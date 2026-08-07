@@ -1,0 +1,341 @@
+#!/bin/bash
+# ============================================
+# RAVENA CLI - Ferramenta Unificada
+# Ravena Security Sandbox
+# ============================================
+# CLI unificado para gerenciar todo o sistema
+# Uso: ravena <comando> [opções]
+# ============================================
+
+set -e
+
+# Cores
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;36m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+BOLD='\033[1m'
+
+# Diretório do projeto
+RAVENA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPTS_DIR="$RAVENA_DIR/scripts"
+
+# Funções de log
+log() { echo -e "${GREEN}[+]${NC} $1"; }
+warn() { echo -e "${YELLOW}[!]${NC} $1"; }
+error() { echo -e "${RED}[!]${NC} $1"; }
+info() { echo -e "${BLUE}[i]${NC} $1"; }
+
+# ============================================
+# Funções de ajuda
+# ============================================
+
+mostrar_ajuda() {
+    echo -e "${BOLD}${CYAN}"
+    echo "╔══════════════════════════════════════════════╗"
+    echo "║       RAVENA SANDBOX DE SEGURANÇA - CLI     ║"
+    echo "╚══════════════════════════════════════════════╝"
+    echo -e "${NC}"
+    echo ""
+    echo -e "${BOLD}Uso:${NC} ravena <comando> [opções]"
+    echo ""
+    echo -e "${BOLD}Comandos:${NC}"
+    echo "  ${GREEN}iniciar${NC}      Iniciar todos os serviços"
+    echo "  ${GREEN}parar${NC}        Parar todos os serviços"
+    echo "  ${GREEN}reiniciar${NC}    Reiniciar todos os serviços"
+    echo "  ${GREEN}status${NC}       Ver status dos serviços"
+    echo "  ${GREEN}logs${NC}         Ver logs em tempo real"
+    echo "  ${GREEN}testar${NC}       Executar testes de segurança"
+    echo "  ${GREEN}relatorio${NC}    Gerar relatório"
+    echo "  ${GREEN}backup${NC}       Criar backup do banco"
+    echo "  ${GREEN}restaurar${NC}    Restaurar backup"
+    echo "  ${GREEN}resetar${NC}      Resetar ambiente completo"
+    echo "  ${GREEN}varredura${NC}    Executar varredura de vulnerabilidades"
+    echo "  ${GREEN}monitorar${NC}    Abrir monitoramento"
+    echo "  ${GREEN}atualizar${NC}    Atualizar dependências"
+    echo "  ${GREEN}limpar${NC}       Limpar logs e cache"
+    echo "  ${GREEN}ajuda${NC}        Mostrar esta ajuda"
+    echo ""
+    echo -e "${BOLD}Exemplos:${NC}"
+    echo "  ravena iniciar"
+    echo "  ravena testar --tipo sql_injection"
+    echo "  ravena varredura --alvo 192.168.1.0/24"
+    echo "  ravena backup --retidos 30"
+    echo ""
+}
+
+# ============================================
+# Comandos
+# ============================================
+
+cmd_iniciar() {
+    log "Iniciando Ravena Sandbox de Segurança..."
+    cd "$RAVENA_DIR"
+    docker-compose up -d
+    log "Sistema iniciado!"
+    echo ""
+    echo "Serviços:"
+    echo "  - Aplicação:    http://localhost:8080"
+    echo "  - PostgreSQL:   localhost:5432"
+    echo "  - Redis:        localhost:6379"
+    echo "  - Nginx:        http://localhost:80"
+    echo "  - Grafana:      http://localhost:3000"
+    echo "  - Kibana:       http://localhost:5601"
+    echo "  - Elastic:      http://localhost:9200"
+}
+
+cmd_parar() {
+    log "Parando Ravena Sandbox de Segurança..."
+    cd "$RAVENA_DIR"
+    docker-compose down
+    log "Sistema parado!"
+}
+
+cmd_reiniciar() {
+    log "Reiniciando Ravena Sandbox de Segurança..."
+    cd "$RAVENA_DIR"
+    docker-compose restart
+    log "Sistema reiniciado!"
+}
+
+cmd_status() {
+    log "Status do Ravena Sandbox de Segurança:"
+    echo ""
+    cd "$RAVENA_DIR"
+    docker-compose ps
+    echo ""
+    
+    # Verificar health check
+    info "Verificando verificação de saúde..."
+    if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+        log "Aplicação: SAUDÁVEL"
+    else
+        error "Aplicação: INDISPONÍVEL"
+    fi
+    
+    # Verificar PostgreSQL
+    if docker exec ravena-db pg_isready > /dev/null 2>&1; then
+        log "PostgreSQL: CONECTADO"
+    else
+        error "PostgreSQL: DESCONECTADO"
+    fi
+    
+    # Verificar Redis
+    if docker exec ravena-redis redis-cli ping > /dev/null 2>&1; then
+        log "Redis: CONECTADO"
+    else
+        error "Redis: DESCONECTADO"
+    fi
+}
+
+cmd_logs() {
+    log "Mostrando logs do Ravena..."
+    cd "$RAVENA_DIR"
+    docker-compose logs -f --tail=100
+}
+
+cmd_testar() {
+    log "Executando testes de segurança..."
+    cd "$RAVENA_DIR"
+    
+    if [ -f "tests/security_tests.py" ]; then
+        python3 tests/security_tests.py
+    else
+        error "Arquivo de testes não encontrado!"
+    fi
+}
+
+cmd_relatorio() {
+    log "Gerando relatório de segurança..."
+    cd "$RAVENA_DIR"
+    
+    if [ -f "monitoring/generate_pdf_report.py" ]; then
+        python3 monitoring/generate_pdf_report.py
+    elif [ -f "monitoring/generate_report.py" ]; then
+        python3 monitoring/generate_report.py
+    else
+        error "Gerador de relatório não encontrado!"
+    fi
+}
+
+cmd_backup() {
+    log "Criando backup do banco de dados..."
+    
+    if [ -f "$SCRIPTS_DIR/backup_postgres.sh" ]; then
+        bash "$SCRIPTS_DIR/backup_postgres.sh"
+    else
+        error "Script de backup não encontrado!"
+    fi
+}
+
+cmd_restaurar() {
+    if [ -z "$1" ]; then
+        error "Especifique o arquivo de backup: ravena restaurar <arquivo>"
+        exit 1
+    fi
+    
+    if [ ! -f "$1" ]; then
+        error "Arquivo de backup não encontrado: $1"
+        exit 1
+    fi
+    
+    log "Restaurando backup: $1"
+    cd "$RAVENA_DIR"
+    
+    docker exec -i ravena-db pg_restore -h localhost -p 5432 -U ravena_test -d ravena_sandbox < "$1"
+    
+    log "Backup restaurado com sucesso!"
+}
+
+cmd_resetar() {
+    warn "ATENÇÃO: Isso vai apagar TODOS os dados!"
+    read -p "Tem certeza? (sim/nao): " CONFIRM
+    
+    if [ "$CONFIRM" != "sim" ]; then
+        echo "Cancelado."
+        exit 0
+    fi
+    
+    log "Resetando ambiente completo..."
+    cd "$RAVENA_DIR"
+    
+    # Parar containers
+    docker-compose down -v
+    
+    # Remover dados
+    rm -rf data/postgres/*
+    rm -rf data/elasticsearch/*
+    rm -rf logs/*
+    
+    # Reiniciar
+    docker-compose up -d
+    
+    log "Ambiente resetado com sucesso!"
+}
+
+cmd_varredura() {
+    if [ -z "$1" ]; then
+        error "Especifique o alvo: ravena varredura <alvo>"
+        exit 1
+    fi
+    
+    log "Executando varredura de vulnerabilidades em: $1"
+    cd "$RAVENA_DIR"
+    
+    # Verificar se nmap está instalado
+    if ! command -v nmap &> /dev/null; then
+        error "nmap não está instalado!"
+        exit 1
+    fi
+    
+    # Varredura básica
+    nmap -sV -sC "$1"
+}
+
+cmd_monitorar() {
+    log "Abrindo monitoramento..."
+    echo ""
+    echo "Painéis disponíveis:"
+    echo "  1. Grafana:    http://localhost:3000"
+    echo "  2. Kibana:     http://localhost:5601"
+    echo "  3. Prometheus: http://localhost:9090"
+    echo ""
+    echo "Pressione Enter para voltar..."
+    read
+}
+
+cmd_atualizar() {
+    log "Atualizando dependências..."
+    cd "$RAVENA_DIR"
+    
+    # Atualizar pip
+    pip install --upgrade pip
+    
+    # Atualizar requirements
+    if [ -f "requirements.txt" ]; then
+        pip install -r requirements.txt --upgrade
+    fi
+    
+    # Atualizar imagens Docker
+    docker-compose pull
+    
+    log "Dependências atualizadas!"
+}
+
+cmd_limpar() {
+    log "Limpando logs e cache..."
+    cd "$RAVENA_DIR"
+    
+    # Limpar logs
+    rm -rf logs/*
+    
+    # Limpar cache Docker
+    docker system prune -f
+    
+    # Limpar cache pip
+    pip cache purge 2>/dev/null || true
+    
+    log "Limpeza concluída!"
+}
+
+# ============================================
+# Parser de argumentos
+# ============================================
+
+case "${1:-ajuda}" in
+    iniciar)
+        cmd_iniciar
+        ;;
+    parar)
+        cmd_parar
+        ;;
+    reiniciar)
+        cmd_reiniciar
+        ;;
+    status)
+        cmd_status
+        ;;
+    logs)
+        cmd_logs
+        ;;
+    testar)
+        cmd_testar
+        ;;
+    relatorio)
+        cmd_relatorio
+        ;;
+    backup)
+        cmd_backup
+        ;;
+    restaurar)
+        shift
+        cmd_restaurar "$@"
+        ;;
+    resetar)
+        cmd_resetar
+        ;;
+    varredura)
+        shift
+        cmd_varredura "$@"
+        ;;
+    monitorar)
+        cmd_monitorar
+        ;;
+    atualizar)
+        cmd_atualizar
+        ;;
+    limpar)
+        cmd_limpar
+        ;;
+    ajuda|--ajuda|-h)
+        mostrar_ajuda
+        ;;
+    *)
+        error "Comando inválido: $1"
+        echo ""
+        mostrar_ajuda
+        exit 1
+        ;;
+esac

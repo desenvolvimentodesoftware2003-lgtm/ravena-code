@@ -1,0 +1,74 @@
+{
+  "index_patterns": [
+    {
+      "name": "ravena-attacks-*",
+      "pattern": {
+        "index": {
+          "number_of_shards": 1,
+          "number_of_replicas": 0
+        },
+        "mappings": {
+          "properties": {
+            "timestamp": {
+              "type": "date"
+            },
+            "attack_type": {
+              "type": "keyword"
+            },
+            "endpoint": {
+              "type": "keyword"
+            },
+            "payload": {
+              "type": "text"
+            },
+            "blocked": {
+              "type": "boolean"
+            },
+            "ip_address": {
+              "type": "ip"
+            },
+            "user_agent": {
+              "type": "text"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "ravena-audit-*",
+      "pattern": {
+        "index": {
+          "number_of_shards": 1,
+          "number_of_replicas": 0
+        },
+        "mappings": {
+          "properties": {
+            "timestamp": {
+              "type": "date"
+            },
+            "table_name": {
+              "type": "keyword"
+            },
+            "operation": {
+              "type": "keyword"
+            },
+            "old_data": {
+              "type": "object",
+              "enabled": false
+            },
+            "new_data": {
+              "type": "object",
+              "enabled": false
+            },
+            "user_id": {
+              "type": "keyword"
+            },
+            "ip_address": {
+              "type": "ip"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

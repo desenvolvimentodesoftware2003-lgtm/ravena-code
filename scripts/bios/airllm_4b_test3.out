@@ -1,0 +1,74 @@
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Error in cpuinfo: failed to parse processor information from /proc/cpuinfo
+[transformers] The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+using generic AirLLM streaming model for architecture: Qwen3_5ForCausalLM
+found local checkpoint...
+found_layers:{'model.embed_tokens.': True, 'model.layers.0.': True, 'model.layers.1.': True, 'model.layers.2.': True, 'model.layers.3.': True, 'model.layers.4.': True, 'model.layers.5.': True, 'model.layers.6.': True, 'model.layers.7.': True, 'model.layers.8.': True, 'model.layers.9.': True, 'model.layers.10.': True, 'model.layers.11.': True, 'model.layers.12.': True, 'model.layers.13.': True, 'model.layers.14.': True, 'model.layers.15.': True, 'model.layers.16.': True, 'model.layers.17.': True, 'model.layers.18.': True, 'model.layers.19.': True, 'model.layers.20.': True, 'model.layers.21.': True, 'model.layers.22.': True, 'model.layers.23.': True, 'model.layers.24.': True, 'model.layers.25.': True, 'model.layers.26.': True, 'model.layers.27.': True, 'model.layers.28.': True, 'model.layers.29.': True, 'model.layers.30.': True, 'model.layers.31.': True, 'model.norm.': True}
+saved layers already found in /data/qwen35-4b-txt/splitted_model
+[ERROR] `loss` is part of Qwen3_5CausalLMOutputWithPast.__init__'s signature, but not documented. Make sure to add it to the docstring of the function in /usr/lib/python3.14/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py.
+[ERROR] `logits` is part of Qwen3_5CausalLMOutputWithPast.__init__'s signature, but not documented. Make sure to add it to the docstring of the function in /usr/lib/python3.14/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py.
+modelo pronto: AirLLMBaseModel
+input: torch.Size([1, 9])
+Traceback (most recent call last):
+  File "/root/airllm_4b_test3.py", line 11, in <module>
+    out = m.generate(ids, max_new_tokens=16, do_sample=False)
+  File "/usr/lib/python3.14/site-packages/airllm/airllm_base.py", line 750, in generate
+    return self.model.generate(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+  File "/usr/lib/python3.14/site-packages/transformers/generation/utils.py", line 2584, in generate
+    result = decoding_method(
+        self,
+    ...<5 lines>...
+        **model_kwargs,
+    )
+  File "/usr/lib/python3.14/site-packages/transformers/generation/utils.py", line 2784, in _sample
+    outputs = self._prefill(
+        input_ids,
+    ...<2 lines>...
+        is_first_iteration=not generation_config.is_assistant,
+    )
+  File "/usr/lib/python3.14/site-packages/transformers/generation/utils.py", line 3830, in _prefill
+    return self(**model_inputs, return_dict=True)
+  File "/usr/lib/python3.14/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/lib/python3.14/site-packages/transformers/utils/generic.py", line 907, in wrapper
+    output = func(self, *args, **kwargs)
+  File "/usr/lib/python3.14/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py", line 1665, in forward
+    outputs: BaseModelOutputWithPast = self.model(
+                                       ~~~~~~~~~~^
+        input_ids=input_ids,
+        ^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "/usr/lib/python3.14/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/lib/python3.14/site-packages/transformers/utils/generic.py", line 1036, in wrapper
+    output = func(self, *args, **kwargs)
+  File "/usr/lib/python3.14/site-packages/transformers/utils/output_capturing.py", line 252, in wrapper
+    outputs = func(self, *args, **kwargs)
+  File "/usr/lib/python3.14/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py", line 1198, in forward
+    position_embeddings = self.rotary_emb(hidden_states, position_ids)
+  File "/usr/lib/python3.14/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/lib/python3.14/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+  File "/usr/lib/python3.14/site-packages/transformers/modeling_rope_utils.py", line 128, in wrapper
+    return rope_forward(self, x, position_ids, **kwargs)
+  File "/usr/lib/python3.14/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py", line 167, in forward
+    return cos.to(dtype=x.dtype), sin.to(dtype=x.dtype)
+           ~~~~~~^^^^^^^^^^^^^^^
+RuntimeError: Failed to initialize cpuinfo!

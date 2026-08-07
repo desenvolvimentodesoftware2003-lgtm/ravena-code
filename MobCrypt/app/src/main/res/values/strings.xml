@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MobCrypt</string>
+    <string name="start_vpn">Ativar VPN Segura</string>
+    <string name="stop_vpn">Desativar VPN</string>
+    <string name="status_idle">Ocioso</string>
+    <string name="status_protected">Protegido via Tor</string>
+</resources>

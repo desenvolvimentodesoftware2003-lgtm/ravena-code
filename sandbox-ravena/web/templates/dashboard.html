@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ravena - Dashboard</title>
+    <link rel="stylesheet" href="/static/css/ravena.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+
+    <header class="header">
+        <div class="header-left">
+            <i class="fas fa-shield-halved logo-icon"></i>
+            <span class="logo-text">RAVENA</span>
+        </div>
+        <div class="header-center">
+            <span class="status-badge" id="desktopStatus">
+                <i class="fas fa-circle"></i> Desktop: Verificando...
+            </span>
+        </div>
+        <div class="header-right">
+            <span class="user-info" id="userInfo">
+                <i class="fas fa-user"></i> <span id="username">-</span>
+            </span>
+            <button class="btn-logout" id="btnLogout">
+                <i class="fas fa-right-from-bracket"></i> Sair
+            </button>
+        </div>
+    </header>
+
+    <main class="main-layout">
+
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3><i class="fas fa-list-check"></i> Tarefas</h3>
+                <ul class="task-list" id="taskList">
+                    <li class="task-item" data-action="scan">
+                        <i class="fas fa-radar"></i> Scan de Rede
+                    </li>
+                    <li class="task-item" data-action="report">
+                        <i class="fas fa-file-lines"></i> Relatório
+                    </li>
+                    <li class="task-item" data-action="backup">
+                        <i class="fas fa-database"></i> Backup
+                    </li>
+                    <li class="task-item" data-action="status">
+                        <i class="fas fa-chart-line"></i> Status
+                    </li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <h3><i class="fas fa-chart-simple"></i> Status</h3>
+                <div class="status-card">
+                    <div class="status-row">
+                        <span>CPU</span>
+                        <span id="cpuValue">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="cpuBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="status-card">
+                    <div class="status-row">
+                        <span>RAM</span>
+                        <span id="ramValue">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="ramBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="status-card">
+                    <div class="status-row">
+                        <span>Disco</span>
+                        <span id="diskValue">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="diskBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="status-card">
+                    <div class="status-row">
+                        <span>Rede</span>
+                        <span id="netStatus">-</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <section class="chat-panel">
+            <div class="chat-header">
+                <h2><i class="fas fa-robot"></i> Chat com Agente</h2>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="message agent-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <p>Olá! Sou o agente Ravena. Como posso ajudar?</p>
+                        <span class="message-time">Agora</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="commandInput" placeholder="Digite seu comando..." autocomplete="off">
+                <button class="btn-send" id="btnSend">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </section>
+
+        <section class="action-panel">
+            <div class="action-header">
+                <h2><i class="fas fa-terminal"></i> Ação ao Vivo</h2>
+                <button class="btn-clear" id="btnClearTerminal">
+                    <i class="fas fa-eraser"></i>
+                </button>
+            </div>
+            <div class="terminal" id="terminal">
+                <div class="terminal-line system">
+                    <span class="terminal-prompt">$</span> Ravena Terminal iniciado...
+                </div>
+                <div class="terminal-line system">
+                    <span class="terminal-prompt">$</span> Conectando ao desktop...
+                </div>
+            </div>
+            <div class="action-footer">
+                <div class="system-stats">
+                    <span><i class="fas fa-microchip"></i> CPU: <span id="termCpu">0%</span></span>
+                    <span><i class="fas fa-memory"></i> RAM: <span id="termRam">0%</span></span>
+                    <span><i class="fas fa-network-wired"></i> <span id="termNet">-</span></span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <div class="footer-left">
+            <span><i class="fas fa-circle status-online"></i> Status: <span id="footerStatus">ONLINE</span></span>
+            <span><i class="fas fa-lock"></i> TLS 1.3</span>
+            <span><i class="fas fa-shield-halved"></i> Pós-Quântico</span>
+        </div>
+        <div class="footer-right">
+            <span><i class="fas fa-clock"></i> Sessão: 90 dias</span>
+            <span id="footerTime">-</span>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="/static/js/websocket.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

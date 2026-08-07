@@ -1,0 +1,51 @@
+# ============================================
+# CONFIGURAÇÃO DO PROMETHEUS
+# ============================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# ============================================
+# RULES DE ALERTA
+# ============================================
+rule_files:
+  - "alert_rules.yml"
+
+# ============================================
+# TARGETS DE SCRAPE
+# ============================================
+scrape_configs:
+  # Monitoramento do próprio Prometheus
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Nginx
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['ravena-nginx:8080']
+
+  # PostgreSQL (via exporter)
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['ravena-db:5432']
+
+  # Redis
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['ravena-redis:6379']
+
+  # Aplicação Ravena
+  - job_name: 'ravena-app'
+    static_configs:
+      - targets: ['ravena-app:8080']
+
+# ============================================
+# CONFIGURAÇÕES ADICIONAIS
+# ============================================
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093

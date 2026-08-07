@@ -1,0 +1,42 @@
+# ============================================
+# GITIGNORE - SANDBOX RAVENA
+# ============================================
+
+# Dados persistidos
+data/postgres/
+data/elasticsearch/
+
+# Logs
+logs/
+*.log
+
+# Configurações sensíveis
+.env
+*.env.local
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Backup
+*.bak
+*.backup

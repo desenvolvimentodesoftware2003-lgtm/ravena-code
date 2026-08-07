@@ -1,0 +1,196 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Security Dashboard - Sandbox Ravena",
+    "tags": ["security", "ravena", "sandbox"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Total de Ataques",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(attack_log_total)",
+            "legendFormat": "Total"
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "calcs": ["lastNotNull"]
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Ataques por Tipo",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (type) (attack_log_total)",
+            "legendFormat": "{{type}}"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Ataques em Tempo Real",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(attack_log_total[1m])",
+            "legendFormat": "{{type}}"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Tentativas de Login",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(audit_log_total{action=\"login\"})",
+            "legendFormat": "Total"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Logins Falhos",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(audit_log_total{action=\"login\", status=\"failed\"})",
+            "legendFormat": "Falhas"
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "calcs": ["lastNotNull"]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "red",
+                "value": 50
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Saques Solicitados",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(withdrawal_requests_total)",
+            "legendFormat": "Total"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Saques Aprovados vs Negados",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (status) (withdrawal_requests_total)",
+            "legendFormat": "{{status}}"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Uso de CPU",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "CPU %"
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "calcs": ["lastNotNull"]
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Uso de Memória",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+            "legendFormat": "Memória %"
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "calcs": ["lastNotNull"]
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "Últimos Eventos de Segurança",
+        "type": "logs",
+        "targets": [
+          {
+            "expr": "{job=\"ravena-security\"}",
+            "legendFormat": ""
+          }
+        ]
+      }
+    ],
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "omega_version": "4.0.0-RAVENA-CORE",
+  "config_version": "1.0.0",
+  "created_at": "2026-07-14T00:00:00Z",
+
+  "core": {
+    "verbose": true,
+    "fallback_inteligente": true,
+    "max_ciclos_pensamento": 3,
+    "confianca_minima": 0.3,
+    "modo_soberano": true
+  },
+
+  "log": {
+    "nivel": "INFO",
+    "formato": "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s",
+    "saida": ["console", "jsonl"],
+    "caminho_jsonl": "data/cognitive_treino.jsonl",
+    "max_bytes": 10485760,
+    "backup_count": 3
+  },
+
+  "conhecimento": {
+    "ativo": true,
+    "chunk_size": 300,
+    "chunk_overlap": 50,
+    "max_resultados": 5,
+    "similaridade_minima": 0.5,
+    "autoridade_minima": 0.3,
+    "meia_vida_stale_horas": 720
+  },
+
+  "visao": {
+    "ativo": false,
+    "modo": "unificado",
+    "mouse_click": true,
+    "confidence_threshold": 0.75
+  },
+
+  "seguranca": {
+    "separado": true,
+    "lockdown_alert": 0.55,
+    "lockdown_block": 0.60,
+    "lockdown_violacoes_emergencia": 3
+  },
+
+  "sensores_cognitivos": {
+    "ativo": true,
+    "capturar_raciocinio": true,
+    "capturar_contexto": true,
+    "capturar_fonte": true,
+    "formato": "jsonl"
+  },
+
+  "ml_pipeline": {
+    "ativo": false,
+    "cluster_k": 5,
+    "metricas": ["confianca_media", "acertos", "autoridade_trend"]
+  },
+
+  "inteligencia_propria": {
+    "ativo": false,
+    "encoder_dim": 768,
+    "dp_otimizacao": true,
+    "batch_size": 32,
+    "learning_rate": 0.0001
+  }
+}

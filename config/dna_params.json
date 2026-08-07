@@ -1,0 +1,19 @@
+{
+    "version": "3.0.0",
+    "core_model": "Llama-3.1-70b",
+    "operational_limits": {
+        "max_risk_per_trade": 0.02,
+        "min_confidence_score": 0.85,
+        "max_daily_loss": 0.05
+    },
+    "personality_traits": {
+        "analytical_depth": "high",
+        "narrative_fluency": "sophisticated",
+        "reasoning_style": "chain_of_thought"
+    },
+    "decision_matrix": {
+        "macro_weight": 0.4,
+        "technical_weight": 0.4,
+        "sentiment_weight": 0.2
+    }
+}

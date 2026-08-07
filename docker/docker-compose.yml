@@ -1,0 +1,103 @@
+# ============================================================
+# Ravena AIM - v1.0.0-beta
+# Docker Compose para Oracle Cloud Infrastructure (OCI)
+# ============================================================
+version: '3.8'
+
+services:
+  # Core da Ravena (OmegaCore + Orquestração)
+  ravena-core:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: ravena-core
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - RAVENA_ENV=production
+      - RAVENA_VERSION=1.0.0-beta
+      - CHROMADB_HOST=chromadb
+      - CHROMADB_PORT=8001
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ravena_logs:/app/logs
+      - ravena_data:/app/data
+      - ravena_memoria:/app/memoria
+    depends_on:
+      - chromadb
+      - redis
+    networks:
+      - ravena-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+
+  # ChromaDB - Banco Vetorial para RAG
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: ravena-chromadb
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    networks:
+      - ravena-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # Redis - Cache e Filas de Mensagens
+  redis:
+    image: redis:7-alpine
+    container_name: ravena-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - ravena-network
+
+  # Trading Bot (Signal Bridge + Bybit Connector)
+  ravena-trading:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: ravena-trading
+    restart: unless-stopped
+    command: ["python", "-m", "src.trading.signal_bridge_v3.2.6"]
+    environment:
+      - RAVENA_ENV=production
+      - BYBIT_API_KEY=${BYBIT_API_KEY}
+      - BYBIT_API_SECRET=${BYBIT_API_SECRET}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - ravena-core
+      - redis
+    networks:
+      - ravena-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+volumes:
+  ravena_logs:
+  ravena_data:
+  ravena_memoria:
+  chroma_data:
+  redis_data:
+
+networks:
+  ravena-network:
+    driver: bridge

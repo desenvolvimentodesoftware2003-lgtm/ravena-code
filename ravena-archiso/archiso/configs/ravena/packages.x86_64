@@ -1,0 +1,78 @@
+# ============================================
+# PACKAGES.X86_64 - Pacotes da ISO Ravena
+# ============================================
+
+# Sistema base
+base
+linux
+linux-firmware
+sudo
+nano
+vim
+tmux
+htop
+
+# Sistema de arquivos
+dosfstools
+e2fsprogs
+ntfs-3g
+rsync
+
+# Rede
+networkmanager
+network-manager-applet
+wpa_supplicant
+dialog
+dhclient
+curl
+wget
+git
+openssh
+
+# Python
+python
+python-pip
+python-virtualenv
+
+# Dependências Python (para Ravena)
+flask
+psycopg2
+redis
+pyjwt
+requests
+gunicorn
+
+# Docker
+docker
+docker-compose
+
+# Segurança
+nmap
+netcat
+socat
+openssl
+gnupg
+
+# Utilitários
+base-devel
+cmake
+gcc
+make
+unzip
+p7zip
+tree
+jq
+sed
+grep
+awk
+
+# Logs
+rsyslog
+logrotate
+
+# Cron
+cronie
+
+# Monitoramento
+lm_sensors
+numactl

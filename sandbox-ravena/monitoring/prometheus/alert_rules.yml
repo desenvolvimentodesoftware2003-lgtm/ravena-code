@@ -1,0 +1,86 @@
+# ============================================
+# REGRAS DE ALERTA - PROMETHEUS
+# ============================================
+
+groups:
+  - name: ravena_alerts
+    rules:
+      # Alerta de muitos ataques
+      - alert: HighAttackRate
+        expr: rate(attack_log_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Taxa alta de ataques detectada"
+          description: "Mais de 10 ataques por segundo nos últimos 5 minutos"
+
+      # Alerta de SQL Injection
+      - alert: SQLInjectionDetected
+        expr: increase(attack_log_total{attack_type="sql_injection"}[1m]) > 5
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SQL Injection detectado"
+          description: "Mais de 5 tentativas de SQL Injection no último minuto"
+
+      # Alerta de tentativa de brute force
+      - alert: BruteForceDetected
+        expr: increase(attack_log_total{attack_type="brute_force"}[1m]) > 20
+        for: 0m
+        labels:
+          severity: high
+        annotations:
+          summary: "Tentativa de brute force detectada"
+          description: "Mais de 20 tentativas de brute force no último minuto"
+
+      # Alerta de sessão inválida
+      - alert: InvalidSession
+        expr: increase(attack_log_total{attack_type="session_hijack"}[5m]) > 10
+        for: 2m
+        labels:
+          severity: medium
+        annotations:
+          summary: "Tentativas de sequestro de sessão"
+          description: "Mais de 10 tentativas de sequestro de sessão nos últimos 5 minutos"
+
+      # Alerta de uso de CPU alto
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Uso de CPU alto"
+          description: "Uso de CPU acima de 80% por mais de 5 minutos"
+
+      # Alerta de uso de memória alto
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Uso de memória alto"
+          description: "Uso de memória acima de 80% por mais de 5 minutos"
+
+      # Alerta de disco quase cheio
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Espaço em disco baixo"
+          description: "Menos de 20% de espaço em disco disponível"
+
+      # Alerta de serviço down
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Serviço indisponível"
+          description: "O serviço {{ $labels.instance }} está indisponível"

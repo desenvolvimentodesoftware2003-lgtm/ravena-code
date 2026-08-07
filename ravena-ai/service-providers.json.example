@@ -1,0 +1,94 @@
+{
+	"llm": [
+		{
+			"name": "ollama-local",
+			"type": "ollama",
+			"url": "http://192.168.1.10:11434",
+			"model": "gemma4:31b",
+			"enabled": true,
+			"temperature": 1,
+			"top_k": 64,
+			"top_p": 0.95,
+			"ignoreVideo": false,
+			"textOnly": false,
+			"timeout_multiplier": 1
+		},
+		{
+			"name": "openai-official",
+			"type": "openai",
+			"url": "https://api.openai.com/v1",
+			"apiKey": "sk-proj-...",
+			"model": "gpt-4o",
+			"enabled": true,
+			"temperature": 0.7,
+			"timeout_multiplier": 2
+		},
+		{
+			"name": "openrouter-default",
+			"type": "openrouter",
+			"url": "https://openrouter.ai/api/v1",
+			"apiKey": "sk-or-v1-...",
+			"model": "google/gemma-3-27b-it",
+			"enabled": true,
+			"temperature": 0.7,
+			"timeout_multiplier": 2,
+			"textOnly": true
+		},
+		{
+			"name": "lmstudio-deepseek",
+			"type": "openai",
+			"url": "http://localhost:1234/v1",
+			"apiKey": "not-needed",
+			"model": "deepseek-coder-v2",
+			"enabled": false,
+			"temperature": 0.3,
+			"textOnly": true
+		},
+		{
+			"name": "deepseek-api",
+			"type": "openai",
+			"url": "https://api.deepseek.com/v1",
+			"apiKey": "sk-...",
+			"model": "deepseek-reasoner",
+			"enabled": false,
+			"temperature": 0.5,
+			"timeout_multiplier": 3,
+			"textOnly": true
+		}
+	],
+	"whisper": [
+		{
+			"name": "primary",
+			"url": "http://192.168.1.10:3378",
+			"enabled": true
+		}
+	],
+	"comfyui": [
+		{
+			"name": "primary",
+			"url": "http://192.168.1.10:8188",
+			"enabled": true
+		}
+	],
+	"bonsai": [
+		{
+			"name": "primary",
+			"url": "http://192.168.1.30:1234",
+			"enabled": true
+		}
+	],
+	"sdwebui": [
+		{
+			"name": "primary",
+			"url": "http://localhost:7860",
+			"enabled": true
+		}
+	],
+	"f5tts": [
+		{
+			"name": "primary",
+			"url": "http://192.168.1.10:5050",
+			"enabled": true
+		}
+	]
+}

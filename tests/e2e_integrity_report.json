@@ -1,0 +1,235 @@
+{
+  "timestamp": "2026-07-12T16:01:52.989732",
+  "version": "3.2.6",
+  "summary": {
+    "total": 37,
+    "passed": 37,
+    "failed": 0,
+    "time_seconds": 1.07
+  },
+  "results": [
+    {
+      "check": "Directory src/core",
+      "status": "PASS",
+      "detail": "",
+      "time_ms": 0
+    },
+    {
+      "check": "Directory src/security",
+      "status": "PASS",
+      "detail": "",
+      "time_ms": 0
+    },
+    {
+      "check": "Directory src/trading",
+      "status": "PASS",
+      "detail": "",
+      "time_ms": 0
+    },
+    {
+      "check": "Directory src/rag",
+      "status": "PASS",
+      "detail": "",
+      "time_ms": 0
+    },
+    {
+      "check": "Directory src/learning",
+      "status": "PASS",
+      "detail": "",
+      "time_ms": 0
+    },
+    {
+      "check": "Directory src/orchestration",
+      "status": "PASS",
+      "detail": "",
+      "time_ms": 0
+    },
+    {
+      "check": "Directory src/simulation",
+      "status": "PASS",
+      "detail": "",
+      "time_ms": 1
+    },
+    {
+      "check": "Directory src/utils",
+      "status": "PASS",
+      "detail": "",
+      "time_ms": 1
+    },
+    {
+      "check": "Directory tests",
+      "status": "PASS",
+      "detail": "",
+      "time_ms": 1
+    },
+    {
+      "check": "Directory .github/workflows",
+      "status": "PASS",
+      "detail": "",
+      "time_ms": 1
+    },
+    {
+      "check": "Module Omega v3.2.6",
+      "status": "PASS",
+      "detail": "Classes: ['Omega']",
+      "time_ms": 67
+    },
+    {
+      "check": "Module Omega Core v3.2.6",
+      "status": "PASS",
+      "detail": "Loaded successfully",
+      "time_ms": 94
+    },
+    {
+      "check": "Module Hacker Agent",
+      "status": "PASS",
+      "detail": "Classes: ['HackerAgent']",
+      "time_ms": 95
+    },
+    {
+      "check": "Module Security Core v3.2.7",
+      "status": "PASS",
+      "detail": "Classes: ['SecurityCore']",
+      "time_ms": 96
+    },
+    {
+      "check": "Module Zero Trust v3.2.6",
+      "status": "PASS",
+      "detail": "Classes: ['ZeroTrustProtocol']",
+      "time_ms": 98
+    },
+    {
+      "check": "Module Secrets Manager",
+      "status": "PASS",
+      "detail": "Loaded successfully",
+      "time_ms": 132
+    },
+    {
+      "check": "Module RAG Advanced",
+      "status": "PASS",
+      "detail": "Loaded successfully",
+      "time_ms": 136
+    },
+    {
+      "check": "Module Bybit Connector",
+      "status": "PASS",
+      "detail": "Loaded successfully",
+      "time_ms": 368
+    },
+    {
+      "check": "Module Signal Bridge",
+      "status": "PASS",
+      "detail": "Loaded successfully",
+      "time_ms": 1058
+    },
+    {
+      "check": "Module Trade Brain",
+      "status": "PASS",
+      "detail": "Loaded successfully",
+      "time_ms": 1059
+    },
+    {
+      "check": "Module Agente Dev",
+      "status": "PASS",
+      "detail": "Classes: ['AgenteDev']",
+      "time_ms": 1060
+    },
+    {
+      "check": "Module External API Manager",
+      "status": "PASS",
+      "detail": "Loaded successfully",
+      "time_ms": 1061
+    },
+    {
+      "check": "Module Telegram Bot",
+      "status": "PASS",
+      "detail": "Loaded successfully",
+      "time_ms": 1063
+    },
+    {
+      "check": "Test tests/health_check.py",
+      "status": "PASS",
+      "detail": "Size: 23009 bytes",
+      "time_ms": 1063
+    },
+    {
+      "check": "Test tests/test_elite_v327.py",
+      "status": "PASS",
+      "detail": "Size: 3514 bytes",
+      "time_ms": 1063
+    },
+    {
+      "check": "Test tests/test_token_protection.py",
+      "status": "PASS",
+      "detail": "Size: 1575 bytes",
+      "time_ms": 1063
+    },
+    {
+      "check": "Test tests/test_integration_v3.2.6.py",
+      "status": "PASS",
+      "detail": "Size: 3357 bytes",
+      "time_ms": 1063
+    },
+    {
+      "check": "Test tests/stress_test_v328.py",
+      "status": "PASS",
+      "detail": "Size: 4506 bytes",
+      "time_ms": 1063
+    },
+    {
+      "check": "Test tests/global_validation_test_v3.2.6.py",
+      "status": "PASS",
+      "detail": "Size: 3758 bytes",
+      "time_ms": 1063
+    },
+    {
+      "check": "Report tests/health_check_report.json",
+      "status": "PASS",
+      "detail": "Size: 3964 bytes",
+      "time_ms": 1063
+    },
+    {
+      "check": "Report tests/health_check_report.md",
+      "status": "PASS",
+      "detail": "Size: 2560 bytes",
+      "time_ms": 1063
+    },
+    {
+      "check": "Report tests/health_check_report.html",
+      "status": "PASS",
+      "detail": "Size: 5889 bytes",
+      "time_ms": 1064
+    },
+    {
+      "check": "Report tests/stress_test_v3.2.8.log",
+      "status": "PASS",
+      "detail": "Size: 4949 bytes",
+      "time_ms": 1065
+    },
+    {
+      "check": "CI/CD .github/workflows/e2e-tests.yml",
+      "status": "PASS",
+      "detail": "Size: 1402 bytes",
+      "time_ms": 1065
+    },
+    {
+      "check": "JSON Schema",
+      "status": "PASS",
+      "detail": "All keys present",
+      "time_ms": 1066
+    },
+    {
+      "check": "JSON counts match",
+      "status": "PASS",
+      "detail": "Summary total=22, Results count=22",
+      "time_ms": 1066
+    },
+    {
+      "check": "Health score",
+      "status": "PASS",
+      "detail": "Score: 100.0%",
+      "time_ms": 1066
+    }
+  ],
+  "verdict": "PASS"
+}

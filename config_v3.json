@@ -1,0 +1,90 @@
+{
+  "ravena_version": "3.2.6",
+  "config_version": "3.2.6",
+  "created_at": "2026-07-12T15:50:00Z",
+
+  "omega_autonomous_reintegration": {
+    "vision_semantic_fusion": {
+      "enabled": true,
+      "anomaly_mapping": {
+        "DEGRADAÇÃO_PERFORMANCE": "ESCALONAMENTO_RECURSOS",
+        "LATÊNCIA_ALTA": "REINICIAR_SERVIÇO",
+        "ATAQUE_BRUTE_FORCE": "BLOQUEAR_IP",
+        "TENTATIVA_INVASÃO": "ISOLAR_MODULO",
+        "VAZAMENTO_DADOS": "CORTAR_CONEXÃO",
+        "USO_ANÔMALO_CPU": "LIMITAR_THREADS",
+        "FALHA_AUTENTICAÇÃO": "ROTACIONAR_CREDENCIAIS",
+        "DEFAULT": "NOTIFICAR_APENAS"
+      },
+      "confidence_threshold": 0.75,
+      "fusion_mode": "semantic"
+    },
+    "self_healing": {
+      "active": true,
+      "confidence_threshold": 0.9,
+      "max_auto_correction_cycles": 5,
+      "cooldown_seconds": 60,
+      "actions": ["BLOQUEAR_IP", "REINICIAR_SERVIÇO", "ISOLAR_MODULO", "ESCALONAMENTO_RECURSOS"]
+    },
+    "audit_logging": {
+      "enabled": true,
+      "log_level": "INFO",
+      "output": ["console", "file"],
+      "file_path": "logs/omega_audit.log"
+    }
+  },
+
+  "zero_trust": {
+    "protocol_version": "2.2",
+    "token_expiry_seconds": 3600,
+    "max_failed_attempts": 5,
+    "lockout_duration_seconds": 300
+  },
+
+  "trading": {
+    "exchange": "bybit",
+    "mode": "demo",
+    "max_leverage": 3,
+    "risk_per_trade_percent": 1.0,
+    "max_open_positions": 5
+  },
+
+  "rag": {
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "chunk_size": 512,
+    "chunk_overlap": 64,
+    "max_results": 5,
+    "similarity_threshold": 0.7
+  },
+
+  "suitability_dynamic_gate": {
+    "modes": {
+      "AGGRESSIVE": {
+        "balance_limit": 10000,
+        "sentiment_threshold": 0.15,
+        "audit_required": false
+      },
+      "MODERATE": {
+        "balance_limit": 50000,
+        "sentiment_threshold": 0.30,
+        "audit_required": false
+      },
+      "CONSERVATIVE": {
+        "balance_limit": 100000000,
+        "sentiment_threshold": 0.50,
+        "audit_required": true
+      }
+    }
+  },
+  "core_settings": {
+    "brutality_threshold": 0.52
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    "handlers": ["console", "file"],
+    "file_path": "logs/ravena.log",
+    "max_bytes": 10485760,
+    "backup_count": 5
+  }
+}

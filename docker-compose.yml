@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  ravena-aim:
+    build:
+      context: .
+      target: dev
+    container_name: ravena-aim
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - ravena_data:/app/chroma_db
+      - ravena_logs:/app/logs
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  ravena-aim-health:
+    build:
+      context: .
+      target: production
+    container_name: ravena-aim-health
+    env_file:
+      - .env
+    profiles:
+      - health
+    command: python main.py health
+
+  ravena-aim-api:
+    build:
+      context: .
+      target: api
+    container_name: ravena-aim-api
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ravena_logs:/app/logs
+    profiles:
+      - api
+    command: python main.py serve
+
+volumes:
+  ravena_data:
+  ravena_logs:

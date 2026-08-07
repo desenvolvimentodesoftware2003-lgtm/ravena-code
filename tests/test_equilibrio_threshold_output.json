@@ -1,0 +1,729 @@
+{
+  "metadados": {
+    "data": "2026-07-14T19:10:30",
+    "total_ativos": 27,
+    "chegaram_ao_filtro": 25,
+    "bloqueados_gate": 2,
+    "tech_confidence": 0.7,
+    "balance": 1000.0,
+    "suitability_mode": "AGGRESSIVE"
+  },
+  "distribuicao_brutalidade": {
+    "min": 0.3622,
+    "max": 0.5915,
+    "media": 0.4959,
+    "mediana": 0.5026,
+    "p25": 0.4445,
+    "p75": 0.5559,
+    "p90": 0.573,
+    "p95": 0.5901
+  },
+  "distribuicao_prob_hibrida": {
+    "min": 0.4359,
+    "max": 0.6536,
+    "media": 0.5574,
+    "mediana": 0.555,
+    "p25": 0.5302,
+    "p75": 0.5786,
+    "p90": 0.6462,
+    "p95": 0.653
+  },
+  "knee_point": {
+    "threshold": 0.52,
+    "aprovados": 21,
+    "indice": 22,
+    "distancia": 0.14
+  },
+  "threshold_recomendado": 0.52,
+  "aprovados_com_recomendado": [
+    "ETHUSDT",
+    "INJUSDT",
+    "SUIUSDT",
+    "LINKUSDT",
+    "NEARUSDT",
+    "APTUSDT",
+    "SHIBUSDT",
+    "AVAXUSDT",
+    "DOGEUSDT",
+    "UNIUSDT",
+    "BTCUSDT",
+    "OPUSDT",
+    "RENDERUSDT",
+    "ADAUSDT",
+    "XRPUSDT",
+    "PEPEUSDT",
+    "SOLUSDT",
+    "FETUSDT",
+    "BNBUSDT",
+    "TIAUSDT",
+    "LTCUSDT"
+  ],
+  "reprovados_com_recomendado": [
+    "SEIUSDT",
+    "ARBUSDT",
+    "ATOMUSDT",
+    "DOTUSDT"
+  ],
+  "bloqueados_gate_lista": [
+    "MATICUSDT",
+    "TRXUSDT"
+  ],
+  "varredura": [
+    {
+      "threshold": 0.3,
+      "aprovados": 25,
+      "pct": 100.0,
+      "media_prob": 0.5574,
+      "media_brute": 0.4959
+    },
+    {
+      "threshold": 0.31,
+      "aprovados": 25,
+      "pct": 100.0,
+      "media_prob": 0.5574,
+      "media_brute": 0.4959
+    },
+    {
+      "threshold": 0.32,
+      "aprovados": 25,
+      "pct": 100.0,
+      "media_prob": 0.5574,
+      "media_brute": 0.4959
+    },
+    {
+      "threshold": 0.33,
+      "aprovados": 25,
+      "pct": 100.0,
+      "media_prob": 0.5574,
+      "media_brute": 0.4959
+    },
+    {
+      "threshold": 0.34,
+      "aprovados": 25,
+      "pct": 100.0,
+      "media_prob": 0.5574,
+      "media_brute": 0.4959
+    },
+    {
+      "threshold": 0.35,
+      "aprovados": 25,
+      "pct": 100.0,
+      "media_prob": 0.5574,
+      "media_brute": 0.4959
+    },
+    {
+      "threshold": 0.36,
+      "aprovados": 25,
+      "pct": 100.0,
+      "media_prob": 0.5574,
+      "media_brute": 0.4959
+    },
+    {
+      "threshold": 0.37,
+      "aprovados": 25,
+      "pct": 100.0,
+      "media_prob": 0.5574,
+      "media_brute": 0.4959
+    },
+    {
+      "threshold": 0.38,
+      "aprovados": 25,
+      "pct": 100.0,
+      "media_prob": 0.5574,
+      "media_brute": 0.4959
+    },
+    {
+      "threshold": 0.39,
+      "aprovados": 25,
+      "pct": 100.0,
+      "media_prob": 0.5574,
+      "media_brute": 0.4959
+    },
+    {
+      "threshold": 0.4,
+      "aprovados": 25,
+      "pct": 100.0,
+      "media_prob": 0.5574,
+      "media_brute": 0.4959
+    },
+    {
+      "threshold": 0.41,
+      "aprovados": 25,
+      "pct": 100.0,
+      "media_prob": 0.5574,
+      "media_brute": 0.4959
+    },
+    {
+      "threshold": 0.42,
+      "aprovados": 25,
+      "pct": 100.0,
+      "media_prob": 0.5574,
+      "media_brute": 0.4959
+    },
+    {
+      "threshold": 0.43,
+      "aprovados": 25,
+      "pct": 100.0,
+      "media_prob": 0.5574,
+      "media_brute": 0.4959
+    },
+    {
+      "threshold": 0.44,
+      "aprovados": 24,
+      "pct": 96.0,
+      "media_prob": 0.5624,
+      "media_brute": 0.5014
+    },
+    {
+      "threshold": 0.45,
+      "aprovados": 23,
+      "pct": 92.0,
+      "media_prob": 0.5676,
+      "media_brute": 0.5066
+    },
+    {
+      "threshold": 0.46,
+      "aprovados": 22,
+      "pct": 88.0,
+      "media_prob": 0.5727,
+      "media_brute": 0.511
+    },
+    {
+      "threshold": 0.47,
+      "aprovados": 22,
+      "pct": 88.0,
+      "media_prob": 0.5727,
+      "media_brute": 0.511
+    },
+    {
+      "threshold": 0.48,
+      "aprovados": 21,
+      "pct": 84.0,
+      "media_prob": 0.5773,
+      "media_brute": 0.5133
+    },
+    {
+      "threshold": 0.49,
+      "aprovados": 21,
+      "pct": 84.0,
+      "media_prob": 0.5773,
+      "media_brute": 0.5133
+    },
+    {
+      "threshold": 0.5,
+      "aprovados": 21,
+      "pct": 84.0,
+      "media_prob": 0.5773,
+      "media_brute": 0.5133
+    },
+    {
+      "threshold": 0.51,
+      "aprovados": 21,
+      "pct": 84.0,
+      "media_prob": 0.5773,
+      "media_brute": 0.5133
+    },
+    {
+      "threshold": 0.52,
+      "aprovados": 21,
+      "pct": 84.0,
+      "media_prob": 0.5773,
+      "media_brute": 0.5133
+    },
+    {
+      "threshold": 0.53,
+      "aprovados": 20,
+      "pct": 80.0,
+      "media_prob": 0.5798,
+      "media_brute": 0.5174
+    },
+    {
+      "threshold": 0.54,
+      "aprovados": 16,
+      "pct": 64.0,
+      "media_prob": 0.5917,
+      "media_brute": 0.5353
+    },
+    {
+      "threshold": 0.55,
+      "aprovados": 13,
+      "pct": 52.0,
+      "media_prob": 0.6025,
+      "media_brute": 0.5485
+    },
+    {
+      "threshold": 0.56,
+      "aprovados": 11,
+      "pct": 44.0,
+      "media_prob": 0.6106,
+      "media_brute": 0.5557
+    },
+    {
+      "threshold": 0.57,
+      "aprovados": 10,
+      "pct": 40.0,
+      "media_prob": 0.6155,
+      "media_brute": 0.5594
+    },
+    {
+      "threshold": 0.58,
+      "aprovados": 6,
+      "pct": 24.0,
+      "media_prob": 0.6429,
+      "media_brute": 0.5647
+    },
+    {
+      "threshold": 0.59,
+      "aprovados": 6,
+      "pct": 24.0,
+      "media_prob": 0.6429,
+      "media_brute": 0.5647
+    },
+    {
+      "threshold": 0.6,
+      "aprovados": 6,
+      "pct": 24.0,
+      "media_prob": 0.6429,
+      "media_brute": 0.5647
+    },
+    {
+      "threshold": 0.61,
+      "aprovados": 6,
+      "pct": 24.0,
+      "media_prob": 0.6429,
+      "media_brute": 0.5647
+    },
+    {
+      "threshold": 0.62,
+      "aprovados": 6,
+      "pct": 24.0,
+      "media_prob": 0.6429,
+      "media_brute": 0.5647
+    },
+    {
+      "threshold": 0.63,
+      "aprovados": 5,
+      "pct": 20.0,
+      "media_prob": 0.6468,
+      "media_brute": 0.5746
+    },
+    {
+      "threshold": 0.64,
+      "aprovados": 5,
+      "pct": 20.0,
+      "media_prob": 0.6468,
+      "media_brute": 0.5746
+    },
+    {
+      "threshold": 0.65,
+      "aprovados": 2,
+      "pct": 8.0,
+      "media_prob": 0.6533,
+      "media_brute": 0.5908
+    },
+    {
+      "threshold": 0.66,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    },
+    {
+      "threshold": 0.67,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    },
+    {
+      "threshold": 0.68,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    },
+    {
+      "threshold": 0.69,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    },
+    {
+      "threshold": 0.7,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    },
+    {
+      "threshold": 0.71,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    },
+    {
+      "threshold": 0.72,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    },
+    {
+      "threshold": 0.73,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    },
+    {
+      "threshold": 0.74,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    },
+    {
+      "threshold": 0.75,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    },
+    {
+      "threshold": 0.76,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    },
+    {
+      "threshold": 0.77,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    },
+    {
+      "threshold": 0.78,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    },
+    {
+      "threshold": 0.79,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    },
+    {
+      "threshold": 0.8,
+      "aprovados": 0,
+      "pct": 0.0,
+      "media_prob": 0,
+      "media_brute": 0
+    }
+  ],
+  "resultados_detalhados": [
+    {
+      "simbolo": "BTCUSDT",
+      "ativo": "BTC",
+      "prob_hibrida": 0.5617,
+      "brutalidade": 0.5193,
+      "taxa_vitoria": 0.65,
+      "sentimento": 0.6,
+      "status": "READY",
+      "passou_filtro_60ag": true,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "ETHUSDT",
+      "ativo": "ETH",
+      "prob_hibrida": 0.6536,
+      "brutalidade": 0.5915,
+      "taxa_vitoria": 0.7,
+      "sentimento": 0.9,
+      "status": "READY",
+      "passou_filtro_60ag": true,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "SOLUSDT",
+      "ativo": "SOL",
+      "prob_hibrida": 0.537,
+      "brutalidade": 0.4575,
+      "taxa_vitoria": 0.55,
+      "sentimento": 0.6,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "ADAUSDT",
+      "ativo": "ADA",
+      "prob_hibrida": 0.5477,
+      "brutalidade": 0.4843,
+      "taxa_vitoria": 0.5833,
+      "sentimento": 0.6,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "DOGEUSDT",
+      "ativo": "DOGE",
+      "prob_hibrida": 0.573,
+      "brutalidade": 0.5475,
+      "taxa_vitoria": 0.6667,
+      "sentimento": 0.6,
+      "status": "READY",
+      "passou_filtro_60ag": true,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "BNBUSDT",
+      "ativo": "BNB",
+      "prob_hibrida": 0.5302,
+      "brutalidade": 0.4406,
+      "taxa_vitoria": 0.5333,
+      "sentimento": 0.6,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "XRPUSDT",
+      "ativo": "XRP",
+      "prob_hibrida": 0.5451,
+      "brutalidade": 0.4778,
+      "taxa_vitoria": 0.5833,
+      "sentimento": 0.6,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "DOTUSDT",
+      "ativo": "DOT",
+      "prob_hibrida": 0.4359,
+      "brutalidade": 0.3622,
+      "taxa_vitoria": 0.4333,
+      "sentimento": 0.3,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "LINKUSDT",
+      "ativo": "LINK",
+      "prob_hibrida": 0.6412,
+      "brutalidade": 0.5606,
+      "taxa_vitoria": 0.65,
+      "sentimento": 0.9,
+      "status": "READY",
+      "passou_filtro_60ag": true,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "AVAXUSDT",
+      "ativo": "AVAX",
+      "prob_hibrida": 0.5764,
+      "brutalidade": 0.5559,
+      "taxa_vitoria": 0.6667,
+      "sentimento": 0.6,
+      "status": "READY",
+      "passou_filtro_60ag": true,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "MATICUSDT",
+      "ativo": "MATIC",
+      "prob_hibrida": 0,
+      "brutalidade": 0,
+      "taxa_vitoria": 0,
+      "sentimento": 0,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": true
+    },
+    {
+      "simbolo": "UNIUSDT",
+      "ativo": "UNI",
+      "prob_hibrida": 0.57,
+      "brutalidade": 0.5401,
+      "taxa_vitoria": 0.6,
+      "sentimento": 0.6,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "TRXUSDT",
+      "ativo": "TRX",
+      "prob_hibrida": 0,
+      "brutalidade": 0,
+      "taxa_vitoria": 0,
+      "sentimento": 0,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": true
+    },
+    {
+      "simbolo": "SHIBUSDT",
+      "ativo": "SHIB",
+      "prob_hibrida": 0.5786,
+      "brutalidade": 0.5615,
+      "taxa_vitoria": 0.6833,
+      "sentimento": 0.6,
+      "status": "READY",
+      "passou_filtro_60ag": true,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "LTCUSDT",
+      "ativo": "LTC",
+      "prob_hibrida": 0.5269,
+      "brutalidade": 0.4323,
+      "taxa_vitoria": 0.5,
+      "sentimento": 0.6,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "ATOMUSDT",
+      "ativo": "ATOM",
+      "prob_hibrida": 0.4441,
+      "brutalidade": 0.3827,
+      "taxa_vitoria": 0.4667,
+      "sentimento": 0.3,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "NEARUSDT",
+      "ativo": "NEAR",
+      "prob_hibrida": 0.6402,
+      "brutalidade": 0.558,
+      "taxa_vitoria": 0.6667,
+      "sentimento": 0.9,
+      "status": "READY",
+      "passou_filtro_60ag": true,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "OPUSDT",
+      "ativo": "OP",
+      "prob_hibrida": 0.5599,
+      "brutalidade": 0.5148,
+      "taxa_vitoria": 0.6333,
+      "sentimento": 0.6,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "ARBUSDT",
+      "ativo": "ARB",
+      "prob_hibrida": 0.4551,
+      "brutalidade": 0.4103,
+      "taxa_vitoria": 0.4667,
+      "sentimento": 0.3,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "PEPEUSDT",
+      "ativo": "PEPE",
+      "prob_hibrida": 0.5431,
+      "brutalidade": 0.4728,
+      "taxa_vitoria": 0.5667,
+      "sentimento": 0.6,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "INJUSDT",
+      "ativo": "INJ",
+      "prob_hibrida": 0.653,
+      "brutalidade": 0.5901,
+      "taxa_vitoria": 0.6833,
+      "sentimento": 0.9,
+      "status": "READY",
+      "passou_filtro_60ag": true,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "TIAUSDT",
+      "ativo": "TIA",
+      "prob_hibrida": 0.5301,
+      "brutalidade": 0.4403,
+      "taxa_vitoria": 0.5167,
+      "sentimento": 0.6,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "SEIUSDT",
+      "ativo": "SEI",
+      "prob_hibrida": 0.4754,
+      "brutalidade": 0.4611,
+      "taxa_vitoria": 0.5833,
+      "sentimento": 0.3,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "SUIUSDT",
+      "ativo": "SUI",
+      "prob_hibrida": 0.6462,
+      "brutalidade": 0.573,
+      "taxa_vitoria": 0.6833,
+      "sentimento": 0.9,
+      "status": "READY",
+      "passou_filtro_60ag": true,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "APTUSDT",
+      "ativo": "APT",
+      "prob_hibrida": 0.6231,
+      "brutalidade": 0.5153,
+      "taxa_vitoria": 0.5833,
+      "sentimento": 0.9,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "FETUSDT",
+      "ativo": "FET",
+      "prob_hibrida": 0.5318,
+      "brutalidade": 0.4445,
+      "taxa_vitoria": 0.5333,
+      "sentimento": 0.6,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    },
+    {
+      "simbolo": "RENDERUSDT",
+      "ativo": "RENDER",
+      "prob_hibrida": 0.555,
+      "brutalidade": 0.5026,
+      "taxa_vitoria": 0.6167,
+      "sentimento": 0.6,
+      "status": "REJECTED",
+      "passou_filtro_60ag": false,
+      "bloqueado_gate": false
+    }
+  ]
+}

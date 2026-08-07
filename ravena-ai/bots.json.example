@@ -1,0 +1,47 @@
+[
+   {
+    "enabled": true,
+    "nome": "ravena-whatsapp-exemplo",
+    "managementUser": "ravuser",
+    "managementPW": "ravpw",
+
+    "privado": false,
+    "comunitario": false,
+    "webhookPort": 3601,
+    "numero": "559911223344",
+    "ignorePV": false,
+    "ignoreInvites": true,
+    "customPrefix": "!",
+    "autoDownloadPV": false,
+    "updateStatus": true,
+    "aiPersonality": "Você é um assistente prestativo."
+   },
+   {
+    "enabled": false,
+    "nome": "ravena-discord-exemplo",
+    "managementUser": "ravuser_discord",
+    "managementPW": "ravpw_discord",
+    
+    "useDiscord": true,
+    "discordToken": "SEU_TOKEN_DE_BOT_DO_DISCORD_VEM_AQUI",
+
+    "privado": false,
+    "ignorePV": false,
+    "customPrefix": "!"
+   },
+   {
+    "enabled": false,
+    "nome": "ravena-telegram-exemplo",
+
+    "useTelegram": true,
+    "webhookHost": "seu-dominio.com",
+    "webhookPort": 3602,
+    "telegramBotName": "NOME_DEFINIDO_NO_BOTFATHER",
+    "telegramBotId": "8123456789",
+    "telegramBotToken": "SEU_TOKEN_DE_BOT_DO_TELEGRAM_VEM_AQUI",
+
+    "privado": false,
+    "ignorePV": false,
+    "customPrefix": "/"
+   }
+]
