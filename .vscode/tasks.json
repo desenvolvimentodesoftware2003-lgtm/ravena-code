@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "install",
+      "path": "ravena-ai",
+      "group": "clean",
+      "problemMatcher": [],
+      "label": "npm: install - ravena-ai",
+      "detail": "install dependencies from package"
+    }
+  ]
+}
