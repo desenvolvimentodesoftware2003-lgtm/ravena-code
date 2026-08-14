@@ -1,0 +1,25 @@
+#!/bin/bash
+# RAVENA SALVAR SESSAO - dump do estado tmux p/ /mnt/ravena-data/sessoes/
+# Uso: ravena-salvar-sessao [nome]
+SESSAO_DIR="/mnt/ravena-data/sessoes"
+NOME="${1:-auto}"
+
+mkdir -p "$SESSAO_DIR"
+STAMP=$(date +%Y%m%d-%H%M%S)
+ARQ="$SESSAO_DIR/$NOME-$STAMP.tmux"
+
+# dump da arvore do tmux (sessao/windows/panes/cmds) se houver sessao ativa
+if tmux has-session 2>/dev/null; then
+    tmux list-sessions -F '#{session_name}' 2>/dev/null > "$ARQ.sessions"
+    tmux list-windows -a -F '#{session_name}|#{window_index}|#{window_name}|#{pane_current_command}|#{pane_current_path}' 2>/dev/null >> "$ARQ.windows"
+    # captura do buffer principal (tipo snapshot)
+    tmux list-panes -a -F '#{session_name}|#{window_index}|#{pane_id}' 2>/dev/null | while IFS='|' read -r s w p; do
+        tmux capture-pane -p -t "$p" 2>/dev/null | head -50 > "$ARQ.pane-$s-$w.txt"
+    done
+    echo "sessao salva: $ARQ (com $($ARQ.sessions 2>/dev/null | wc -l) sessao)"
+else
+    echo "sem sessao tmux ativa - salvando apenas estados vazios"
+    : > "$ARQ.sessions"
+fi
+logger -t ravena-sessao "dump salvo: $ARQ" 2>/dev/null
+echo "OK: $ARQ"

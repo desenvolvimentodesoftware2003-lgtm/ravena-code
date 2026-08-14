@@ -1,0 +1,33 @@
+#!/bin/bash
+# RAVENA RESTAURAR SESSAO - recoloca as janelas do ultimo dump
+# Uso: ravena-restaurar-sessao [nome]
+SESSAO_DIR="/mnt/ravena-data/sessoes"
+NOME="${1:-auto}"
+
+# acha o dump mais recente
+LATEST=$(ls -1t "$SESSAO_DIR"/"$NOME"-*.tmux.windows 2>/dev/null | head -1)
+if [ -z "$LATEST" ]; then
+    echo "nenhum dump de sessao encontrado em $SESSAO_DIR (nome '$NOME')"
+    exit 1
+fi
+echo "restaurando a partir de: $LATEST"
+
+tmux has-session -t ravena 2>/dev/null || tmux new-session -d -s ravena 2>/dev/null
+
+# cria as janelas (evita duplicar: prefixo R- para as restauradas)
+while IFS='|' read -r ses w nome cmd path; do
+    [ -z "$w" ] && continue
+    if ! tmux has-window -t "ravena:$w" 2>/dev/null; then
+        tmux new-window -t "ravena:$w" -n "$nome" -c "${path:-$HOME}" 2>/dev/null || true
+    fi
+done < "$LATEST"
+
+# reanexa se possivel (caso esteja num terminal real)
+if [ -n "$TMUX" ]; then
+    tmux switch-client -t ravena 2>/dev/null || true
+elif [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
+    tmux attach-session -t ravena 2>/dev/null || true
+fi
+
+logger -t ravena-sessao "sessao restaurada de $LATEST" 2>/dev/null
+echo "OK: $LATEST restaurado"

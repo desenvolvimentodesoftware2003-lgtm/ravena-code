@@ -1,0 +1,115 @@
+#!/bin/bash
+# RAVENA GATEWAY - roteia o chat local (llama-server :8080) para acoes da Ravena
+PROVIDER="http://localhost:8080/v1/chat/completions"
+HEALTH="http://localhost:8080/health"
+
+wait_provider() {
+    # aguarda o llama-server responder /health (modelo pode estar carregando)
+    local tries=0 code
+    while [ "$tries" -lt 90 ]; do
+        code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$HEALTH" 2>/dev/null | tr -d '[:space:]')
+        if [ "$code" = "200" ]; then
+            return 0
+        fi
+        tries=$((tries+1))
+        if [ $((tries % 5)) -eq 0 ]; then
+            echo "RAVENA: modelo ainda carregando... ($((tries*2))s ate agora)" >&2
+        fi
+        sleep 2
+    done
+    echo "RAVENA: provedor nao respondeu. rode: llm provedor" >&2
+    return 1
+}
+
+chat() {
+    local q="$1" out tries=0
+    for tries in $(seq 1 8); do
+        out=$(curl -s --max-time 120 "$PROVIDER" \
+          -H "Content-Type: application/json" \
+          -d "$(python3 -c "
+import json,sys
+sys.stdout.write(json.dumps({
+  'model':'qwen',
+  'messages':[
+    {'role':'system','content':'Voce e o assistente da Ravena. Se o usuario pedir acao no sistema, responda APENAS com um comando entre colchetes [comando]. Caso contrario responda normalmente.'},
+    {'role':'user','content':sys.argv[1]}
+  ],
+  'temperature':0.7,'top_p':0.95,'max_tokens':1024
+}))" "$q")")
+        if echo "$out" | python3 -c "
+import sys, json
+try:
+    j = json.load(sys.stdin)
+    sys.exit(0 if 'choices' in j else 1)
+except Exception:
+    sys.exit(1)
+"; then
+            printf '%s' "$out"
+            return 0
+        fi
+        tries=$((tries+1))
+        sleep 2
+    done
+    printf '%s' "$out"
+    return 1
+}
+
+extract() {
+  python3 -c "
+import sys, json
+try:
+    j = json.load(sys.stdin)
+    print(j['choices'][0]['message']['content'])
+except Exception as e:
+    print('RAVENA: modelo carregando ou provider indisponivel (%s)' % e)
+"
+}
+
+case "$1" in
+  -exec)
+    shift
+    q="$*"
+    echo "RAVENA: consultando modelo local..." >&2
+    wait_provider || exit 1
+    out=$(chat "$q")
+    texto=$(echo "$out" | extract)
+    echo "$texto"
+    cmd=$(echo "$texto" | grep -oE '\[[^]]+\]' | head -1 | tr -d '[]')
+    if [ -n "$cmd" ]; then
+      echo ""
+      echo "RAVENA: executando: $cmd"
+      eval "$cmd"
+    fi
+    ;;
+  -noticias)
+    shift
+    q="$*"
+    ctx=$(intel mercado 2>/dev/null | head -30)
+    wait_provider || exit 1
+    out=$(curl -s --max-time 120 "$PROVIDER" \
+      -H "Content-Type: application/json" \
+      -d "$(python3 -c "
+import json,sys
+ctx, q = sys.argv[1], sys.argv[2]
+sys.stdout.write(json.dumps({
+  'model':'qwen',
+  'messages':[
+    {'role':'system','content':'Resuma/analise usando as noticias como contexto.'},
+    {'role':'user','content':'NOTICIAS:\n'+ctx+'\n\nPERGUNTA: '+q}
+  ],
+  'temperature':0.6,'max_tokens':1024
+}))" "$ctx" "$q")")
+    echo "$out" | extract
+    ;;
+  *)
+    q="$*"
+    if [ -z "$q" ]; then
+      echo "uso: ravena-ia 'pergunta' | -exec 'acao' | -noticias 'pergunta'"
+      exit 1
+    fi
+    echo "RAVENA: consultando modelo local..." >&2
+    wait_provider || exit 1
+    out=$(chat "$q")
+    echo "$out" | extract
+    ;;
+esac
