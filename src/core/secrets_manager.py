@@ -63,6 +63,30 @@ class SecretsManager:
             "required": True,
             "default": None,
         },
+        # 🟡 MEDIO - dados de mercado. Estas duas estavam ausentes do
+        # registro deste repo: o codigo de `fonte_ohlcv` e
+        # `fonte_agentsearch` LE as duas, mas elas nao tinham severidade,
+        # nao eram validadas e nao apareciam na auditoria — por isso a
+        # contagem dizia 17 enquanto o ravena-aim dizia 19. O mesmo
+        # secrets_manager.py nao pode divergir entre os dois repos.
+        "LSE_API_KEY": {
+            "description": "Chave do London Strategic Edge (dados de mercado OHLCV, "
+            "22.966 instrumentos: cripto, acoes, forex, futures, "
+            "etf, indice, commodity)",
+            "severity": "MEDIUM",
+            "module": "trading/fonte_ohlcv",
+            "required": False,
+            "default": None,
+        },
+        "SCIPHI_API_KEY": {
+            "description": "Chave da SciPhi (AgentSearch — provider de busca da "
+            "Fonte 1b do Agente de Busca 360). Sem ela o Radar360 "
+            "funciona so com os 13 RSS.",
+            "severity": "MEDIUM",
+            "module": "cerebros/plutus/core/fonte_agentsearch",
+            "required": False,
+            "default": None,
+        },
         # 🟠 ALTO - Oracle Cloud Infrastructure
         "OCI_COMPARTMENT_ID": {
             "description": "OCID do compartment na Oracle Cloud",
