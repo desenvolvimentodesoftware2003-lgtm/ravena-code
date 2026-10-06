@@ -1,0 +1,70 @@
+name: Ravena AIM E2E Pipeline v3.2.6
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install -r requirements.txt
+
+    - name: Health Check
+      run: python tests/health_check.py
+
+    # Antes da validacao, e nao depois: `validate_e2e_integrity.py`
+    # confere a existencia de tests/health_check_report.md/.html, que sao
+    # gerados aqui. Na ordem antiga o passo de validacao rodava num
+    # checkout limpo, sem os relatorios, e reprovava por arquivo ausente.
+    - name: Generate Reports
+      run: python generate_reports.py
+
+    - name: E2E Integrity Validation
+      run: python validate_e2e_integrity.py
+
+    - name: Stress Test (gera o .log que o validador confere)
+      run: python tests/stress_test_v328.py
+      continue-on-error: true
+
+    - name: Upload Reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-reports
+        path: |
+          tests/health_check_report.json
+          tests/health_check_report.md
+          tests/health_check_report.html
+          tests/e2e_integrity_report.json
+          tests/stress_test_v3.2.8.log
+
+    - name: Check Health Score
+      run: |
+        python -c "
+          import json
+          with open('tests/health_check_report.json') as f:
+              data = json.load(f)
+          score = data['summary']['health_score']
+          print(f'Health Score: {score}%')
+          if score < 90:
+              print('FAIL: Health score below 90% threshold')
+              exit(1)
+          else:
+              print('PASS: Health score meets threshold')
+        "

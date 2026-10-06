@@ -15,6 +15,19 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+# O console do Windows e cp1252 e nao tem U+2705 (o ✅ do check). Sem
+# isto o `print` levanta UnicodeEncodeError no PRIMEIRO check e o
+# validador morre sem ter verificado nada — que e como ele ja estava,
+# silenciosamente, em qualquer terminal Windows.
+# `errors="replace"` cobre o que ainda nao couber, para nao voltar a
+# quebrar em outro caractere. E o mesmo efeito de PYTHONUTF8=1, so que
+# local ao script, sem depender de variavel de ambiente.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError):
+    pass  # Python < 3.7 ou stdout ja redirecionado para um objeto sem reconfigure
+
 results = []
 start_time = time.time()
 
@@ -82,7 +95,7 @@ tests = [
     "tests/health_check.py",
     "tests/test_elite_v327.py",
     "tests/test_token_protection.py",
-    "tests/test_integration_v3.2.6.py",
+    "tests/test_integration_v326.py",
     "tests/stress_test_v328.py",
     "tests/global_validation_test_v3.2.6.py",
 ]

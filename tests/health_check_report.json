@@ -1,51 +1,51 @@
 {
-  "timestamp": "2026-07-12T16:07:48.551178",
+  "timestamp": "2026-10-06T05:10:25.006280",
   "version": "v3.2.6",
-  "environment": "development",
+  "environment": "unknown",
   "summary": {
     "total": 22,
-    "passed": 22,
-    "warned": 0,
-    "failed": 0,
-    "time_seconds": 19.09,
-    "health_score": 100.0
+    "passed": 19,
+    "warned": 2,
+    "failed": 1,
+    "time_seconds": 18.9,
+    "health_score": 86.4
   },
   "results": [
     {
       "module": "SecretsManager",
-      "status": "PASS",
-      "details": "Fonte: environment | 10/17 secrets carregados | ZT_KEY: OK",
-      "time_ms": 1
+      "status": "WARN",
+      "details": "Fonte: unknown | 0/17 secrets | ZT_KEY: MISSING",
+      "time_ms": 3
     },
     {
       "module": "ZeroTrust Protocol",
       "status": "PASS",
-      "details": "Token gerado e validado com sucesso | Token: 0bf8297e3bb93bc2edb6d8d0851f27...",
-      "time_ms": 11
+      "details": "Token gerado e validado com sucesso | Token: a3889842abbce6469104e315fa4d9b...",
+      "time_ms": 9482
     },
     {
-      "module": "OmegaCore v3.2.6",
+      "module": "OmegaOrchestrator v3.2.6",
       "status": "PASS",
-      "details": "OmegaCore inicializado",
-      "time_ms": 23
+      "details": "OmegaOrchestrator inicializado",
+      "time_ms": 19
     },
     {
-      "module": "Omega Orchestrator v3.2.6",
+      "module": "Omega v3.2.6",
       "status": "PASS",
       "details": "Omega v3.2.6 status=OPERACIONAL",
-      "time_ms": 6
+      "time_ms": 16
     },
     {
       "module": "Omega (legacy)",
       "status": "PASS",
-      "details": "DecisaoAutonoma inicializado",
-      "time_ms": 21
+      "details": "DiagnosticoMissao inicializado",
+      "time_ms": 2
     },
     {
       "module": "Ravena Model",
-      "status": "PASS",
-      "details": "RavenaModel inicializado",
-      "time_ms": 852
+      "status": "FAIL",
+      "details": "OSError: AutoModelForCausalLM is designed to be instantiated using the `AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path)` or `AutoModelForCausalLM.from_config(config)` methods.",
+      "time_ms": 2
     },
     {
       "module": "Auditor",
@@ -63,13 +63,13 @@
       "module": "Hacker Agent v3.2.8 Final",
       "status": "PASS",
       "details": "Hacker v3.2.8 Final: unknown",
-      "time_ms": 3
+      "time_ms": 0
     },
     {
       "module": "Security Core v3.2.7",
       "status": "PASS",
       "details": "HackerAgent inicializado",
-      "time_ms": 1
+      "time_ms": 2
     },
     {
       "module": "RAG Advanced",
@@ -81,19 +81,19 @@
       "module": "RAG Advanced v3.2.6",
       "status": "PASS",
       "details": "ModuloRAGAvançado inicializado",
-      "time_ms": 18125
+      "time_ms": 8607
     },
     {
       "module": "Signal Bridge (funcional)",
       "status": "PASS",
       "details": "Módulo funcional OK | Funções-chave: ['process_signal', 'determine_suitability_mode', 'calculate_success_probability']",
-      "time_ms": 1
+      "time_ms": 5
     },
     {
       "module": "Bybit Connector",
       "status": "PASS",
       "details": "BybitConnector inicializado",
-      "time_ms": 24
+      "time_ms": 748
     },
     {
       "module": "Trade Brain",
@@ -105,7 +105,7 @@
       "module": "Social Connector",
       "status": "PASS",
       "details": "ConectorSocialInstagram inicializado",
-      "time_ms": 5
+      "time_ms": 4
     },
     {
       "module": "Telegram Bot",
@@ -123,26 +123,26 @@
       "module": "External API Manager",
       "status": "PASS",
       "details": "ExternalAPIManager v3.2.6 inicializado",
-      "time_ms": 1
+      "time_ms": 0
     },
     {
-      "module": "ZeroTrust → OmegaCore (Auth)",
+      "module": "ZeroTrust → OmegaOrchestrator (Auth)",
       "status": "PASS",
-      "details": "Zero Trust ↔ OmegaCore: comunicação autenticada OK",
-      "time_ms": 1
+      "details": "Zero Trust ↔ OmegaOrchestrator: comunicação autenticada OK",
+      "time_ms": 2
     },
     {
       "module": "Secrets Audit (Conformidade)",
-      "status": "PASS",
-      "details": "Auditoria OK | 10/17 carregados | Conforme: SIM",
+      "status": "WARN",
+      "details": "Auditoria: 0/17 carregados | Faltando: ['RAVENA_ZERO_TRUST_SECRET', 'BYBIT_API_KEY', 'BYBIT_API_SECRET', 'OCI_COMPARTMENT_ID', 'QWEN_ENDPOINT_ID', 'KIMI_ENDPOINT_ID']",
       "time_ms": 1
     },
     {
       "module": "RAG Ingestão + Consulta",
       "status": "PASS",
       "details": "RAG ingestão OK (consulta requer embeddings externos)",
-      "time_ms": 5
+      "time_ms": 3
     }
   ],
-  "verdict": "HEALTHY"
+  "verdict": "PARTIAL"
 }

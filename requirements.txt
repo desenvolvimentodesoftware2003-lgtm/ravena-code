@@ -1,0 +1,26 @@
+# Ravena Code — dependencias do CI e da suite
+#
+# Derivado dos imports REAIS de cada passo do workflow
+# (.github/workflows/e2e-tests.yml), nao de uma lista generica:
+#
+#   tests/health_check.py        -> python-dotenv
+#   validate_e2e_integrity.py    -> so stdlib
+#   generate_reports.py          -> so stdlib
+#   pytest tests/                -> pytest + extracao de documento
+#
+# Diferente do requirements.txt do ravena-aim: aqui nao ha cérebros com
+# LoRA, entao torch/transformers/sentence-transformers ficam de fora. Sao
+# centenas de MB que o CI deste repo nao usa.
+
+# --- o que os passos do pipeline importam ---
+python-dotenv>=1.0
+
+# --- suite ---
+pytest>=7.4
+
+# --- extracao de documento (tools/extrair_texto.py) ---
+pymupdf>=1.24      # importado como `fitz`
+python-docx>=1.1
+beautifulsoup4>=4.12
+numpy>=1.26
+pandas>=2.0
