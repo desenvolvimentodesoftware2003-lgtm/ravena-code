@@ -32,7 +32,13 @@ def generate_markdown(report):
     lines.append(f"| ⚠️ Warned | {report['summary']['warned']} |")
     lines.append(f"| ❌ Failed | {report['summary']['failed']} |")
     lines.append(f"| Time (s) | {report['summary']['time_seconds']} |")
-    lines.append(f"| Health Score | {report['summary']['health_score']}% |\n")
+    # Duas notas, porque sao duas perguntas. Integridade = o codigo esta
+    # inteiro. Prontidao = a maquina esta configurada. Numa maquina de
+    # desenvolvimento sem credencial a segunda e baixa e isso e correto.
+    s = report["summary"]
+    lines.append(f"| **Integridade do codigo** | **{s['health_score']}%** ({s.get('code_passed', '?')}/{s.get('code_checks', '?')} checks) |")
+    env = s.get("environment_score")
+    lines.append(f"| Prontidao do ambiente | {'n/a' if env is None else str(env) + '%'} ({s.get('environment_checks', 0)} checks) |\n")
     lines.append("## Module Results\n")
     lines.append("| # | Module | Status | Details | Time (ms) |")
     lines.append("|---|--------|--------|---------|-----------|")

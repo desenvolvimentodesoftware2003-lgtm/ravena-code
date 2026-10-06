@@ -134,8 +134,29 @@ if report_path.exists():
         total = data["summary"]["total"]
         results_count = len(data["results"])
         check("JSON counts match", total == results_count, f"Summary total={total}, Results count={results_count}")
+
+        # O gate e' sobre a INTEGRIDADE DO CODIGO, nao sobre a maquina.
+        # `environment_score` (credencial, pesos, servico) fica de fora
+        # de proposito: no CI nao existe .env com segredo, entao cobra-lo
+        # aqui reprovaria o build por uma configuracao que o CI nao tem
+        # como fornecer. Aparece no relatorio para diagnostico.
         score = data["summary"]["health_score"]
-        check(f"Health score", score >= 90, f"Score: {score}%")
+        code_checks = data["summary"].get("code_checks")
+        code_failed = data["summary"].get("code_failed")
+        detalhe = f"Integridade: {score}%"
+        if code_checks is not None:
+            detalhe += f" ({code_checks - (code_failed or 0)}/{code_checks} checks de codigo)"
+        env = data["summary"].get("environment_score")
+        if env is not None:
+            detalhe += f" | Ambiente: {env}% (nao bloqueia)"
+        check("Health score", score >= 90, detalhe)
+
+        # Todo check de codigo tem de estar PASS. Um WARN em check de
+        # codigo e codigo carregando com fallback — nunca aceitavel.
+        warns_codigo = [r["module"] for r in data["results"]
+                        if r.get("scope", "code") == "code" and r["status"] != "PASS"]
+        check("No code check below PASS", not warns_codigo,
+              f"{len(warns_codigo)}: {warns_codigo}" if warns_codigo else "Todos os checks de codigo em PASS")
     except Exception as e:
         check("JSON Integrity", False, str(e))
 else:
