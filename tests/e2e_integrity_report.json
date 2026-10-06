@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-06T05:28:36.221603",
+  "timestamp": "2026-10-06T05:31:22.251441",
   "version": "3.2.6",
   "summary": {
     "total": 38,
@@ -72,169 +72,169 @@
       "check": "Module Omega v3.2.6",
       "status": "PASS",
       "detail": "Classes: ['Omega']",
-      "time_ms": 57
+      "time_ms": 51
     },
     {
       "check": "Module Omega Orchestrator v3.2.6",
       "status": "PASS",
       "detail": "Loaded successfully",
-      "time_ms": 92
+      "time_ms": 85
     },
     {
       "check": "Module Hacker Agent",
       "status": "PASS",
       "detail": "Classes: ['HackerAgent']",
-      "time_ms": 92
+      "time_ms": 86
     },
     {
       "check": "Module Security Core v3.2.7",
       "status": "PASS",
       "detail": "Classes: ['SecurityCore']",
-      "time_ms": 93
+      "time_ms": 87
     },
     {
       "check": "Module Zero Trust v3.2.6",
       "status": "PASS",
       "detail": "Classes: ['ZeroTrustProtocol']",
-      "time_ms": 95
+      "time_ms": 88
     },
     {
       "check": "Module Secrets Manager",
       "status": "PASS",
       "detail": "Loaded successfully",
-      "time_ms": 105
+      "time_ms": 100
     },
     {
       "check": "Module RAG Advanced",
       "status": "PASS",
       "detail": "Loaded successfully",
-      "time_ms": 108
+      "time_ms": 103
     },
     {
       "check": "Module Bybit Connector",
       "status": "PASS",
       "detail": "Loaded successfully",
-      "time_ms": 230
+      "time_ms": 222
     },
     {
       "check": "Module Signal Bridge",
       "status": "PASS",
       "detail": "Loaded successfully",
-      "time_ms": 262
+      "time_ms": 253
     },
     {
       "check": "Module Trade Brain",
       "status": "PASS",
       "detail": "Loaded successfully",
-      "time_ms": 262
+      "time_ms": 253
     },
     {
       "check": "Module Agente Dev",
       "status": "PASS",
       "detail": "Classes: ['AgenteDev']",
-      "time_ms": 262
+      "time_ms": 254
     },
     {
       "check": "Module External API Manager",
       "status": "PASS",
       "detail": "Loaded successfully",
-      "time_ms": 263
+      "time_ms": 254
     },
     {
       "check": "Module Telegram Bot",
       "status": "PASS",
       "detail": "Loaded successfully",
-      "time_ms": 263
+      "time_ms": 255
     },
     {
       "check": "Test tests/health_check.py",
       "status": "PASS",
-      "detail": "Size: 25875 bytes",
-      "time_ms": 263
+      "detail": "Size: 26662 bytes",
+      "time_ms": 255
     },
     {
       "check": "Test tests/test_elite_v327.py",
       "status": "PASS",
       "detail": "Size: 3514 bytes",
-      "time_ms": 263
+      "time_ms": 255
     },
     {
       "check": "Test tests/test_token_protection.py",
       "status": "PASS",
       "detail": "Size: 1575 bytes",
-      "time_ms": 263
+      "time_ms": 255
     },
     {
       "check": "Test tests/test_integration_v326.py",
       "status": "PASS",
       "detail": "Size: 3361 bytes",
-      "time_ms": 263
+      "time_ms": 256
     },
     {
       "check": "Test tests/stress_test_v328.py",
       "status": "PASS",
       "detail": "Size: 4506 bytes",
-      "time_ms": 263
+      "time_ms": 256
     },
     {
       "check": "Test tests/global_validation_test_v3_2_6.py",
       "status": "PASS",
       "detail": "Size: 3758 bytes",
-      "time_ms": 264
+      "time_ms": 256
     },
     {
       "check": "Report tests/health_check_report.json",
       "status": "PASS",
-      "detail": "Size: 4957 bytes",
-      "time_ms": 264
+      "detail": "Size: 4788 bytes",
+      "time_ms": 256
     },
     {
       "check": "Report tests/health_check_report.md",
       "status": "PASS",
-      "detail": "Size: 2913 bytes",
-      "time_ms": 264
+      "detail": "Size: 2744 bytes",
+      "time_ms": 256
     },
     {
       "check": "Report tests/health_check_report.html",
       "status": "PASS",
-      "detail": "Size: 6164 bytes",
-      "time_ms": 264
+      "detail": "Size: 5997 bytes",
+      "time_ms": 256
     },
     {
       "check": "Report tests/stress_test_v3.2.8.log",
       "status": "PASS",
       "detail": "Size: 16927 bytes",
-      "time_ms": 264
+      "time_ms": 256
     },
     {
       "check": "CI/CD .github/workflows/e2e-tests.yml",
       "status": "PASS",
       "detail": "Size: 2040 bytes",
-      "time_ms": 264
+      "time_ms": 257
     },
     {
       "check": "JSON Schema",
       "status": "PASS",
       "detail": "All keys present",
-      "time_ms": 264
+      "time_ms": 257
     },
     {
       "check": "JSON counts match",
       "status": "PASS",
       "detail": "Summary total=22, Results count=22",
-      "time_ms": 264
+      "time_ms": 257
     },
     {
       "check": "Health score",
       "status": "PASS",
-      "detail": "Integridade: 100.0% (16/16 checks de codigo) | Ambiente: 50.0% (nao bloqueia)",
-      "time_ms": 264
+      "detail": "Integridade: 100.0% (16/16 checks de codigo) | Ambiente: 66.7% (nao bloqueia)",
+      "time_ms": 257
     },
     {
       "check": "No code check below PASS",
       "status": "PASS",
       "detail": "Todos os checks de codigo em PASS",
-      "time_ms": 264
+      "time_ms": 257
     }
   ],
   "verdict": "PASS"

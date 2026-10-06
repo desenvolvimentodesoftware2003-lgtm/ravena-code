@@ -44,12 +44,30 @@ def import_from_file(module_name, file_path):
 
 
 def get_real_classes(mod):
-    """Retorna apenas classes reais do módulo (exclui typing, builtins, etc)."""
-    return [c for c in dir(mod) 
-            if not c.startswith('_') 
+    """Classes DEFINIDAS neste modulo — nao apenas importadas.
+
+    O filtro antigo era uma lista de exclusao ('typing', 'builtins',
+    'enum', ...) e deixava passar qualquer classe de terceiro. Em
+    `ravena_model.py` isso devolvia:
+
+        ['AutoModelForCausalLM', 'AutoTokenizer', 'RavenaModel']
+
+    e o check instanciava a primeira — `AutoModelForCausalLM`, que veio
+    do transformers e levanta OSError pedindo `from_pretrained`. O
+    resultado era "Ravena Model: FAIL" numa máquina sem os pesos do
+    modelo, quando o `RavenaModel` — a classe que existe de verdade —
+    instancia sem problema. Um falso FAIL que apontava para o módulo
+    errado.
+
+    O teste correto nao e lista de exclusao, e igualdade com o proprio modulo:
+    uma classe definida em `x.py` tem `__module__ == x.__name__`, seja `x`
+    o nome do pacote ou o alias usado no `spec_from_file_location`.
+    """
+    return [c for c in dir(mod)
+            if not c.startswith('_')
             and c not in TYPING_NAMES
             and isinstance(getattr(mod, c), type)
-            and getattr(mod, c).__module__ not in ('typing', 'builtins', 'enum', 'datetime', 'collections')]
+            and getattr(mod, c).__module__ == mod.__name__]
 
 
 # ─────────────────────────────────────────────
