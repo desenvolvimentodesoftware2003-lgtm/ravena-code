@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-06T05:31:20.845417",
+  "timestamp": "2026-10-06T05:53:34.196016",
   "version": "v3.2.6",
   "environment": "unknown",
   "summary": {
@@ -7,7 +7,7 @@
     "passed": 20,
     "warned": 2,
     "failed": 0,
-    "time_seconds": 18.67,
+    "time_seconds": 19.03,
     "health_score": 100.0,
     "environment_score": 66.7,
     "code_checks": 16,
@@ -20,29 +20,29 @@
       "module": "SecretsManager",
       "scope": "environment",
       "status": "WARN",
-      "details": "Fonte: unknown | 0/17 secrets | ZT_KEY: MISSING",
+      "details": "Fonte: unknown | 0/19 secrets | ZT_KEY: MISSING",
       "time_ms": 5
     },
     {
       "module": "ZeroTrust Protocol",
       "scope": "environment",
       "status": "PASS",
-      "details": "Token gerado e validado com sucesso | Token: 8c01d358403b70eb2fe011475f1262...",
-      "time_ms": 9311
+      "details": "Token gerado e validado com sucesso | Token: 423299cb889da4832821c7250ad7d1...",
+      "time_ms": 9737
     },
     {
       "module": "OmegaOrchestrator v3.2.6",
       "scope": "code",
       "status": "PASS",
       "details": "OmegaOrchestrator inicializado",
-      "time_ms": 17
+      "time_ms": 16
     },
     {
       "module": "Omega v3.2.6",
       "scope": "code",
       "status": "PASS",
       "details": "Omega v3.2.6 status=OPERACIONAL",
-      "time_ms": 12
+      "time_ms": 13
     },
     {
       "module": "Omega (legacy)",
@@ -63,7 +63,7 @@
       "scope": "code",
       "status": "PASS",
       "details": "AnalisadorEscopo inicializado | Métodos: ['analisar']",
-      "time_ms": 3
+      "time_ms": 2
     },
     {
       "module": "Hacker Agent v3.2.7",
@@ -84,35 +84,35 @@
       "scope": "code",
       "status": "PASS",
       "details": "SecurityCore inicializado",
-      "time_ms": 1
+      "time_ms": 0
     },
     {
       "module": "RAG Advanced",
       "scope": "code",
       "status": "PASS",
       "details": "ModuloRAGAvançado inicializado | Classes no módulo: 10",
-      "time_ms": 4
+      "time_ms": 5
     },
     {
       "module": "RAG Advanced v3.2.6",
       "scope": "code",
       "status": "PASS",
       "details": "ModuloRAGAvançado inicializado",
-      "time_ms": 8600
+      "time_ms": 8497
     },
     {
       "module": "Signal Bridge (funcional)",
       "scope": "code",
       "status": "PASS",
       "details": "Módulo funcional OK | Funções-chave: ['process_signal', 'determine_suitability_mode', 'calculate_success_probability']",
-      "time_ms": 5
+      "time_ms": 6
     },
     {
       "module": "Bybit Connector",
       "scope": "code",
       "status": "PASS",
       "details": "BybitConnector inicializado",
-      "time_ms": 691
+      "time_ms": 724
     },
     {
       "module": "Trade Brain",
@@ -126,28 +126,28 @@
       "scope": "code",
       "status": "PASS",
       "details": "ConectorSocialInstagram inicializado",
-      "time_ms": 5
+      "time_ms": 6
     },
     {
       "module": "Telegram Bot",
       "scope": "code",
       "status": "PASS",
       "details": "TelegramBotRefinement inicializado | Threshold: 0.85",
-      "time_ms": 1
+      "time_ms": 0
     },
     {
       "module": "Engine Patch Segurança",
       "scope": "code",
       "status": "PASS",
       "details": "SegurancaIAIntegrator inicializado",
-      "time_ms": 0
+      "time_ms": 2
     },
     {
       "module": "External API Manager",
       "scope": "code",
       "status": "PASS",
       "details": "ExternalAPIManager v3.2.6 inicializado",
-      "time_ms": 1
+      "time_ms": 0
     },
     {
       "module": "ZeroTrust → OmegaOrchestrator (Auth)",
@@ -160,7 +160,7 @@
       "module": "Secrets Audit (Conformidade)",
       "scope": "environment",
       "status": "WARN",
-      "details": "Auditoria: 0/17 carregados | Faltando: ['RAVENA_ZERO_TRUST_SECRET', 'BYBIT_API_KEY', 'BYBIT_API_SECRET', 'OCI_COMPARTMENT_ID', 'QWEN_ENDPOINT_ID', 'KIMI_ENDPOINT_ID']",
+      "details": "Auditoria: 0/19 carregados | Faltando: ['RAVENA_ZERO_TRUST_SECRET', 'BYBIT_API_KEY', 'BYBIT_API_SECRET', 'OCI_COMPARTMENT_ID', 'QWEN_ENDPOINT_ID', 'KIMI_ENDPOINT_ID']",
       "time_ms": 1
     },
     {
