@@ -51,12 +51,12 @@ class CheckpointHandler:
 
     def _load_processed_files(self):
         if self.processed_files_file.exists():
-            with open(self.processed_files_file, 'r') as f:
+            with open(self.processed_files_file, 'r', encoding="utf-8") as f:
                 self.processed_files = set(line.strip() for line in f if line.strip())
             logger.info(f"{len(self.processed_files)} arquivos processados carregados")
 
     def save_processed_files(self):
-        with open(self.processed_files_file, 'w') as f:
+        with open(self.processed_files_file, 'w', encoding="utf-8") as f:
             for filepath in sorted(self.processed_files):
                 f.write(f"{filepath}\n")
 
@@ -68,7 +68,7 @@ class CheckpointHandler:
         """Salva métricas em CSV sem duplicatas."""
         existing_metrics = []
         if self.metrics_file.exists():
-            with open(self.metrics_file, 'r') as f:
+            with open(self.metrics_file, 'r', encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 existing_metrics = list(reader)
 
@@ -77,7 +77,7 @@ class CheckpointHandler:
 
         if not already_exists:
             file_exists = len(existing_metrics) > 0
-            with open(self.metrics_file, 'a', newline='') as f:
+            with open(self.metrics_file, 'a', newline='', encoding="utf-8") as f:
                 writer = csv.DictWriter(f, fieldnames=['epoch', 'batch', 'step', 'loss', 'accuracy', 'timestamp'])
                 if not file_exists:
                     writer.writeheader()
@@ -112,7 +112,7 @@ class CheckpointHandler:
             "hostname": os.uname().nodename if hasattr(os, 'uname') else "windows"
         }
 
-        with open(ckpt_path / "training_state.json", 'w') as f:
+        with open(ckpt_path / "training_state.json", 'w', encoding="utf-8") as f:
             json.dump(state, f, indent=2)
 
         if self.processed_files_file.exists():
@@ -124,7 +124,7 @@ class CheckpointHandler:
             shutil.copy2(self.metrics_file, ckpt_path / "metrics_history.csv")
 
         latest_file = self.checkpoint_dir / "latest.txt"
-        with open(latest_file, 'w') as f:
+        with open(latest_file, 'w', encoding="utf-8") as f:
             f.write(str(ckpt_path))
 
         logger.info(f"CHECKPOINT SALVO: {ckpt_path}")

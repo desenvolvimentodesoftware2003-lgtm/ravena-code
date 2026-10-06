@@ -32,7 +32,7 @@ class DashboardController:
 
     def _save_stats(self):
         try:
-            with open(self.stats_path, 'w') as f:
+            with open(self.stats_path, 'w', encoding="utf-8") as f:
                 json.dump(self.current_metrics, f, indent=4)
         except Exception as e:
             logger.error(f"Erro ao salvar estatísticas do dashboard: {str(e)}")

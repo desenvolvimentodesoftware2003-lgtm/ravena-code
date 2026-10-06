@@ -34,10 +34,10 @@ class DNASucesso:
         
         if not os.path.exists(self.dna_path):
             os.makedirs(os.path.dirname(self.dna_path), exist_ok=True)
-            with open(self.dna_path, 'w') as f:
+            with open(self.dna_path, 'w', encoding="utf-8") as f:
                 json.dump(default_params, f, indent=4)
         
-        with open(self.dna_path, 'r') as f:
+        with open(self.dna_path, 'r', encoding="utf-8") as f:
             return json.load(f)
 
     def get_param(self, key: str, default=None):
@@ -46,7 +46,7 @@ class DNASucesso:
     def update_dna(self, new_params: dict):
         """Atualiza o DNA garantindo a integridade dos parâmetros críticos."""
         self.params.update(new_params)
-        with open(self.dna_path, 'w') as f:
+        with open(self.dna_path, 'w', encoding="utf-8") as f:
             json.dump(self.params, f, indent=4)
         return self.params
 

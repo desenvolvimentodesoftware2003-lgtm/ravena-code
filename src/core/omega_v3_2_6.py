@@ -81,7 +81,7 @@ class Omega:
     def load_config(self):
         config_path = os.getenv("RAVENA_CONFIG_PATH", "config_v3.json")
         try:
-            with open(config_path, 'r') as f:
+            with open(config_path, 'r', encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
             logging.error(f"Erro ao carregar config: {e}")

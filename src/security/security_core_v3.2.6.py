@@ -153,6 +153,6 @@ class AuditorCore:
             "resultado": resultado
         }
         log_file = os.path.join(self.log_path, f"audit_{datetime.now().strftime('%Y%m%d')}.jsonl")
-        with open(log_file, "a") as f:
+        with open(log_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(log_entry) + "\n")
         logger.info(f"AUDIT: {acao} por {usuario} - {resultado}")

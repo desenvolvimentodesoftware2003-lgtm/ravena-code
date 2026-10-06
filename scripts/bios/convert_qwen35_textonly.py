@@ -61,12 +61,12 @@ def main():
 
     # remove tensores que sobraram em arquivos nao convertidos? nao: so salvamos os mantidos.
     new_idx = {"metadata": idx.get("metadata", {}), "weight_map": new_wm}
-    (DST / "model.safetensors.index.json").write_text(json.dumps(new_idx))
+    (DST / "model.safetensors.index.json").write_text(json.dumps(new_idx), encoding="utf-8")
 
     # config.json: patch architectures
     cfg = json.loads((SRC / "config.json").read_text())
     cfg["architectures"] = ["Qwen3_5ForCausalLM"]
-    (DST / "config.json").write_text(json.dumps(cfg, indent=2))
+    (DST / "config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
     for f in ["tokenizer.json", "tokenizer_config.json", "vocab.json", "merges.txt",
               "generation_config.json", "chat_template.json", "tokenizer.model",
               "special_tokens_map.json", "added_tokens.json"]:

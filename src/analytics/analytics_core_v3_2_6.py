@@ -50,7 +50,7 @@ class AnalyticsCore:
 
     def _save_history(self):
         try:
-            with open(self.history_path, "w") as f:
+            with open(self.history_path, "w", encoding="utf-8") as f:
                 json.dump(list(self.history), f, indent=2)
         except Exception as e:
             logger.error(f"Erro ao salvar historico de metricas: {e}")

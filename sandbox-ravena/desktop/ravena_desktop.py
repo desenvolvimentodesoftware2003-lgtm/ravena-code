@@ -182,7 +182,7 @@ class MonitorSistema:
         """Atualiza métricas"""
         try:
             # CPU
-            with open('/proc/stat', 'r') as f:
+            with open('/proc/stat', 'r', encoding="utf-8") as f:
                 linha = f.readline()
                 cpu = linha.split()
                 total = sum(int(x) for x in cpu[1:])
@@ -190,7 +190,7 @@ class MonitorSistema:
                 self.cpu = 100 * (1 - idle / total) if total > 0 else 0
             
             # RAM
-            with open('/proc/meminfo', 'r') as f:
+            with open('/proc/meminfo', 'r', encoding="utf-8") as f:
                 for linha in f:
                     if 'MemTotal' in linha:
                         total = int(linha.split()[1])

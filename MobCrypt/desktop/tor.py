@@ -53,7 +53,7 @@ class TorManager:
             with open(tgz_path, "wb") as f:
                 f.write(resp.read())
             logger.info("Extraindo...")
-            with tarfile.open(tgz_path, "r:gz") as tf:
+            with tarfile.open(tgz_path, "r:gz", encoding="utf-8") as tf:
                 tf.extractall(dest)
             tgz_path.unlink()
             found = list(dest.rglob("tor.exe"))
@@ -112,7 +112,7 @@ class TorManager:
             control_port=self.control_port,
             data_dir=self.data_dir,
             log_file=log_file,
-        ))
+        ), encoding="utf-8")
 
         logger.info("Iniciando Tor de %s", self.tor_binary)
         self.process = subprocess.Popen(

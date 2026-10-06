@@ -134,7 +134,7 @@ if __name__ == "__main__":
     print()
     print("=== EXPORTAR PARA TREINO ===")
     caminho = sensor.exportar_para_treino()
-    with open(caminho, "r") as f:
+    with open(caminho, "r", encoding="utf-8") as f:
         for linha in f.readlines()[:2]:
             print(json.loads(linha))
 

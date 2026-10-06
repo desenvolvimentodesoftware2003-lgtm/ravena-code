@@ -76,7 +76,7 @@ class MCPMapperCore:
         self.skills[nome] = skill
         
         # Salvar registro
-        with open(self.registry_path, "w") as f:
+        with open(self.registry_path, "w", encoding="utf-8") as f:
             json.dump(self.skills, f, indent=2)
             
         logger.info(f"Habilidade MCP mapeada: {nome}")

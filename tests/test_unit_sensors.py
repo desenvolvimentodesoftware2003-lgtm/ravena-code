@@ -27,11 +27,11 @@ class TestSensorStatus:
 class TestFileSensor:
     def test_coleta_arquivos(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            with open(os.path.join(tmpdir, "test.log"), "w") as f:
+            with open(os.path.join(tmpdir, "test.log"), "w", encoding="utf-8") as f:
                 f.write("ERROR: test log line\n")
-            with open(os.path.join(tmpdir, "data.json"), "w") as f:
+            with open(os.path.join(tmpdir, "data.json"), "w", encoding="utf-8") as f:
                 json.dump({"key": "value"}, f)
-            with open(os.path.join(tmpdir, "not_watched.txt"), "w") as f:
+            with open(os.path.join(tmpdir, "not_watched.txt"), "w", encoding="utf-8") as f:
                 f.write("skip")
             sensor = FileSensor("test_fs", watch_dir=tmpdir, extensions=[".log", ".json"])
             records = sensor.run_once()
@@ -50,7 +50,7 @@ class TestFileSensor:
     def test_arquivos_ja_processados(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             fpath = os.path.join(tmpdir, "test.log")
-            with open(fpath, "w") as f:
+            with open(fpath, "w", encoding="utf-8") as f:
                 f.write("content")
             sensor = FileSensor("dedup", watch_dir=tmpdir)
             r1 = sensor.run_once()
@@ -70,7 +70,7 @@ class TestFileSensor:
         def cb(data):
             results.append(data)
         with tempfile.TemporaryDirectory() as tmpdir:
-            with open(os.path.join(tmpdir, "a.log"), "w") as f:
+            with open(os.path.join(tmpdir, "a.log"), "w", encoding="utf-8") as f:
                 f.write("cb test")
             sensor = FileSensor("cb_fs", watch_dir=tmpdir)
             sensor.register_callback(cb)
@@ -120,7 +120,7 @@ class TestSensorManager:
 
     def test_run_all(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            with open(os.path.join(tmpdir, "a.log"), "w") as f:
+            with open(os.path.join(tmpdir, "a.log"), "w", encoding="utf-8") as f:
                 f.write("line1")
             mgr = SensorManager()
             mgr.register(FileSensor("fs1", watch_dir=tmpdir))
@@ -150,7 +150,7 @@ class TestSensorManager:
     def test_health_check_com_sensores(self):
         mgr = SensorManager()
         with tempfile.TemporaryDirectory() as tmpdir:
-            with open(os.path.join(tmpdir, "f.log"), "w") as f:
+            with open(os.path.join(tmpdir, "f.log"), "w", encoding="utf-8") as f:
                 f.write("data")
             mgr.register(FileSensor("fs1", watch_dir=tmpdir))
             mgr.run_all()
@@ -177,7 +177,7 @@ class TestSensorManager:
         def cb(data):
             results.append(data["source"])
         with tempfile.TemporaryDirectory() as tmpdir:
-            with open(os.path.join(tmpdir, "cb.log"), "w") as f:
+            with open(os.path.join(tmpdir, "cb.log"), "w", encoding="utf-8") as f:
                 f.write("callback data")
             sensor = FileSensor("cb_mgr", watch_dir=tmpdir)
             sensor.register_callback(cb)

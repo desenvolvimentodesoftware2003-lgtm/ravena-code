@@ -40,7 +40,7 @@ def _registrar_erro(modulo: str, funcao: str, erro: str):
     }
     log_path = LOG_DIR / f"erros_{datetime.now().strftime('%Y%m%d')}.jsonl"
     try:
-        with open(log_path, "a") as f:
+        with open(log_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(entrada) + "\n")
     except Exception as e:
         logger.error(f"Falha ao registrar erro em {log_path}: {e}")

@@ -37,7 +37,7 @@ class PipelineRetreinamento:
         self.buffer.append(exemplo)
         
         # Persistir no buffer local
-        with open(self.buffer_path, "a") as f:
+        with open(self.buffer_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(exemplo.__dict__) + "\n")
             
         logger.info(f"Exemplo adicionado ao buffer de retreinamento. Buffer: {len(self.buffer)}")
@@ -50,7 +50,7 @@ class PipelineRetreinamento:
         dataset_file = f"./data/datasets/dataset_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
         os.makedirs(os.path.dirname(dataset_file), exist_ok=True)
         
-        with open(dataset_file, "w") as f:
+        with open(dataset_file, "w", encoding="utf-8") as f:
             for ex in self.buffer:
                 f.write(json.dumps(ex.__dict__) + "\n")
                 

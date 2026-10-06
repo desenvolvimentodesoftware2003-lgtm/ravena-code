@@ -94,7 +94,7 @@ def create_dashboard(session):
         print(f"[ERRO] Arquivo não encontrado: {dashboard_path}")
         return False
     
-    with open(dashboard_path, 'r') as f:
+    with open(dashboard_path, 'r', encoding="utf-8") as f:
         dashboard = json.load(f)
     
     # Ajustar fonte de dados

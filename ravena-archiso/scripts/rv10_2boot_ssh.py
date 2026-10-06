@@ -17,7 +17,7 @@ PW = "Dozinh@12"
 def log(msg):
     line = str(msg)
     print(line)
-    with open(LOG, "a") as f:
+    with open(LOG, "a", encoding="utf-8") as f:
         f.write(line + "\n")
 
 def run_vm(timeout_min=20):

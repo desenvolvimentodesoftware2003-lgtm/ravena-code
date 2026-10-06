@@ -35,7 +35,7 @@ class HackerAgent:
                 "malware_signatures": ["0xDEADBEEF", "0xCAFEBABE"],
                 "suspicious_domains": ["scam-trading.com", "fake-exchange.io"]
             }
-            with open(self.fingerprints_path, 'w') as f:
+            with open(self.fingerprints_path, 'w', encoding="utf-8") as f:
                 json.dump(initial_data, f, indent=4)
             logger.info("Base de fingerprints inicializada.")
 
@@ -50,7 +50,7 @@ class HackerAgent:
         confianca = 0.95
         detalhes = []
 
-        with open(self.fingerprints_path, 'r') as f:
+        with open(self.fingerprints_path, 'r', encoding="utf-8") as f:
             fingerprints = json.load(f)
 
         if tipo == "url":

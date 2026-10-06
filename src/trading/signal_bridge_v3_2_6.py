@@ -70,7 +70,7 @@ except Exception as e:
 
 def load_config():
     try:
-        with open(CONFIG_PATH, 'r') as f:
+        with open(CONFIG_PATH, 'r', encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         logger.error(f"Erro ao carregar config: {e}")

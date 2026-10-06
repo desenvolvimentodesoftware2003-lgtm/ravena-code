@@ -259,7 +259,7 @@ class TestDSLInterpreter:
         dsl = DSLInterpreter()
         mgr = SensorManager()
         with tempfile.TemporaryDirectory() as tmpdir:
-            with open(os.path.join(tmpdir, "test.log"), "w") as f:
+            with open(os.path.join(tmpdir, "test.log"), "w", encoding="utf-8") as f:
                 f.write("log data")
             mgr.register(FileSensor("fs1", watch_dir=tmpdir))
             dsl.bind_system("sensor_manager", mgr)
