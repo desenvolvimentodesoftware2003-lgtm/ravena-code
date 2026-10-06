@@ -142,7 +142,7 @@ def test_omega_orchestrator_module():
 
 def test_omega_v326():
     """Testa a inicialização do Omega v3.2.6."""
-    mod = import_from_file("omega_v326_mod", PROJECT_ROOT / "src/core/omega_v3.2.6.py")
+    mod = import_from_file("omega_v326_mod", PROJECT_ROOT / "src/core/omega_v3_2_6.py")
     # Instanciar a classe principal Omega (não dataclasses auxiliares)
     target = getattr(mod, 'Omega', None)
     if target is None:
@@ -259,7 +259,7 @@ def test_rag_v326():
 
 def test_signal_bridge():
     """Testa o Signal Bridge (ponte de trading) — módulo funcional."""
-    mod = import_from_file("sig_bridge_mod", PROJECT_ROOT / "src/trading/signal_bridge_v3.2.6.py")
+    mod = import_from_file("sig_bridge_mod", PROJECT_ROOT / "src/trading/signal_bridge_v3_2_6.py")
     # Signal Bridge é funcional (sem classes), verificar funções
     funcs = [f for f in dir(mod) if not f.startswith('_') and callable(getattr(mod, f)) and not isinstance(getattr(mod, f), type)]
     key_funcs = ['process_signal', 'determine_suitability_mode', 'calculate_success_probability']
@@ -271,7 +271,7 @@ def test_signal_bridge():
 
 def test_bybit_connector():
     """Testa o Bybit Connector (exchange)."""
-    mod = import_from_file("bybit_mod", PROJECT_ROOT / "src/trading/bybit_connector_v3.2.6.py")
+    mod = import_from_file("bybit_mod", PROJECT_ROOT / "src/trading/bybit_connector_v3_2_6.py")
     classes = get_real_classes(mod)
     target = None
     for name in ['BybitConnector', 'BybitConnectorV326']:

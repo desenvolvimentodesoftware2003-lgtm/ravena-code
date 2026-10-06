@@ -41,7 +41,7 @@ class AnalyticsCore:
 
     def _load_history(self):
         try:
-            with open(self.history_path) as f:
+            with open(self.history_path, encoding="utf-8") as f:
                 data = json.load(f)
                 for item in data[-self.history.maxlen:]:
                     self.history.append(item)

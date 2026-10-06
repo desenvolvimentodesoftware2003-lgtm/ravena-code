@@ -217,7 +217,7 @@ class ParserArquivo:
             return []
 
         try:
-            doc = fitz.open(caminho)
+            doc = fitz.open(caminho, encoding="utf-8")
             texto_completo = ""
             for pagina in doc:
                 texto_completo += pagina.get_text()

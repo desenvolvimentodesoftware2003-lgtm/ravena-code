@@ -161,7 +161,7 @@ class CheckpointHandler:
 
         state_file = ckpt_path / "training_state.json"
         if state_file.exists():
-            with open(state_file) as f:
+            with open(state_file, encoding="utf-8") as f:
                 state = json.load(f)
 
             self.epoch = state.get('epoch', 0)
@@ -175,7 +175,7 @@ class CheckpointHandler:
 
         processed_file = ckpt_path / "processed_files.txt"
         if processed_file.exists():
-            with open(processed_file) as f:
+            with open(processed_file, encoding="utf-8") as f:
                 self.processed_files = set(line.strip() for line in f if line.strip())
             logger.info(f"{len(self.processed_files)} arquivos restaurados")
 
@@ -185,7 +185,7 @@ class CheckpointHandler:
         """Encontra o último checkpoint disponível."""
         latest_file = self.checkpoint_dir / "latest.txt"
         if latest_file.exists():
-            with open(latest_file) as f:
+            with open(latest_file, encoding="utf-8") as f:
                 path = f.read().strip()
                 if Path(path).exists():
                     return path

@@ -48,15 +48,15 @@ for d in dirs:
 
 print("\n--- Phase 2: Critical Modules ---")
 modules = [
-    ("Omega v3.2.6", "src/core/omega_v3.2.6.py", "Omega"),
+    ("Omega v3.2.6", "src/core/omega_v3_2_6.py", "Omega"),
     ("Omega Orchestrator v3.2.6", "src/core/omega_orchestrator_v3.2.6.py"),
     ("Hacker Agent", "src/security/hacker_agent.py", "HackerAgent"),
     ("Security Core v3.2.7", "src/security/security_core_v3.2.7.py", "SecurityCore"),
     ("Zero Trust v3.2.6", "src/security/zero_trust_v3.2.6.py", "ZeroTrustProtocol"),
     ("Secrets Manager", "src/core/secrets_manager.py"),
     ("RAG Advanced", "src/rag/rag_advanced.py"),
-    ("Bybit Connector", "src/trading/bybit_connector_v3.2.6.py"),
-    ("Signal Bridge", "src/trading/signal_bridge_v3.2.6.py"),
+    ("Bybit Connector", "src/trading/bybit_connector_v3_2_6.py"),
+    ("Signal Bridge", "src/trading/signal_bridge_v3_2_6.py"),
     ("Trade Brain", "src/trading/trade_brain_v3.2.6.py"),
     ("Agente Dev", "src/orchestration/agente_dev_v3.2.6.py", "AgenteDev"),
     ("External API Manager", "src/utils/external_api_manager_v3.2.6.py"),
@@ -113,7 +113,7 @@ print("\n--- Phase 6: JSON Report Integrity ---")
 report_path = PROJECT_ROOT / "tests" / "health_check_report.json"
 if report_path.exists():
     try:
-        with open(report_path) as f:
+        with open(report_path, encoding="utf-8") as f:
             data = json.load(f)
         required_keys = ["timestamp", "version", "summary", "results", "verdict"]
         missing = [k for k in required_keys if k not in data]

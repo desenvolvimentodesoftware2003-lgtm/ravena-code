@@ -19,7 +19,7 @@ def _import_mod(name, rel_path):
     return mod
 
 def test_bybit_connector():
-    mod = _import_mod("bybit_test", "src/trading/bybit_connector_v3.2.6.py")
+    mod = _import_mod("bybit_test", "src/trading/bybit_connector_v3_2_6.py")
     target = getattr(mod, "BybitConnector", None)
     assert target is not None, "BybitConnector class not found"
     instance = target()
@@ -35,7 +35,7 @@ def test_risk_manager():
     print(f"[PASS] RiskManager inicializado")
 
 def test_signal_bridge():
-    mod = _import_mod("signal_test", "src/trading/signal_bridge_v3.2.6.py")
+    mod = _import_mod("signal_test", "src/trading/signal_bridge_v3_2_6.py")
     funcs = ["process_signal", "determine_suitability_mode", "calculate_success_probability"]
     for f in funcs:
         assert hasattr(mod, f), f"Function {f} not found in signal_bridge"

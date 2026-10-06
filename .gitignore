@@ -35,6 +35,10 @@ chroma_db/
 *.sqlite3
 checkpoints/
 data/datasets/
+data/*.json
+
+# Relatorio que o teste reescreve a cada execucao
+tests/test_equilibrio_threshold_output.json
 
 # Valores por maquina
 config_agente.json

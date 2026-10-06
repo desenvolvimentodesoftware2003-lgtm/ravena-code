@@ -36,7 +36,7 @@ except ImportError:
 
 # Vision RAG Semantic (arquivo com underscore)
 try:
-    _vrs = _import_from_file("vrs_mod", os.path.join(_project_root, "src/rag/vision_rag_semantic_v3.2.6.py"))
+    _vrs = _import_from_file("vrs_mod", os.path.join(_project_root, "src/rag/vision_rag_semantic_v3_2_6.py"))
     VisionRAGSemantic = _vrs.VisionRAGSemantic
     PadraoDetectado = _vrs.PadraoDetectado
     DecisaoAutonoma = _vrs.DecisaoAutonoma

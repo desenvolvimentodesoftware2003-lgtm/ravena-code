@@ -19,7 +19,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src" / "core"))
 
 import importlib.util
-spec = importlib.util.spec_from_file_location("omega_mod", PROJECT_ROOT / "src" / "core" / "omega_v3.2.6.py")
+spec = importlib.util.spec_from_file_location("omega_mod", PROJECT_ROOT / "src" / "core" / "omega_v3_2_6.py")
 omega_mod = importlib.util.module_from_spec(spec)
 sys.modules["omega_mod"] = omega_mod
 spec.loader.exec_module(omega_mod)

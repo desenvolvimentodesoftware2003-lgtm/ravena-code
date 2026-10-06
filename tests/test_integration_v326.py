@@ -20,7 +20,7 @@ def import_from_file(module_name, file_path):
     spec.loader.exec_module(module)
     return module
 
-omega_mod = import_from_file("omega_mod_int", PROJECT_ROOT / "src/core" / "omega_v3.2.6.py")
+omega_mod = import_from_file("omega_mod_int", PROJECT_ROOT / "src/core" / "omega_v3_2_6.py")
 Omega = omega_mod.Omega
 
 # Configuração de Logging para o teste
