@@ -9,8 +9,20 @@ SERVE=/usr/local/bin/ravena-airllm-server.py
 [ -f "$CONF" ] && . "$CONF"
 
 MODELOS="/mnt/ravena-data/modelos"
-[ -d "$MODELOS" ] || MODELOS="/home/ravena/modelos"
 TXT_DIR="/mnt/ravena-data/modelos/qwen27b-txt"
+SFS_MODELOS="/home/ravena/modelos"
+
+# --- 0. se a RAVENA-DATA estiver montada mas sem modelo, copia o modelo do
+#    squashfs (sistema live, comprimido = mmap lento) para o disco real ---
+if [ -d "$MODELOS" ] && [ -z "$(ls "$MODELOS"/L3-Dark-Planet*gguf 2>/dev/null)" ]; then
+    SRC=$(ls "$SFS_MODELOS"/L3-Dark-Planet*gguf 2>/dev/null | head -1)
+    if [ -n "$SRC" ]; then
+        echo "ravena-llm: copiando modelo para RAVENA-DATA (1a vez)..."
+        cp -f "$SRC" "$MODELOS/" 2>/dev/null || true
+        sync
+    fi
+fi
+[ -d "$MODELOS" ] || MODELOS="/home/ravena/modelos"
 
 # --- 1. prioridade: GGUF L3-Dark-Planet-8B via llama-server (MHA puro,
 #    3.78 tok/s medido em i7-8665U 7.7GB; ~3.9GB de RAM total) ---

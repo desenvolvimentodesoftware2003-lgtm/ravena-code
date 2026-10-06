@@ -100,22 +100,6 @@ find_esp_partition() {
             esac
         done
     fi
-    # MODO INSTALADO: se o pacote ravena-instalar rodou, /etc/ravena/instalado
-    # existe => aceita a ESP do proprio disco interno (nao so removiveis)
-    if [ -f /etc/ravena/instalado ]; then
-        echo "RAVENA-DATA: modo instalado - procurando ESP vfat em qualquer disco" >&2
-        for dev in $(lsblk -n -o NAME -r 2>/dev/null); do
-            case "$dev" in
-                sd[a-z][0-9]*|vd[a-z][0-9]*|hd[a-z][0-9]*|nvme[0-9]*n[0-9]*p[0-9]*)
-                    fst=$(blkid -p -o value -s TYPE "/dev/$dev" 2>/dev/null)
-                    if [ "$fst" = "vfat" ] || [ "$fst" = "msdos" ]; then
-                        echo "RAVENA-DATA: ESP instalada == /dev/$dev" >&2
-                        echo "/dev/$dev"; return 0
-                    fi
-                    ;;
-            esac
-        done
-    fi
     # passo 2: fallback seguro - apenas discos removiveis sem filtro de tamanho
     echo "RAVENA-DATA: aviso - procurando ESP vfat extra em discos removiveis" >&2
     for disk in $(lsblk -n -d -o NAME -r 2>/dev/null); do
@@ -408,11 +392,16 @@ persist_ravena_home() {
         cp -a /home/ravena/.tmux.conf "$base/config/dotfiles/.tmux.conf" 2>/dev/null || true
         cp -a /home/ravena/.gitconfig "$base/config/dotfiles/.gitconfig" 2>/dev/null || true
     else
-        cp -a "$base/config/dotfiles/.bashrc" /home/ravena/.bashrc 2>/dev/null || true
-        cp -a "$base/config/dotfiles/.bash_profile" /home/ravena/.bash_profile 2>/dev/null || true
-        cp -a "$base/config/dotfiles/.tmux.conf" /home/ravena/.tmux.conf 2>/dev/null || true
-        cp -a "$base/config/dotfiles/.gitconfig" /home/ravena/.gitconfig 2>/dev/null || true
-        echo "RAVENA-DATA: dotfiles restaurados da particao (.bashrc/.bash_profile/.tmux.conf)"
+        # RESTAURA da particao SOMENTE se o arquivo persistido for mais novo
+        # (evita que dotfiles antigos da RV9b sobrescrevam as correcoes do ISO)
+        for df in .bashrc .bash_profile .tmux.conf .gitconfig; do
+            if [ -f "$base/config/dotfiles/$df" ] && [ -f "/home/ravena/$df" ]; then
+                if [ "$base/config/dotfiles/$df" -nt "/home/ravena/$df" ]; then
+                    cp -a "$base/config/dotfiles/$df" "/home/ravena/$df" 2>/dev/null || true
+                fi
+            fi
+        done
+        echo "RAVENA-DATA: dotfiles restaurados da particao se mais novos (.bashrc/.bash_profile/.tmux.conf)"
     fi
     echo "RAVENA-DATA: persistencia pronta em /home/ravena/.ravena (config+cache)"
 }

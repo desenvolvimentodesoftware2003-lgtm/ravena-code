@@ -19,10 +19,5 @@ done
 CONN=$(nmcli -t -f NAME,DEVICE connection show 2>/dev/null | grep -v '^:' | head -1 | cut -d: -f1)
 [ -n "$CONN" ] && nmcli connection up "$CONN" 2>/dev/null || true
 
-# mostra estado final da rede
-sleep 2
-echo
-echo "=== REDE ==="
-nmcli device status 2>/dev/null | awk '{print "  "$0}'
-echo "=== INTERNET ==="
-if ping -c1 -W3 1.1.1.1 >/dev/null 2>&1; then echo "  CONECTADO (internet OK)"; else echo "  SEM INTERNET - rode: wifi (listar) / conectar-wifi (conectar)"; fi
+# (F5) status de rede silencioso: roda no boot via ravena-net.service;
+# detalhes ficam dentro do OS com: rede / wifi / conectar-wifi

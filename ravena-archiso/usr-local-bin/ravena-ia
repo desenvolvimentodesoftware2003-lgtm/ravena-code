@@ -5,14 +5,17 @@ HEALTH="http://localhost:8080/health"
 
 wait_provider() {
     # aguarda o llama-server responder /health (modelo pode estar carregando)
+    # 150 tentativas x 2s = 300s: no 1o boot do pendrive USB o modelo pode
+    # demorar (copia p/ RAVENA-DATA ou mmap do squashfs), e respostas longas
+    # em CPU levam minutos. Desistir antes = erro falso.
     local tries=0 code
-    while [ "$tries" -lt 90 ]; do
+    while [ "$tries" -lt 150 ]; do
         code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$HEALTH" 2>/dev/null | tr -d '[:space:]')
         if [ "$code" = "200" ]; then
             return 0
         fi
         tries=$((tries+1))
-        if [ $((tries % 5)) -eq 0 ]; then
+        if [ $((tries % 10)) -eq 0 ]; then
             echo "RAVENA: modelo ainda carregando... ($((tries*2))s ate agora)" >&2
         fi
         sleep 2
@@ -24,7 +27,7 @@ wait_provider() {
 chat() {
     local q="$1" out tries=0
     for tries in $(seq 1 8); do
-        out=$(curl -s --max-time 120 "$PROVIDER" \
+        out=$(curl -s --max-time 600 "$PROVIDER" \
           -H "Content-Type: application/json" \
           -d "$(python3 -c "
 import json,sys
@@ -34,7 +37,7 @@ sys.stdout.write(json.dumps({
     {'role':'system','content':'Voce e o assistente da Ravena. Se o usuario pedir acao no sistema, responda APENAS com um comando entre colchetes [comando]. Caso contrario responda normalmente.'},
     {'role':'user','content':sys.argv[1]}
   ],
-  'temperature':0.7,'top_p':0.95,'max_tokens':1024
+  'temperature':0.7,'top_p':0.95,'max_tokens':512
 }))" "$q")")
         if echo "$out" | python3 -c "
 import sys, json
@@ -86,7 +89,7 @@ case "$1" in
     q="$*"
     ctx=$(intel mercado 2>/dev/null | head -30)
     wait_provider || exit 1
-    out=$(curl -s --max-time 120 "$PROVIDER" \
+    out=$(curl -s --max-time 600 "$PROVIDER" \
       -H "Content-Type: application/json" \
       -d "$(python3 -c "
 import json,sys
