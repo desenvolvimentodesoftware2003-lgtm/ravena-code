@@ -7,7 +7,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 _project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_orch_path = os.path.join(_project_root, "core", "omega_orchestrator_v3.2.6.py")
+_orch_path = os.path.join(_project_root, "core", "omega_orchestrator_v3_2_6.py")
 _spec = importlib.util.spec_from_file_location("omega_orch_mod", _orch_path)
 _orch_mod = importlib.util.module_from_spec(_spec)
 sys.modules["omega_orch_mod"] = _orch_mod

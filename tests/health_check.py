@@ -114,7 +114,7 @@ def test_secrets_manager():
 
 def test_zero_trust():
     """Testa o Protocolo Zero Trust (geração e validação de tokens)."""
-    mod = import_from_file("zero_trust_mod", PROJECT_ROOT / "src/security/zero_trust_v3.2.6.py")
+    mod = import_from_file("zero_trust_mod", PROJECT_ROOT / "src/security/zero_trust_v3_2_6.py")
     zt = mod.ZeroTrustProtocol()
     token = zt.generate_token("test_module")
     if not token:
@@ -128,7 +128,7 @@ def test_zero_trust():
 
 def test_omega_orchestrator_module():
     """Testa a inicialização do OmegaOrchestrator v3.2.6."""
-    mod = import_from_file("omega_orch_mod", PROJECT_ROOT / "src/core/omega_orchestrator_v3.2.6.py")
+    mod = import_from_file("omega_orch_mod", PROJECT_ROOT / "src/core/omega_orchestrator_v3_2_6.py")
     target = getattr(mod, 'OmegaOrchestrator', None)
     if target is None:
         classes = get_real_classes(mod)
@@ -205,7 +205,7 @@ def test_hacker_v328():
 
 def test_security_core():
     """Testa o Security Core v3.2.7."""
-    mod = import_from_file("sec_core_mod", PROJECT_ROOT / "src/security/security_core_v3.2.7.py")
+    mod = import_from_file("sec_core_mod", PROJECT_ROOT / "src/security/security_core_v3_2_7.py")
     classes = get_real_classes(mod)
     if not classes:
         return "WARN", "Módulo carregou mas imports internos falharam"
@@ -235,7 +235,7 @@ def test_rag_advanced():
 
 def test_rag_v326():
     """Testa o RAG Advanced v3.2.6."""
-    mod = import_from_file("rag_v326_mod", PROJECT_ROOT / "src/rag/rag_advanced_v3.2.6.py")
+    mod = import_from_file("rag_v326_mod", PROJECT_ROOT / "src/rag/rag_advanced_v3_2_6.py")
     # Buscar a classe principal (pular Enums e dataclasses simples)
     from enum import EnumType
     target = None
@@ -288,7 +288,7 @@ def test_bybit_connector():
 
 def test_trade_brain():
     """Testa o Trade Brain."""
-    mod = import_from_file("trade_brain_mod", PROJECT_ROOT / "src/trading/trade_brain_v3.2.6.py")
+    mod = import_from_file("trade_brain_mod", PROJECT_ROOT / "src/trading/trade_brain_v3_2_6.py")
     classes = get_real_classes(mod)
     if not classes:
         funcs = [f for f in dir(mod) if not f.startswith('_') and callable(getattr(mod, f))]
@@ -325,7 +325,7 @@ def test_social_connector():
 
 def test_telegram_bot():
     """Testa o Telegram Bot Refinement."""
-    mod = import_from_file("tg_bot_mod", PROJECT_ROOT / "src/utils/telegram_bot_refinement_v3.2.6.py")
+    mod = import_from_file("tg_bot_mod", PROJECT_ROOT / "src/utils/telegram_bot_refinement_v3_2_6.py")
     TBR = getattr(mod, 'TelegramBotRefinement', None)
     if TBR:
         bot = TBR()
@@ -349,7 +349,7 @@ def test_engine_patch():
 
 def test_external_api_manager():
     """Testa o External API Manager."""
-    mod = import_from_file("api_mgr_mod", PROJECT_ROOT / "src/utils/external_api_manager_v3.2.6.py")
+    mod = import_from_file("api_mgr_mod", PROJECT_ROOT / "src/utils/external_api_manager_v3_2_6.py")
     EAM = getattr(mod, 'ExternalAPIManager', None)
     if EAM:
         manager = EAM()
@@ -376,7 +376,7 @@ def test_ravena_model():
 
 def test_zero_trust_to_omega():
     """Testa se o Zero Trust consegue gerar token para o OmegaOrchestrator."""
-    mod = import_from_file("zt_comm_mod", PROJECT_ROOT / "src/security/zero_trust_v3.2.6.py")
+    mod = import_from_file("zt_comm_mod", PROJECT_ROOT / "src/security/zero_trust_v3_2_6.py")
     zt = mod.ZeroTrustProtocol()
     token = zt.generate_token("omega_orchestrator")
     valid = zt.validate_access("omega_orchestrator", token)

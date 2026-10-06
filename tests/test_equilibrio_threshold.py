@@ -22,7 +22,7 @@ def _carregar(nome, path):
     return mod
 
 _cl_mod = _carregar("cl_mod", BASE / "src/clarividencia.py")
-_sa_mod = _carregar("sa_mod", BASE / "src/orchestration/search_agent_v3.2.6.py")
+_sa_mod = _carregar("sa_mod", BASE / "src/orchestration/search_agent_v3_2_6.py")
 _sb_mod = _carregar("sb_mod", BASE / "src/trading/signal_bridge_v3_2_6.py")
 
 process_signal = _sb_mod.process_signal

@@ -74,7 +74,7 @@ services:
       dockerfile: docker/Dockerfile
     container_name: ravena-trading
     restart: unless-stopped
-    command: ["python", "-m", "src.trading.signal_bridge_v3.2.6"]
+    command: ["python", "-m", "src.trading.signal_bridge_v3_2_6"]
     environment:
       - RAVENA_ENV=production
       - BYBIT_API_KEY=${BYBIT_API_KEY}

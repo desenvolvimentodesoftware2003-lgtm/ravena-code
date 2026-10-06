@@ -27,9 +27,9 @@ def test_rag_advanced():
     print(f"[PASS] ModuloRAGAvançado inicializado")
 
 def test_rag_advanced_v326():
-    mod = _import_mod("rag_v326_test", "src/rag/rag_advanced_v3.2.6.py")
+    mod = _import_mod("rag_v326_test", "src/rag/rag_advanced_v3_2_6.py")
     classes = [c for c in dir(mod) if not c.startswith("_") and isinstance(getattr(mod, c), type)]
-    assert len(classes) > 0, f"No classes in rag_advanced_v3.2.6"
+    assert len(classes) > 0, f"No classes in rag_advanced_v3_2_6"
     print(f"[PASS] RAG v3.2.6 classes: {len(classes)}")
 
 def test_vision_rag_semantic():
@@ -43,9 +43,9 @@ def test_vision_rag_semantic():
     print(f"[PASS] VisionRAGSemantic + PadraoDetectado + DecisaoAutonoma")
 
 def test_rag_core_v326():
-    mod = _import_mod("rag_core_test", "src/rag/rag_core_v3.2.6.py")
+    mod = _import_mod("rag_core_test", "src/rag/rag_core_v3_2_6.py")
     classes = [c for c in dir(mod) if not c.startswith("_") and isinstance(getattr(mod, c), type)]
-    assert len(classes) > 0, f"No classes in rag_core_v3.2.6"
+    assert len(classes) > 0, f"No classes in rag_core_v3_2_6"
     print(f"[PASS] RAG Core v3.2.6 classes: {classes}")
 
 if __name__ == "__main__":

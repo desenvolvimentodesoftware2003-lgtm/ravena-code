@@ -27,7 +27,7 @@ def test_bybit_connector():
     print(f"[PASS] BybitConnector inicializado")
 
 def test_risk_manager():
-    mod = _import_mod("risk_test", "src/trading/risk_manager_v3.2.6.py")
+    mod = _import_mod("risk_test", "src/trading/risk_manager_v3_2_6.py")
     target = getattr(mod, "RiskManager", None)
     assert target is not None, "RiskManager class not found"
     instance = target()
@@ -42,7 +42,7 @@ def test_signal_bridge():
     print(f"[PASS] SignalBridge functions: {funcs}")
 
 def test_sentiment_analyzer():
-    mod = _import_mod("sentiment_test", "src/trading/sentiment_analyzer_v3.2.6.py")
+    mod = _import_mod("sentiment_test", "src/trading/sentiment_analyzer_v3_2_6.py")
     classes = [c for c in dir(mod) if not c.startswith("_") and isinstance(getattr(mod, c), type)]
     assert len(classes) > 0, f"No classes found in sentiment_analyzer"
     print(f"[PASS] SentimentAnalyzer classes: {classes}")

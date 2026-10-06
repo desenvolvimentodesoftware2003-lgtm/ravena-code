@@ -62,18 +62,18 @@ for d in dirs:
 print("\n--- Phase 2: Critical Modules ---")
 modules = [
     ("Omega v3.2.6", "src/core/omega_v3_2_6.py", "Omega"),
-    ("Omega Orchestrator v3.2.6", "src/core/omega_orchestrator_v3.2.6.py"),
+    ("Omega Orchestrator v3.2.6", "src/core/omega_orchestrator_v3_2_6.py"),
     ("Hacker Agent", "src/security/hacker_agent.py", "HackerAgent"),
-    ("Security Core v3.2.7", "src/security/security_core_v3.2.7.py", "SecurityCore"),
-    ("Zero Trust v3.2.6", "src/security/zero_trust_v3.2.6.py", "ZeroTrustProtocol"),
+    ("Security Core v3.2.7", "src/security/security_core_v3_2_7.py", "SecurityCore"),
+    ("Zero Trust v3.2.6", "src/security/zero_trust_v3_2_6.py", "ZeroTrustProtocol"),
     ("Secrets Manager", "src/core/secrets_manager.py"),
     ("RAG Advanced", "src/rag/rag_advanced.py"),
     ("Bybit Connector", "src/trading/bybit_connector_v3_2_6.py"),
     ("Signal Bridge", "src/trading/signal_bridge_v3_2_6.py"),
-    ("Trade Brain", "src/trading/trade_brain_v3.2.6.py"),
-    ("Agente Dev", "src/orchestration/agente_dev_v3.2.6.py", "AgenteDev"),
-    ("External API Manager", "src/utils/external_api_manager_v3.2.6.py"),
-    ("Telegram Bot", "src/utils/telegram_bot_refinement_v3.2.6.py"),
+    ("Trade Brain", "src/trading/trade_brain_v3_2_6.py"),
+    ("Agente Dev", "src/orchestration/agente_dev_v3_2_6.py", "AgenteDev"),
+    ("External API Manager", "src/utils/external_api_manager_v3_2_6.py"),
+    ("Telegram Bot", "src/utils/telegram_bot_refinement_v3_2_6.py"),
 ]
 for name, rel_path, *class_names in modules:
     fp = PROJECT_ROOT / rel_path
@@ -97,7 +97,7 @@ tests = [
     "tests/test_token_protection.py",
     "tests/test_integration_v326.py",
     "tests/stress_test_v328.py",
-    "tests/global_validation_test_v3.2.6.py",
+    "tests/global_validation_test_v3_2_6.py",
 ]
 for t in tests:
     fp = PROJECT_ROOT / t

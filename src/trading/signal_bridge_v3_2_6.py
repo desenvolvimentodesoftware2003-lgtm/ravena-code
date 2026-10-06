@@ -58,7 +58,7 @@ CONFIG_PATH = os.getenv("RAVENA_CONFIG_PATH", "config_v3.json")
 _SIMULACAO_FILTER = None
 try:
     _sf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            "..", "simulation", "simulacao_filter_v3.2.6.py")
+                            "..", "simulation", "simulacao_filter_v3_2_6.py")
     _sf_path = os.path.abspath(_sf_path)
     _spec_sf = importlib.util.spec_from_file_location("simulacao_filter_mod", _sf_path)
     _sf_mod = importlib.util.module_from_spec(_spec_sf)

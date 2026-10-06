@@ -2,7 +2,7 @@
 VALIDADOR VERACIDADE — Modulo de Validacao de Informacao (v1.0.0)
 =================================================================
 Ravena AIM | Modulo: seguranca cognitiva
-Extraido e atualizado de security_core_v3.2.6.
+Extraido e atualizado de security_core_v3_2_6.
 Responsabilidades:
   - Validar veracidade de informacoes coletadas
   - Cruzar dados com base de conhecimento

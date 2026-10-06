@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-06T05:10:25.006280",
+  "timestamp": "2026-10-06T05:23:50.725476",
   "version": "v3.2.6",
   "environment": "unknown",
   "summary": {
@@ -7,7 +7,7 @@
     "passed": 19,
     "warned": 2,
     "failed": 1,
-    "time_seconds": 18.9,
+    "time_seconds": 19.41,
     "health_score": 86.4
   },
   "results": [
@@ -20,26 +20,26 @@
     {
       "module": "ZeroTrust Protocol",
       "status": "PASS",
-      "details": "Token gerado e validado com sucesso | Token: a3889842abbce6469104e315fa4d9b...",
-      "time_ms": 9482
+      "details": "Token gerado e validado com sucesso | Token: 97f1055213e1343f371444afffafa7...",
+      "time_ms": 10144
     },
     {
       "module": "OmegaOrchestrator v3.2.6",
       "status": "PASS",
       "details": "OmegaOrchestrator inicializado",
-      "time_ms": 19
+      "time_ms": 29
     },
     {
       "module": "Omega v3.2.6",
       "status": "PASS",
       "details": "Omega v3.2.6 status=OPERACIONAL",
-      "time_ms": 16
+      "time_ms": 11
     },
     {
       "module": "Omega (legacy)",
       "status": "PASS",
       "details": "DiagnosticoMissao inicializado",
-      "time_ms": 2
+      "time_ms": 3
     },
     {
       "module": "Ravena Model",
@@ -63,55 +63,55 @@
       "module": "Hacker Agent v3.2.8 Final",
       "status": "PASS",
       "details": "Hacker v3.2.8 Final: unknown",
-      "time_ms": 0
+      "time_ms": 1
     },
     {
       "module": "Security Core v3.2.7",
       "status": "PASS",
       "details": "HackerAgent inicializado",
-      "time_ms": 2
+      "time_ms": 1
     },
     {
       "module": "RAG Advanced",
       "status": "PASS",
       "details": "ModuloRAGAvançado inicializado | Classes no módulo: 10",
-      "time_ms": 4
+      "time_ms": 5
     },
     {
       "module": "RAG Advanced v3.2.6",
       "status": "PASS",
       "details": "ModuloRAGAvançado inicializado",
-      "time_ms": 8607
+      "time_ms": 8476
     },
     {
       "module": "Signal Bridge (funcional)",
       "status": "PASS",
       "details": "Módulo funcional OK | Funções-chave: ['process_signal', 'determine_suitability_mode', 'calculate_success_probability']",
-      "time_ms": 5
+      "time_ms": 4
     },
     {
       "module": "Bybit Connector",
       "status": "PASS",
       "details": "BybitConnector inicializado",
-      "time_ms": 748
+      "time_ms": 711
     },
     {
       "module": "Trade Brain",
       "status": "PASS",
       "details": "RiskManager inicializado",
-      "time_ms": 1
+      "time_ms": 3
     },
     {
       "module": "Social Connector",
       "status": "PASS",
       "details": "ConectorSocialInstagram inicializado",
-      "time_ms": 4
+      "time_ms": 5
     },
     {
       "module": "Telegram Bot",
       "status": "PASS",
       "details": "TelegramBotRefinement inicializado | Threshold: 0.85",
-      "time_ms": 1
+      "time_ms": 2
     },
     {
       "module": "Engine Patch Segurança",
@@ -123,19 +123,19 @@
       "module": "External API Manager",
       "status": "PASS",
       "details": "ExternalAPIManager v3.2.6 inicializado",
-      "time_ms": 0
+      "time_ms": 3
     },
     {
       "module": "ZeroTrust → OmegaOrchestrator (Auth)",
       "status": "PASS",
       "details": "Zero Trust ↔ OmegaOrchestrator: comunicação autenticada OK",
-      "time_ms": 2
+      "time_ms": 1
     },
     {
       "module": "Secrets Audit (Conformidade)",
       "status": "WARN",
       "details": "Auditoria: 0/17 carregados | Faltando: ['RAVENA_ZERO_TRUST_SECRET', 'BYBIT_API_KEY', 'BYBIT_API_SECRET', 'OCI_COMPARTMENT_ID', 'QWEN_ENDPOINT_ID', 'KIMI_ENDPOINT_ID']",
-      "time_ms": 1
+      "time_ms": 2
     },
     {
       "module": "RAG Ingestão + Consulta",

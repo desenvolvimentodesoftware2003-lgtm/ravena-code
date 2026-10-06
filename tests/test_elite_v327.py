@@ -22,7 +22,7 @@ def import_from_file(module_name, file_path):
     return module
 
 hacker_mod = import_from_file("hacker_agent", PROJECT_ROOT / "src/security/hacker_agent.py")
-SecurityCore = import_from_file("security_core_mod", PROJECT_ROOT / "src/security/security_core_v3.2.7.py").SecurityCore
+SecurityCore = import_from_file("security_core_mod", PROJECT_ROOT / "src/security/security_core_v3_2_7.py").SecurityCore
 HackerAgent = hacker_mod.HackerAgent
 
 # Configuração de Logging

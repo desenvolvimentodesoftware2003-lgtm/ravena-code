@@ -55,7 +55,7 @@ class ReadinessChecker:
         self.results["security"]["hacker_agent_present"] = hacker_present
         
         # Verificar se o SecurityCore v3.2.7 está presente
-        security_v327 = os.path.exists("/home/ubuntu/Ravena_AI_Core_Infrastructure/06_Arquitetura_Modular_e_Versoes/ravena-modular_v3/src/security/security_core_v3.2.7.py")
+        security_v327 = os.path.exists("/home/ubuntu/Ravena_AI_Core_Infrastructure/06_Arquitetura_Modular_e_Versoes/ravena-modular_v3/src/security/security_core_v3_2_7.py")
         self.results["security"]["security_core_v327_present"] = security_v327
         
         return hacker_present and security_v327

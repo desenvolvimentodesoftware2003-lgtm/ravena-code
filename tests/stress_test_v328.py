@@ -18,7 +18,7 @@ def import_from_file(module_name, file_path):
 
 hacker_mod = import_from_file("hacker_mod_stress", PROJECT_ROOT / "src/security/hacker_agent.py")
 HackerAgent = hacker_mod.HackerAgent
-agente_mod = import_from_file("agente_dev_mod_stress", PROJECT_ROOT / "src/orchestration/agente_dev_v3.2.6.py")
+agente_mod = import_from_file("agente_dev_mod_stress", PROJECT_ROOT / "src/orchestration/agente_dev_v3_2_6.py")
 AgenteDev = agente_mod.AgenteDev
 
 # Configuração de Logging para o Teste de Estresse

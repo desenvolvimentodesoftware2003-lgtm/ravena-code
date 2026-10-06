@@ -1,5 +1,5 @@
 """
-RAVENA AIM v3.2.6 — src/core/omega_orchestrator_v3.2.6.py
+RAVENA AIM v3.2.6 — src/core/omega_orchestrator_v3_2_6.py
 ==========================================================
 Orquestrador Omega — Ponto de Convergência e Roteamento.
 Orquestra RAG, Segurança, Visão e Aprendizado.
@@ -53,7 +53,7 @@ except Exception:
 
 # Security Core v3.2.6 (arquivo com ponto)
 try:
-    _sc = _import_from_file("sec_core_mod", os.path.join(_project_root, "src/security/security_core_v3.2.6.py"))
+    _sc = _import_from_file("sec_core_mod", os.path.join(_project_root, "src/security/security_core_v3_2_6.py"))
     SecurityLayer = _sc.SecurityLayer
     LockdownV22 = _sc.LockdownV22
     AuditorCore = _sc.AuditorCore
@@ -64,7 +64,7 @@ except Exception:
 
 # Utils Core v3.2.6 (arquivo com ponto)
 try:
-    _uc = _import_from_file("utils_core_mod", os.path.join(_project_root, "src/utils/utils_core_v3.2.6.py"))
+    _uc = _import_from_file("utils_core_mod", os.path.join(_project_root, "src/utils/utils_core_v3_2_6.py"))
     UtilsCore = _uc.UtilsCore
 except Exception:
     UtilsCore = None

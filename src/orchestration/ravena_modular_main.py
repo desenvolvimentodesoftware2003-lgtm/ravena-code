@@ -18,7 +18,7 @@ def _import_mod(module_name, file_path):
 
 omega_mod = _import_mod("omega_mod", PROJECT_ROOT / "src" / "core" / "omega_v3_2_6.py")
 juiz_mod = _import_mod("juiz_mod", PROJECT_ROOT / "src" / "security" / "juiz_universal.py")
-rag_mod = _import_mod("rag_mod", PROJECT_ROOT / "src" / "rag" / "rag_core_v3.2.6.py")
+rag_mod = _import_mod("rag_mod", PROJECT_ROOT / "src" / "rag" / "rag_core_v3_2_6.py")
 
 Omega = omega_mod.Omega
 JuizUniversal = juiz_mod.JuizUniversal
