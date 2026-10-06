@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Segredos — NUNCA versionar.
+# .env.example CONTINUA versionado: e o template com as variaveis vazias.
+.env
+.env.*
+!.env.example
+
+# Cache de ferramenta
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# ISOs e squashfs (7,8 GB cada — nunca vao para o git)
+*.iso
+*.sfs
+
+# Logs e artefatos de build
+*.log
+logs/
+
+# Dados de runtime / indices
+chroma_db/
+*.db
+*.sqlite3
+checkpoints/
+data/datasets/
+
+# Valores por maquina
+config_agente.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
