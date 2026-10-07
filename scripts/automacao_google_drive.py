@@ -1,4 +1,4 @@
-pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
+# pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
 import os
 import json
 from google.oauth2.credentials import Credentials

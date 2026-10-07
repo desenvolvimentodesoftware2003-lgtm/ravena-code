@@ -48,13 +48,13 @@ def chat_completion(messages):
         return text, gen
 
 def application(environ, start_response):
+    global MAX_NEW
     if environ.get("PATH_INFO") == "/v1/chat/completions" and environ["REQUEST_METHOD"] == "POST":
         try:
             length = int(environ.get("CONTENT_LENGTH", 0))
             body = json.loads(environ["wsgi.input"].read(length) or b"{}")
             messages = body.get("messages", [])
             max_tokens = int(body.get("max_tokens", MAX_NEW))
-            global MAX_NEW
             MAX_NEW = max(1, min(max_tokens, 4096))
             text, gen = chat_completion(messages)
             resp = {
