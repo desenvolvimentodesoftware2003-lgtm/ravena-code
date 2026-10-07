@@ -24,3 +24,10 @@ python-docx>=1.1
 beautifulsoup4>=4.12
 numpy>=1.26
 pandas>=2.0
+
+# --- visao ativa (src/simulation/active_vision_v3_2_6.py) ---
+# Nao e usado por nenhum passo do workflow nem pela suite: declarado para
+# que `pip install -r requirements.txt` deixe o repo inteiro importavel.
+# Pese ~70 MB; remova se for descartar este modulo.
+opencv-python>=4.9
+mss>=9.0

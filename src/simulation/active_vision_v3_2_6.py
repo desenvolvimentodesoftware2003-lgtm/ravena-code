@@ -22,7 +22,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, Tuple
 
 # Importar o módulo base da Ravena
-from vision_module import ModuloPercepçãoVisual, TipoEntradaVisual, NivelAmeaca
+from src.rag.vision_module import ModuloPercepçãoVisual, TipoEntradaVisual, NivelAmeaca
 
 logger = logging.getLogger("ravena.active_vision")
 
