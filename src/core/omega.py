@@ -91,6 +91,7 @@ class Omega:
         caminhos = [
             config_path,
             os.path.join(_projeto_raiz, "config", "omega_config.json"),
+            os.path.join(_projeto_raiz, "config", "config_v3.json"),
             os.path.join(_projeto_raiz, "config_v3.json")
         ]
         for caminho in caminhos:

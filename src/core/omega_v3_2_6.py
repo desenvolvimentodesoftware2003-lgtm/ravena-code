@@ -11,6 +11,7 @@ Responsabilidades:
   - Integracao Clarividencia → SearchAgent → SignalBridge → StepScaling.
 """
 import os
+from pathlib import Path
 import time
 import logging
 import json
@@ -50,6 +51,39 @@ class StatusSistema:
     uptime_inicio: float = field(default_factory=time.time)
     ciclos_autocorrecao: int = 0
 
+def _achar_config_v3() -> str:
+    """Caminho de config_v3.json, independente do cwd.
+
+    O default era o caminho RELATIVO "config_v3.json": da raiz do repo
+    funcionava, de qualquer outro diretorio devolvia {} sem erro
+    visivel — e ai suitability_mode, audit_required e o limiar de
+    brutalidade saem do default em vez do arquivo. Foi o que fez
+    test_manus_ai_level.py reprovar (ciclos_autocorrecao 0 != 1) num
+    checkout onde o arquivo nao estava na raiz.
+
+    Ordem: $RAVENA_CONFIG_PATH, depois config/config_v3.json subindo a
+    partir da pasta deste modulo. O caminho solto segue aceito para
+    checkout antigo.
+    """
+    env = os.getenv("RAVENA_CONFIG_PATH")
+    if env:
+        return env
+    d = Path(__file__).resolve().parent
+    for _ in range(6):
+        p = d / "config" / "config_v3.json"
+        if p.is_file():
+            return str(p)
+        p = d / "config_v3.json"
+        if p.is_file():
+            return str(p)
+        novo = d.parent
+        if novo == d:
+            break
+        d = novo
+    return "config/config_v3.json"
+
+
+
 class Omega:
     """
     O Núcleo Omega da Ravena.
@@ -79,7 +113,7 @@ class Omega:
         self._inicializado = True
 
     def load_config(self):
-        config_path = os.getenv("RAVENA_CONFIG_PATH", "config_v3.json")
+        config_path = _achar_config_v3()
         try:
             with open(config_path, 'r', encoding="utf-8") as f:
                 return json.load(f)

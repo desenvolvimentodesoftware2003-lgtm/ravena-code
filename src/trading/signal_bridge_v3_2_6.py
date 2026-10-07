@@ -12,6 +12,7 @@ Responsabilidades:
   - Utilizar Qwen 3.5 e Kimi K2.5 na OCI para orquestração e raciocínio avançado.
 """
 import os
+from pathlib import Path
 import sys
 import time
 import logging
@@ -46,13 +47,45 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ravena.signal_bridge")
 
+def _achar_config_v3() -> str:
+    """Caminho de config_v3.json, independente do cwd.
+
+    O default era o caminho RELATIVO "config_v3.json": da raiz do repo
+    funcionava, de qualquer outro diretorio devolvia {} sem erro
+    visivel — e ai suitability_mode, audit_required e o limiar de
+    brutalidade saem do default em vez do arquivo. Foi o que fez
+    test_manus_ai_level.py reprovar (ciclos_autocorrecao 0 != 1) num
+    checkout onde o arquivo nao estava na raiz.
+
+    Ordem: $RAVENA_CONFIG_PATH, depois config/config_v3.json subindo a
+    partir da pasta deste modulo. O caminho solto segue aceito para
+    checkout antigo.
+    """
+    env = os.getenv("RAVENA_CONFIG_PATH")
+    if env:
+        return env
+    d = Path(__file__).resolve().parent
+    for _ in range(6):
+        p = d / "config" / "config_v3.json"
+        if p.is_file():
+            return str(p)
+        p = d / "config_v3.json"
+        if p.is_file():
+            return str(p)
+        novo = d.parent
+        if novo == d:
+            break
+        d = novo
+    return "config/config_v3.json"
+
+
 # ─────────────────────────────────────────────
 # Configurações OCI e Carregamento de Config
 # ─────────────────────────────────────────────
 OCI_COMPARTMENT_ID = os.getenv("OCI_COMPARTMENT_ID")
 QWEN_ENDPOINT_ID = os.getenv("QWEN_ENDPOINT_ID")
 KIMI_ENDPOINT_ID = os.getenv("KIMI_ENDPOINT_ID")
-CONFIG_PATH = os.getenv("RAVENA_CONFIG_PATH", "config_v3.json")
+CONFIG_PATH = os.getenv("RAVENA_CONFIG_PATH") or _achar_config_v3()
 
 # Módulo de Filtro de Simulação (60 agentes)
 _SIMULACAO_FILTER = None
