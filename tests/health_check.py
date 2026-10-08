@@ -586,7 +586,7 @@ if __name__ == "__main__":
     print()
     if code_failed == 0:
         print("  ╔══════════════════════════════════════════╗")
-        print("  ║  ✅ SISTEMA SAUDÁVEL — PRONTO PARA OCI  ║")
+        print("  ║  ✅ SISTEMA SAUDÁVEL — TRADING ATIVO    ║")
         print("  ╚══════════════════════════════════════════╝")
     elif code_failed <= 3:
         print("  ╔══════════════════════════════════════════╗")

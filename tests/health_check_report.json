@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-08T00:28:45.537363",
+  "timestamp": "2026-10-08T04:56:50.666488",
   "version": "v3.2.6",
   "environment": "development",
   "summary": {
@@ -7,7 +7,7 @@
     "passed": 22,
     "warned": 0,
     "failed": 0,
-    "time_seconds": 30.51,
+    "time_seconds": 20.17,
     "health_score": 100.0,
     "environment_score": 100.0,
     "code_checks": 16,
@@ -20,64 +20,64 @@
       "module": "SecretsManager",
       "scope": "environment",
       "status": "PASS",
-      "details": "Fonte: environment | 9/18 secrets carregados | ZT_KEY: OK",
-      "time_ms": 20
+      "details": "Fonte: environment | 15/15 secrets carregados | ZT_KEY: OK",
+      "time_ms": 5
     },
     {
       "module": "ZeroTrust Protocol",
       "scope": "environment",
       "status": "PASS",
-      "details": "Token gerado e validado com sucesso | Token: 02745a1261ab4a33500e5722a2793e...",
-      "time_ms": 16062
+      "details": "Token gerado e validado com sucesso | Token: fb2aabd2707261cdb2942472294c39...",
+      "time_ms": 10660
     },
     {
       "module": "OmegaOrchestrator v3.2.6",
       "scope": "code",
       "status": "PASS",
       "details": "OmegaOrchestrator inicializado",
-      "time_ms": 21
+      "time_ms": 18
     },
     {
       "module": "Omega v3.2.6",
       "scope": "code",
       "status": "PASS",
       "details": "Omega v3.2.6 status=OPERACIONAL",
-      "time_ms": 33
+      "time_ms": 12
     },
     {
       "module": "Omega (legacy)",
       "scope": "code",
       "status": "PASS",
       "details": "DiagnosticoMissao inicializado",
-      "time_ms": 4
+      "time_ms": 3
     },
     {
       "module": "Ravena Model",
       "scope": "environment",
       "status": "PASS",
       "details": "RavenaModel inicializado",
-      "time_ms": 3
+      "time_ms": 15
     },
     {
       "module": "Auditor",
       "scope": "code",
       "status": "PASS",
       "details": "AnalisadorEscopo inicializado | Métodos: ['analisar']",
-      "time_ms": 3
+      "time_ms": 9
     },
     {
       "module": "Hacker Agent v3.2.7",
       "scope": "code",
       "status": "PASS",
       "details": "Agente: Ravena_Hacker_Elite v1.0.0 (v3.2.7 Integration)",
-      "time_ms": 1
+      "time_ms": 2
     },
     {
       "module": "Hacker Agent v3.2.8 Final",
       "scope": "code",
       "status": "PASS",
       "details": "Hacker v3.2.8 Final: unknown",
-      "time_ms": 1
+      "time_ms": 2
     },
     {
       "module": "Security Core v3.2.7",
@@ -91,42 +91,42 @@
       "scope": "code",
       "status": "PASS",
       "details": "ModuloRAGAvançado inicializado | Classes no módulo: 10",
-      "time_ms": 20
+      "time_ms": 5
     },
     {
       "module": "RAG Advanced v3.2.6",
       "scope": "code",
       "status": "PASS",
       "details": "ModuloRAGAvançado inicializado",
-      "time_ms": 13205
+      "time_ms": 8628
     },
     {
       "module": "Signal Bridge (funcional)",
       "scope": "code",
       "status": "PASS",
       "details": "Módulo funcional OK | Funções-chave: ['process_signal', 'determine_suitability_mode', 'calculate_success_probability']",
-      "time_ms": 9
+      "time_ms": 6
     },
     {
       "module": "Bybit Connector",
       "scope": "code",
       "status": "PASS",
       "details": "BybitConnector inicializado",
-      "time_ms": 1108
+      "time_ms": 773
     },
     {
       "module": "Trade Brain",
       "scope": "code",
       "status": "PASS",
       "details": "RiskManager inicializado",
-      "time_ms": 2
+      "time_ms": 4
     },
     {
       "module": "Social Connector",
       "scope": "code",
       "status": "PASS",
       "details": "ConectorSocialInstagram inicializado",
-      "time_ms": 5
+      "time_ms": 6
     },
     {
       "module": "Telegram Bot",
@@ -160,8 +160,8 @@
       "module": "Secrets Audit (Conformidade)",
       "scope": "environment",
       "status": "PASS",
-      "details": "Auditoria OK | 9/18 carregados | Desligados: 3 | Conforme: SIM",
-      "time_ms": 8
+      "details": "Auditoria OK | 15/15 carregados | Conforme: SIM",
+      "time_ms": 7
     },
     {
       "module": "RAG Ingestão + Consulta",

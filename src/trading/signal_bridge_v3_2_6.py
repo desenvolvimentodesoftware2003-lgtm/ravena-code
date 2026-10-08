@@ -9,7 +9,8 @@ Responsabilidades:
   - Aplicar o filtro de Suitability Dinâmico baseado no saldo USDT (Recuperado v2.2.0).
   - Calcular a Probabilidade de Sucesso Ponderada (Recuperado v2.2.0).
   - Integrar-se ao HealthMonitor do Self-Healing V2.2.0.
-  - Utilizar Qwen 3.5 e Kimi K2.5 na OCI para orquestração e raciocínio avançado.
+  - Orquestrar análise (Qwen) e decisão (Kimi) com modelos LOCAIS em
+    data/models via llama.cpp — sem OCI e sem resposta simulada.
 """
 
 import asyncio
@@ -22,11 +23,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-
-try:
-    import oci  # Biblioteca OCI SDK para integração com Generative AI
-except ImportError:
-    oci = None
 
 # ─────────────────────────────────────────────
 # Configuração de Logging
@@ -77,11 +73,18 @@ def _achar_config_v3() -> str:
 
 
 # ─────────────────────────────────────────────
-# Configurações OCI e Carregamento de Config
+# Modelos LOCAIS (llama.cpp) e Carregamento de Config
 # ─────────────────────────────────────────────
-OCI_COMPARTMENT_ID = os.getenv("OCI_COMPARTMENT_ID")
-QWEN_ENDPOINT_ID = os.getenv("QWEN_ENDPOINT_ID")
-KIMI_ENDPOINT_ID = os.getenv("KIMI_ENDPOINT_ID")
+# Trilho real de inferência: GGUFs em data/models, um modelo residente
+# por vez (qwen=análise, kimi=decisão), sob demanda. Sem OCI e sem
+# fallback simulado: falha real vira log de erro e dict vazio — quem
+# consome cai no dado bruto, nunca em número inventado.
+_RAIZ_PROJETO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_MODELOS_LOCAIS = {
+    "qwen": os.path.join(_RAIZ_PROJETO, "data", "models", "qwen2.5-1.5b-instruct-q4_k_m.gguf"),
+    "kimi": os.path.join(_RAIZ_PROJETO, "data", "models", "Qwen3.5-9B-Kimi-k3-Distilled.Q4_K_M.gguf"),
+}
+_CACHE_MODELOS: dict[str, Any] = {}
 CONFIG_PATH = os.getenv("RAVENA_CONFIG_PATH") or _achar_config_v3()
 
 # Módulo de Filtro de Simulação (60 agentes)
@@ -146,28 +149,95 @@ def calculate_success_probability(
 
 
 # ─────────────────────────────────────────────
-# Lógica de Orquestração com LLMs OCI
+# Orquestração com LLMs locais (llama.cpp) — sem OCI, sem simulação
 # ─────────────────────────────────────────────
-def get_llm_recommendation(prompt: str, endpoint_id: str) -> dict[str, Any]:
-    """Obtém recomendação do LLM na OCI."""
-    if not oci:
-        logger.warning("OCI SDK nao instalado. Simulando resposta do LLM.")
-        return {"confidence_score": 0.95, "analysis": "Simulacao de analise tecnica positiva."}
-    if not endpoint_id or not OCI_COMPARTMENT_ID:
-        logger.warning("OCI endpoint ou compartment nao configurado. Simulando resposta.")
-        return {"confidence_score": 0.95, "analysis": "Simulacao de analise tecnica positiva."}
+def _obter_modelo(papel: str):
+    """RavenaModel do papel, carregado sob demanda.
 
-    try:
-        config_oci = oci.config.from_file()
-        generative_ai_client = oci.generative_ai_inference.GenerativeAiInferenceClient(config_oci)
-        generate_text_details = oci.generative_ai_inference.models.GenerateTextDetails(
-            compartment_id=OCI_COMPARTMENT_ID, endpoint_id=endpoint_id, prompt=prompt, max_tokens=512, temperature=0.7
-        )
-        response = generative_ai_client.generate_text(generate_text_details)
-        return json.loads(response.data.generated_text)
-    except Exception as e:
-        logger.error(f"Erro ao obter recomendação do LLM: {e}")
+    Só UM modelo residente por vez: a máquina tem RAM limitada e dois
+    GGUFs juntos empurravam o processo para o swap (medido: 149s de
+    geração no 9B contra ~30s com o outro descarregado). Descarrega o
+    modelo do outro papel antes de carregar este — o cache fica na
+    página quente do disco, o custo é só o reload (~2s no 1.5B, ~8s
+    no 9B) uma vez por ciclo de sinal.
+    """
+    modelo = _CACHE_MODELOS.get(papel)
+    if modelo is None:
+        for outro, m in list(_CACHE_MODELOS.items()):
+            if outro != papel:
+                m.descarregar()
+                _CACHE_MODELOS.pop(outro, None)
+                logger.info("Modelo %r descarregado para liberar RAM", outro)
+        from src.core.ravena_model import RavenaModel
+
+        modelo = RavenaModel(caminho_gguf=_MODELOS_LOCAIS[papel])
+        if not modelo.carregar():
+            return None
+        _CACHE_MODELOS[papel] = modelo
+    return modelo
+
+
+def _extrair_json(texto: str) -> dict[str, Any] | None:
+    """Primeiro objeto JSON válido do texto (o modelo às vezes embrulha em prosa)."""
+    texto = (texto or "").strip()
+    if not texto:
+        return None
+    ini, fim = texto.find("{"), texto.rfind("}")
+    candidatos = [texto] if ini == 0 else [texto[ini : fim + 1]]
+    if ini != 0:
+        candidatos.append(texto)
+    for fatia in candidatos:
+        try:
+            obj = json.loads(fatia)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(obj, dict):
+            return obj
+    return None
+
+
+def get_llm_recommendation(prompt: str, papel: str) -> dict[str, Any]:
+    """Recomendação do modelo LOCAL do papel ("qwen" ou "kimi").
+
+    Resposta real do GGUF em data/models — sem OCI e sem simulação.
+    Qualquer falha (arquivo ausente, carga, geração, JSON inválido)
+    loga erro e devolve {}: o chamador cai no dado bruto, nunca em
+    número inventado.
+    """
+    caminho = _MODELOS_LOCAIS.get(papel)
+    if not caminho:
+        logger.error("Papel de LLM desconhecido: %r", papel)
         return {}
+    if not os.path.exists(caminho):
+        logger.error("GGUF ausente para o papel %r: %s", papel, caminho)
+        return {}
+    modelo = _obter_modelo(papel)
+    if modelo is None:
+        logger.error("Modelo local %r falhou ao carregar.", papel)
+        return {}
+
+    instrucao = (
+        " Responda SOMENTE com um JSON válido, sem texto fora dele, no formato: "
+        '{"confidence_score": <número entre 0 e 1>, "analysis": "<análise objetiva em português>"}'
+    )
+    # forcar_json: gramática do llama.cpp — resposta começa em "{" desde
+    # o 1º token (corta o raciocínio em prosa do distill Kimi) e sai
+    # parseável. 320 tokens dão folga para o JSON completo.
+    texto = modelo.gerar_resposta(prompt + instrucao, max_tokens=320, temperatura=0.2, forcar_json=True)
+    if not texto or texto.startswith("Erro"):
+        logger.error("Geração falhou no papel %r: %s", papel, texto)
+        return {}
+    dados = _extrair_json(texto)
+    if dados is None:
+        logger.error("Resposta do papel %r sem JSON válido: %.200s", papel, texto)
+        return {}
+    try:
+        score = float(dados.get("confidence_score", 0.0))
+    except (TypeError, ValueError):
+        score = 0.0
+    dados["confidence_score"] = min(max(score, 0.0), 1.0)
+    dados.setdefault("analysis", "")
+    return dados
 
 
 # ─────────────────────────────────────────────
@@ -175,7 +245,7 @@ def get_llm_recommendation(prompt: str, endpoint_id: str) -> dict[str, Any]:
 # ─────────────────────────────────────────────
 def process_signal(raw_data: dict[str, Any], current_balance: float = 0.0) -> dict[str, Any]:
     """
-    Processa o sinal bruto usando Qwen 3.5, Kimi K2.5 e Lógicas de Elite.
+    Processa o sinal bruto usando Qwen e Kimi locais e Lógicas de Elite.
 
     Args:
         raw_data (Dict[str, Any]): O relatório bruto do SearchAgent 360, contendo:
@@ -200,8 +270,8 @@ def process_signal(raw_data: dict[str, Any], current_balance: float = 0.0) -> di
             - 'visual_confirmed': Status de confirmação visual.
             - 'audit_cleared': Status de limpeza de auditoria.
             - 'tech_confidence': Confiança técnica final (pós-LLM).
-            - 'oci_analysis': Saída bruta da análise Qwen 3.5.
-            - 'oci_decision': Saída bruta da decisão Kimi K2.5.
+            - 'llm_analysis': Saída real da análise Qwen (modelo local).
+            - 'llm_decision': Saída real da decisão Kimi (modelo local).
             - 'raw_search_agent_data': O relatório original completo do SearchAgent 360.
     """
     logger.info("Iniciando processamento de sinal reintegrado v3.1.0...")
@@ -210,9 +280,9 @@ def process_signal(raw_data: dict[str, Any], current_balance: float = 0.0) -> di
     suitability_mode = determine_suitability_mode(current_balance, config_data)
     mode_params = config_data.get("suitability_dynamic_gate", {}).get("modes", {}).get(suitability_mode, {})
 
-    # 1. Raciocínio e Análise com Qwen 3.5
+    # 1. Raciocínio e Análise com Qwen (modelo local)
     qwen_prompt = f"Analise os seguintes dados de mercado: {json.dumps(raw_data)}. Forneça análise técnica e score."
-    qwen_analysis = get_llm_recommendation(qwen_prompt, QWEN_ENDPOINT_ID)
+    qwen_analysis = get_llm_recommendation(qwen_prompt, "qwen")
 
     tech_conf = qwen_analysis.get("confidence_score", raw_data.get("tech_confidence", 0.0))
     sent_score = raw_data.get("sentiment_score", 0.0)
@@ -242,11 +312,11 @@ def process_signal(raw_data: dict[str, Any], current_balance: float = 0.0) -> di
     except Exception as e:
         logger.warning(f"Filtro de simulacao: {e}")
 
-    # 5. Orquestração e Decisão Final com Kimi K2.5
+    # 5. Orquestração e Decisão Final com Kimi (modelo local)
     kimi_prompt = (
         f"Com base na análise (Prob: {final_prob}): {json.dumps(qwen_analysis)}, formate o pacote de execução final."
     )
-    kimi_decision = get_llm_recommendation(kimi_prompt, KIMI_ENDPOINT_ID)
+    kimi_decision = get_llm_recommendation(kimi_prompt, "kimi")
 
     # 6. Formatação do Pacote de Execução (Elite v3.1.0)
     brutality_threshold = config_data.get("core_settings", {}).get("brutality_threshold", 0.85)
@@ -269,8 +339,8 @@ def process_signal(raw_data: dict[str, Any], current_balance: float = 0.0) -> di
         "audit_cleared": audit_status,
         "tech_confidence": tech_conf,
         "simulacao_60_agentes": simulacao_result,
-        "oci_analysis": qwen_analysis,
-        "oci_decision": kimi_decision,
+        "llm_analysis": qwen_analysis,
+        "llm_decision": kimi_decision,
         "raw_search_agent_data": raw_data,
     }
 

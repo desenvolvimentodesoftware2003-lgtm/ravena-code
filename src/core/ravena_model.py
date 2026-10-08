@@ -1,10 +1,10 @@
 """
 RAVENA_MODEL — Núcleo de Inteligência v4.1.0
 ============================================
-Suporta tres modos:
-- gguf:    llama.cpp (CPU, rapido, quantizado)
+Suporta dois modos:
+- gguf:    llama.cpp (CPU, rapido, quantizado) — o trilho padrao, com
+           GGUFs em data/models (Qwen na analise, Kimi na decisao)
 - local:   HuggingFace Transformers (CPU, float32)
-- oci:     Oracle Cloud Infrastructure (Qwen 3.5 / Kimi K2.5)
 """
 
 import logging
@@ -29,11 +29,6 @@ try:
     _HF_DISPONIVEL = True
 except ImportError:
     _HF_DISPONIVEL = False
-
-try:
-    import oci
-except ImportError:
-    oci = None
 
 try:
     import llama_cpp
@@ -69,9 +64,6 @@ class RavenaModel:
         self._tokenizer = None
         self._model = None
         self._llama = None
-        self._oci_client = None
-        self._oci_compartment = os.getenv("OCI_COMPARTMENT_ID")
-        self._oci_qwen_endpoint = os.getenv("QWEN_ENDPOINT_ID")
         self._carregado = False
         logger.info(f"RavenaModel modo={self.modo} modelo={self.nome_modelo}")
 
@@ -84,8 +76,6 @@ class RavenaModel:
             return self._carregar_gguf()
         elif self.modo == "local":
             return self._carregar_local()
-        elif self.modo == "oci":
-            return self._carregar_oci()
         logger.error(f"Modo desconhecido: {self.modo}")
         return False
 
@@ -103,7 +93,9 @@ class RavenaModel:
             self._llama = llama_cpp.Llama(
                 model_path=caminho,
                 n_ctx=2048,
-                n_threads=4,
+                # todas as threads logicas: no i7-8665U (4C/8T) 4→8
+                # reduziu a geracao do 9B em ~1/3
+                n_threads=os.cpu_count() or 4,
                 verbose=False,
             )
             logger.info(f"GGUF carregado em {time.time() - inicio:.1f}s")
@@ -132,35 +124,26 @@ class RavenaModel:
             logger.error(f"Erro ao carregar modelo local: {e}")
             return False
 
-    def _carregar_oci(self) -> bool:
-        if oci is None:
-            logger.error("SDK OCI nao instalado")
-            return False
-        try:
-            config = oci.config.from_file()
-            self._oci_client = oci.generative_ai_inference.GenerativeAiInferenceClient(config)
-            self._carregado = True
-            logger.info("Conexao OCI estabelecida")
-            return True
-        except Exception as e:
-            logger.error(f"Erro conexao OCI: {e}")
-            return False
-
     # ── Geração ──
 
-    def gerar_resposta(self, prompt: str, max_tokens: int = 100, temperatura: float = 0.1) -> str:
+    def gerar_resposta(
+        self, prompt: str, max_tokens: int = 100, temperatura: float = 0.1, forcar_json: bool = False
+    ) -> str:
+        """Gera resposta. ``forcar_json`` ativa a gramática JSON do
+        llama.cpp: resposta começa em ``{`` desde o primeiro token —
+        corta o raciocínio em prosa do distill Kimi (que estourava o
+        max_tokens antes do JSON) e garante saída parseável."""
         if self.modo == "gguf":
-            return self._gerar_gguf(prompt, max_tokens, temperatura)
+            return self._gerar_gguf(prompt, max_tokens, temperatura, forcar_json)
         elif self.modo == "local":
             return self._gerar_local(prompt, max_tokens, temperatura)
-        elif self.modo == "oci":
-            return self._gerar_oci(prompt, max_tokens, temperatura)
         return "Modo de modelo invalido."
 
-    def _gerar_gguf(self, prompt: str, max_tokens: int, temperatura: float) -> str:
+    def _gerar_gguf(self, prompt: str, max_tokens: int, temperatura: float, forcar_json: bool = False) -> str:
         if not self._carregado and not self.carregar():
             return "Erro: GGUF nao carregado."
         try:
+            kw = {"response_format": {"type": "json_object"}} if forcar_json else {}
             output = self._llama.create_chat_completion(
                 messages=[
                     {"role": "system", "content": _SYSTEM_PROMPT},
@@ -168,6 +151,7 @@ class RavenaModel:
                 ],
                 max_tokens=max_tokens,
                 temperature=temperatura,
+                **kw,
             )
             return output["choices"][0]["message"]["content"]
         except Exception as e:
@@ -199,28 +183,6 @@ class RavenaModel:
         except Exception as e:
             logger.error(f"Erro geracao local: {e}")
             return f"Erro ao gerar resposta: {e}"
-
-    def _gerar_oci(self, prompt: str, max_tokens: int, temperatura: float) -> str:
-        if not self._carregado and not self.carregar():
-            return "Erro: OCI nao conectado."
-        try:
-            system_prompt = _SYSTEM_PROMPT
-            full_prompt = f"{system_prompt}\nUsuario: {prompt}\nRavena:"
-            details = oci.generative_ai_inference.models.GenerateTextDetails(
-                compartment_id=self._oci_compartment,
-                endpoint_id=self._oci_qwen_endpoint,
-                prompt=full_prompt,
-                max_tokens=max_tokens,
-                temperature=temperatura,
-                top_p=0.9,
-            )
-            response = self._oci_client.generate_text(details)
-            resposta = response.data.generated_text.strip()
-            resposta = resposta.split("Usuario:")[0].split("Ravena:")[0].strip()
-            return resposta if resposta else "Entendido. Como posso ajudar?"
-        except Exception as e:
-            logger.error(f"Erro geracao OCI: {e}")
-            return "Erro de conexao com a nuvem."
 
     # ── Utilitários ──
 

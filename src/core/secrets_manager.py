@@ -16,7 +16,7 @@ USO:
   from src.core.secrets_manager import secrets
 
   bybit_key = secrets.get("BYBIT_API_KEY")
-  oci_compartment = secrets.get("OCI_COMPARTMENT_ID")
+  chat_id = secrets.get("TELEGRAM_CHAT_ID")
 """
 
 import json
@@ -82,28 +82,10 @@ class SecretsManager:
         # modo padrao (local, self-hosted) nao pede chave nenhuma. Quem
         # insistir no provider hospedado exporta SCIPHI_API_KEY no
         # ambiente — o get() cai no fallback de env var para qualquer nome.
-        # 🟠 ALTO - Oracle Cloud Infrastructure
-        "OCI_COMPARTMENT_ID": {
-            "description": "OCID do compartment na Oracle Cloud",
-            "severity": "HIGH",
-            "module": "core/ravena_model, trading/signal_bridge",
-            "required": True,
-            "default": None,
-        },
-        "QWEN_ENDPOINT_ID": {
-            "description": "Endpoint ID do modelo Qwen na OCI",
-            "severity": "HIGH",
-            "module": "core/ravena_model, trading/signal_bridge",
-            "required": True,
-            "default": None,
-        },
-        "KIMI_ENDPOINT_ID": {
-            "description": "Endpoint ID do modelo Kimi na OCI",
-            "severity": "HIGH",
-            "module": "core/ravena_model, trading/signal_bridge",
-            "required": True,
-            "default": None,
-        },
+        # OCI (compartment/Qwen/Kimi endpoints) saiu do registro: os
+        # modelos rodam LOCAIS em data/models via llama.cpp — ver
+        # trading/signal_bridge e core/ravena_model. Sem endpoint na
+        # nuvem, nao ha segredo de nuvem a registrar.
         # 🟡 MÉDIO - Redes Sociais
         "INSTAGRAM_ACCESS_TOKEN": {
             "description": "Token de acesso à API do Instagram",

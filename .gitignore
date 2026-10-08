@@ -36,6 +36,10 @@ chroma_db/
 checkpoints/
 data/datasets/
 data/*.json
+data/models/
+
+# Modelos de inferencia (GGUFs — dezenas de GB, nunca vao pro git)
+*.gguf
 
 # Relatorio que o teste reescreve a cada execucao
 tests/test_equilibrio_threshold_output.json
