@@ -53,6 +53,13 @@ def import_from_file(module_name, file_path):
     """Importa um módulo Python a partir do caminho do arquivo."""
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     module = importlib.util.module_from_spec(spec)
+    try:
+        rel = file_path.resolve().relative_to(PROJECT_ROOT.resolve())
+        pacote = ".".join(rel.parts[:-1])
+        if pacote:
+            module.__package__ = pacote
+    except ValueError:
+        pass
     sys.modules[module_name] = module
     spec.loader.exec_module(module)
     return module
