@@ -1,1 +1,1 @@
-print('Teste de Validação Executado - CORRIGIDO')
+print("Teste de Validação Executado - CORRIGIDO")

@@ -1,7 +1,6 @@
 import logging
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 logger = logging.getLogger("mobcrypt.browser")
@@ -9,19 +8,28 @@ logger = logging.getLogger("mobcrypt.browser")
 
 def _find_browser() -> str | None:
     candidates = [
-        ("firefox", [
-            r"C:\Program Files\Mozilla Firefox\firefox.exe",
-            r"C:\Program Files (x86)\Mozilla Firefox\firefox.exe",
-        ]),
-        ("chrome", [
-            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-            r"~\AppData\Local\Google\Chrome\Application\chrome.exe",
-        ]),
-        ("msedge", [
-            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-            r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
-        ]),
+        (
+            "firefox",
+            [
+                r"C:\Program Files\Mozilla Firefox\firefox.exe",
+                r"C:\Program Files (x86)\Mozilla Firefox\firefox.exe",
+            ],
+        ),
+        (
+            "chrome",
+            [
+                r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+                r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+                r"~\AppData\Local\Google\Chrome\Application\chrome.exe",
+            ],
+        ),
+        (
+            "msedge",
+            [
+                r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+                r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+            ],
+        ),
     ]
 
     for name, paths in candidates:

@@ -1,5 +1,4 @@
 import logging
-import os
 import socket
 import subprocess
 import tarfile
@@ -91,7 +90,7 @@ class TorManager:
             s = socket.create_connection((self.socks_host, self.socks_port), timeout=2)
             s.close()
             return True
-        except (OSError, socket.error):
+        except OSError:
             return False
 
     def start(self) -> bool:
@@ -107,12 +106,15 @@ class TorManager:
         log_file = self.data_dir / "tor.log"
         torrc = self.data_dir / "torrc"
 
-        torrc.write_text(TORRC_TEMPLATE.format(
-            socks_port=self.socks_port,
-            control_port=self.control_port,
-            data_dir=self.data_dir,
-            log_file=log_file,
-        ), encoding="utf-8")
+        torrc.write_text(
+            TORRC_TEMPLATE.format(
+                socks_port=self.socks_port,
+                control_port=self.control_port,
+                data_dir=self.data_dir,
+                log_file=log_file,
+            ),
+            encoding="utf-8",
+        )
 
         logger.info("Iniciando Tor de %s", self.tor_binary)
         self.process = subprocess.Popen(
@@ -155,7 +157,7 @@ class TorManager:
                 logger.info("Nova identidade Tor solicitada (control port)")
                 return True
             return False
-        except (OSError, socket.error) as e:
+        except OSError as e:
             logger.warning("ControlPort não disponível (%s), tentando via SOCKS", e)
             return self._new_identity_via_socks()
 
@@ -166,7 +168,7 @@ class TorManager:
             s.close()
             logger.info("Nova identidade Tor solicitada (SOCKS port)")
             return True
-        except (OSError, socket.error) as e:
+        except OSError as e:
             logger.error("Falha ao solicitar nova identidade: %s", e)
             return False
 

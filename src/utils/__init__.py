@@ -7,7 +7,7 @@ Disponibiliza:
 - ConectorSocialInstagram: integracao com Instagram Graph API
 """
 
-from .social_connector import ConectorSocialInstagram, ClienteGraphAPI, PublicadorInstagram, MonitorInstagram
+from .social_connector import ClienteGraphAPI, ConectorSocialInstagram, MonitorInstagram, PublicadorInstagram
 
 __all__ = [
     "ConectorSocialInstagram",

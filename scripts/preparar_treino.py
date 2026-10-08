@@ -8,10 +8,10 @@ PREPARAR TREINO
 5. Exporta dataset formatado para fine-tuning
 """
 
-import os
-import sys
 import json
 import logging
+import os
+import sys
 
 _PROJETO_RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _PROJETO_RAIZ)
@@ -19,8 +19,7 @@ sys.path.insert(0, _PROJETO_RAIZ)
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger("preparar")
 
-from src.core.treinador import Treinador
-from src.core.professor import Professor
+from src.core.treinador import Treinador  # noqa: E402
 
 
 def coletar_pipeline(t: Treinador):
@@ -30,7 +29,7 @@ def coletar_pipeline(t: Treinador):
         logger.warning("Nenhum resultado de pipeline encontrado")
         return 0
 
-    with open(caminho, "r", encoding="utf-8") as f:
+    with open(caminho, encoding="utf-8") as f:
         dados = json.load(f)
 
     resultados = dados.get("resultados", [])
@@ -51,7 +50,7 @@ def coletar_externas(t: Treinador):
         from src.core.alimentacao.templates import GeradorPergunta
 
         alim = Alimentador(_PROJETO_RAIZ)
-        gerador = GeradorPergunta()
+        GeradorPergunta()
 
         # Ingere documentos do core
         temas = ["ravena_core", "docs_pessoais", "base_tecnica"]
@@ -130,12 +129,18 @@ def gerar_wikipedia_fatos() -> int:
     with open(caminho, "w", encoding="utf-8") as f:
         for assunto, fatos in FATOS.items():
             for pergunta, resposta, topico in fatos:
-                f.write(json.dumps({
-                    "pergunta": pergunta,
-                    "resposta_esperada": resposta,
-                    "topico": topico,
-                    "fonte": "wikipedia_template",
-                }, ensure_ascii=False) + "\n")
+                f.write(
+                    json.dumps(
+                        {
+                            "pergunta": pergunta,
+                            "resposta_esperada": resposta,
+                            "topico": topico,
+                            "fonte": "wikipedia_template",
+                        },
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
                 contador += 1
 
     logger.info(f"{contador} fatos da Wikipedia via templates em {caminho}")
@@ -158,10 +163,7 @@ def main():
     gerar_wikipedia_fatos()
 
     # 3. External JSONL
-    t.coletar_jsonl(
-        os.path.join(_PROJETO_RAIZ, "data", "treino", "fontes_externas.jsonl"),
-        fonte="externa"
-    )
+    t.coletar_jsonl(os.path.join(_PROJETO_RAIZ, "data", "treino", "fontes_externas.jsonl"), fonte="externa")
 
     # 4. Augment
     antes = len(t.exemplos)

@@ -1,20 +1,19 @@
-import re
 import logging
-from typing import List, Tuple
+import re
 
 logger = logging.getLogger("ravena.alimentacao.chunker")
 
-_PADRAO_HEADING = re.compile(r'^#{1,6}\s+(.+)$', re.MULTILINE)
+_PADRAO_HEADING = re.compile(r"^#{1,6}\s+(.+)$", re.MULTILINE)
 _TAMANHO_FIXO_PADRAO = 1000
 _SOBREPOSICAO_PADRAO = 100
 
+
 class Chunker:
-    def __init__(self, tamanho_fixo: int = _TAMANHO_FIXO_PADRAO,
-                 sobreposicao: int = _SOBREPOSICAO_PADRAO):
+    def __init__(self, tamanho_fixo: int = _TAMANHO_FIXO_PADRAO, sobreposicao: int = _SOBREPOSICAO_PADRAO):
         self._tamanho_fixo = tamanho_fixo
         self._sobreposicao = sobreposicao
 
-    def chunk_hierarquico(self, texto: str) -> List[Tuple[str, str]]:
+    def chunk_hierarquico(self, texto: str) -> list[tuple[str, str]]:
         if not texto or not texto.strip():
             return []
 
@@ -28,7 +27,7 @@ class Chunker:
             if match:
                 if conteudo_atual:
                     secoes.append((titulo_atual, "\n".join(conteudo_atual).strip()))
-                nivel = len(match.group(0)) - len(match.group(0).lstrip("#"))
+                len(match.group(0)) - len(match.group(0).lstrip("#"))
                 titulo_atual = match.group(1).strip()
                 conteudo_atual = []
             else:
@@ -49,7 +48,7 @@ class Chunker:
 
         return resultado
 
-    def chunk_fixo(self, texto: str) -> List[Tuple[str, str]]:
+    def chunk_fixo(self, texto: str) -> list[tuple[str, str]]:
         if not texto or not texto.strip():
             return []
 
@@ -76,10 +75,10 @@ class Chunker:
         if chunk_atual:
             chunks.append(" ".join(chunk_atual))
 
-        return [(f"Trecho {i+1}", c) for i, c in enumerate(chunks) if len(c) > 50]
+        return [(f"Trecho {i + 1}", c) for i, c in enumerate(chunks) if len(c) > 50]
 
-    def _dividir_grande(self, titulo: str, texto: str) -> List[Tuple[str, str]]:
-        paragrafos = [p.strip() for p in re.split(r'\n\s*\n', texto) if p.strip()]
+    def _dividir_grande(self, titulo: str, texto: str) -> list[tuple[str, str]]:
+        paragrafos = [p.strip() for p in re.split(r"\n\s*\n", texto) if p.strip()]
         chunks = []
         chunk_atual = []
         tamanho_atual = 0
@@ -97,7 +96,7 @@ class Chunker:
 
         return chunks
 
-    def chunk(self, texto: str, modo: str = "hierarquico") -> List[Tuple[str, str]]:
+    def chunk(self, texto: str, modo: str = "hierarquico") -> list[tuple[str, str]]:
         if modo == "hierarquico":
             return self.chunk_hierarquico(texto)
         return self.chunk_fixo(texto)

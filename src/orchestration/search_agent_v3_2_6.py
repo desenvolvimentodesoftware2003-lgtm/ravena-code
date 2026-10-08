@@ -9,13 +9,13 @@ Responsabilidades:
 """
 
 import logging
-from typing import Dict, List, Optional
 
 from src.clarividencia import ClarividenciaExterna, MarkdownReader
-from src.validador_veracidade import ValidadorVeracidade
 from src.core_learning import aprender_com_erro
+from src.validador_veracidade import ValidadorVeracidade
 
 logger = logging.getLogger("ravena.search_agent")
+
 
 class SearchAgent:
     """
@@ -29,7 +29,7 @@ class SearchAgent:
         self.reader = MarkdownReader()
 
     @aprender_com_erro
-    def search_and_synthesize(self, topic: str, deep_search: bool = False) -> Dict:
+    def search_and_synthesize(self, topic: str, deep_search: bool = False) -> dict:
         logger.info(f"[SearchAgent] Iniciando busca para: '{topic}'")
 
         queries = self.clarividencia.triangulate_query(topic)
@@ -66,7 +66,7 @@ class SearchAgent:
             },
         }
 
-    def preparar_para_trading(self, simbolo: str, tech_confidence: float = 0.5) -> Dict:
+    def preparar_para_trading(self, simbolo: str, tech_confidence: float = 0.5) -> dict:
         from src.clarividencia import get_sentiment, get_sinais
 
         sentimento = get_sentiment(simbolo)
@@ -83,6 +83,7 @@ class SearchAgent:
             "audit_cleared": False,
             "timestamp": __import__("time").time(),
         }
+
 
 if __name__ == "__main__":
     agent = SearchAgent()

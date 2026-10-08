@@ -3,8 +3,10 @@ RAVENA AI v3.2.8-Alpha — BYPASS & PAYLOAD ENGINE (Semana 2)
 ==========================================================
 Objetivo: Gerar variações de ataques para testar a resiliência dos filtros.
 """
+
 import random
 import urllib.parse
+
 
 class BypassEngine:
     def __init__(self):
@@ -12,7 +14,7 @@ class BypassEngine:
             self._encode_url,
             self._add_noise_chars,
             self._subdomain_obfuscation,
-            self._homograph_attack_sim
+            self._homograph_attack_sim,
         ]
 
     def _encode_url(self, target):
@@ -20,7 +22,7 @@ class BypassEngine:
 
     def _add_noise_chars(self, target):
         noise = ["@", "!", "--", "=="]
-        return f"{target}{random.choice(noise)}{random.randint(100,999)}"
+        return f"{target}{random.choice(noise)}{random.randint(100, 999)}"
 
     def _subdomain_obfuscation(self, target):
         prefixes = ["login", "secure", "verify", "update", "account"]
@@ -36,6 +38,7 @@ class BypassEngine:
             technique = random.choice(self.evasion_techniques)
             payloads.append(technique(base_target))
         return list(set(payloads))
+
 
 if __name__ == "__main__":
     engine = BypassEngine()

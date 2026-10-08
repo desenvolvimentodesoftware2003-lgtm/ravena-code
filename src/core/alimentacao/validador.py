@@ -1,18 +1,18 @@
-import re
 import logging
-from typing import List, Tuple
+import re
 
 logger = logging.getLogger("ravena.alimentacao.validador")
 
-_PADRAO_LIXO = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f]')
-_PADRAO_BINARIO = re.compile(r'[\x00-\x08\x0e-\x1f]')
+_PADRAO_LIXO = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+_PADRAO_BINARIO = re.compile(r"[\x00-\x08\x0e-\x1f]")
+
 
 class ValidadorRegra1:
     def __init__(self, chars_minimos: int = 20, densidade_alfabetica_min: float = 0.4):
         self._chars_minimos = chars_minimos
         self._densidade_alfabetica_min = densidade_alfabetica_min
 
-    def validar(self, texto: str) -> Tuple[bool, str]:
+    def validar(self, texto: str) -> tuple[bool, str]:
         if not texto or not texto.strip():
             return False, "vazio"
 
@@ -31,7 +31,7 @@ class ValidadorRegra1:
 
         return True, "ok"
 
-    def validar_item(self, pergunta: str, conteudo: str) -> Tuple[bool, str]:
+    def validar_item(self, pergunta: str, conteudo: str) -> tuple[bool, str]:
         val_pergunta, motivo_p = self.validar(pergunta)
         if not val_pergunta:
             return False, f"pergunta_{motivo_p}"
@@ -40,7 +40,7 @@ class ValidadorRegra1:
             return False, f"conteudo_{motivo_c}"
         return True, "ok"
 
-    def filtrar(self, itens: List[Tuple[str, str]]) -> List[Tuple[str, str, str]]:
+    def filtrar(self, itens: list[tuple[str, str]]) -> list[tuple[str, str, str]]:
         resultado = []
         for pergunta, conteudo in itens:
             valido, motivo = self.validar_item(pergunta, conteudo)

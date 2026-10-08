@@ -11,22 +11,20 @@ Responsabilidades:
   - Integrar-se ao HealthMonitor do Self-Healing V2.2.0.
   - Utilizar Qwen 3.5 e Kimi K2.5 na OCI para orquestração e raciocínio avançado.
 """
-import os
-from pathlib import Path
-import sys
-import time
-import logging
-import json
-import hashlib
+
 import asyncio
+import hashlib
 import importlib.util
-from dataclasses import dataclass, field, asdict
-from typing import Optional, Dict, Any, Tuple
+import json
+import logging
+import os
+import time
 from datetime import datetime
-from enum import Enum
+from pathlib import Path
+from typing import Any
 
 try:
-    import oci # Biblioteca OCI SDK para integração com Generative AI
+    import oci  # Biblioteca OCI SDK para integração com Generative AI
 except ImportError:
     oci = None
 
@@ -40,12 +38,11 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(
-            os.path.join(_LOG_DIR, f"signal_bridge_{datetime.now().strftime('%Y%m%d')}.log")
-        )
-    ]
+        logging.FileHandler(os.path.join(_LOG_DIR, f"signal_bridge_{datetime.now().strftime('%Y%m%d')}.log")),
+    ],
 )
 logger = logging.getLogger("ravena.signal_bridge")
+
 
 def _achar_config_v3() -> str:
     """Caminho de config_v3.json, independente do cwd.
@@ -90,8 +87,9 @@ CONFIG_PATH = os.getenv("RAVENA_CONFIG_PATH") or _achar_config_v3()
 # Módulo de Filtro de Simulação (60 agentes)
 _SIMULACAO_FILTER = None
 try:
-    _sf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            "..", "simulation", "simulacao_filter_v3_2_6.py")
+    _sf_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "simulation", "simulacao_filter_v3_2_6.py"
+    )
     _sf_path = os.path.abspath(_sf_path)
     _spec_sf = importlib.util.spec_from_file_location("simulacao_filter_mod", _sf_path)
     _sf_mod = importlib.util.module_from_spec(_spec_sf)
@@ -101,18 +99,20 @@ try:
 except Exception as e:
     logger.warning(f"SimulacaoFilter nao carregado: {e}")
 
+
 def load_config():
     try:
-        with open(CONFIG_PATH, 'r', encoding="utf-8") as f:
+        with open(CONFIG_PATH, encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         logger.error(f"Erro ao carregar config: {e}")
         return {}
 
+
 # ─────────────────────────────────────────────
 # Lógica de Suitability Dinâmico (Recuperado v2.2.0)
 # ─────────────────────────────────────────────
-def determine_suitability_mode(balance: float, config: Dict[str, Any]) -> str:
+def determine_suitability_mode(balance: float, config: dict[str, Any]) -> str:
     """Determina o modo de suitability com base no saldo USDT."""
     modes = config.get("suitability_dynamic_gate", {}).get("modes", {})
     if balance < modes.get("AGGRESSIVE", {}).get("balance_limit", 10000):
@@ -122,14 +122,12 @@ def determine_suitability_mode(balance: float, config: Dict[str, Any]) -> str:
     else:
         return "CONSERVATIVE"
 
+
 # ─────────────────────────────────────────────
 # Cálculo de Probabilidade Ponderada (Recuperado v2.2.0)
 # ─────────────────────────────────────────────
 def calculate_success_probability(
-    tech_confidence: float, 
-    sentiment_score: float, 
-    visual_confirmed: bool,
-    audit_cleared: bool
+    tech_confidence: float, sentiment_score: float, visual_confirmed: bool, audit_cleared: bool
 ) -> float:
     """
     Calcula a probabilidade final baseada nos pesos originais:
@@ -143,13 +141,14 @@ def calculate_success_probability(
         prob += 0.25
     if audit_cleared:
         prob += 0.05
-    
+
     return min(prob, 1.0)
+
 
 # ─────────────────────────────────────────────
 # Lógica de Orquestração com LLMs OCI
 # ─────────────────────────────────────────────
-def get_llm_recommendation(prompt: str, endpoint_id: str) -> Dict[str, Any]:
+def get_llm_recommendation(prompt: str, endpoint_id: str) -> dict[str, Any]:
     """Obtém recomendação do LLM na OCI."""
     if not oci:
         logger.warning("OCI SDK nao instalado. Simulando resposta do LLM.")
@@ -157,16 +156,12 @@ def get_llm_recommendation(prompt: str, endpoint_id: str) -> Dict[str, Any]:
     if not endpoint_id or not OCI_COMPARTMENT_ID:
         logger.warning("OCI endpoint ou compartment nao configurado. Simulando resposta.")
         return {"confidence_score": 0.95, "analysis": "Simulacao de analise tecnica positiva."}
-    
+
     try:
         config_oci = oci.config.from_file()
         generative_ai_client = oci.generative_ai_inference.GenerativeAiInferenceClient(config_oci)
         generate_text_details = oci.generative_ai_inference.models.GenerateTextDetails(
-            compartment_id=OCI_COMPARTMENT_ID,
-            endpoint_id=endpoint_id,
-            prompt=prompt,
-            max_tokens=512,
-            temperature=0.7
+            compartment_id=OCI_COMPARTMENT_ID, endpoint_id=endpoint_id, prompt=prompt, max_tokens=512, temperature=0.7
         )
         response = generative_ai_client.generate_text(generate_text_details)
         return json.loads(response.data.generated_text)
@@ -174,10 +169,11 @@ def get_llm_recommendation(prompt: str, endpoint_id: str) -> Dict[str, Any]:
         logger.error(f"Erro ao obter recomendação do LLM: {e}")
         return {}
 
+
 # ─────────────────────────────────────────────
 # Processamento de Sinal Reintegrado v3.1.0
 # ─────────────────────────────────────────────
-def process_signal(raw_data: Dict[str, Any], current_balance: float = 0.0) -> Dict[str, Any]:
+def process_signal(raw_data: dict[str, Any], current_balance: float = 0.0) -> dict[str, Any]:
     """
     Processa o sinal bruto usando Qwen 3.5, Kimi K2.5 e Lógicas de Elite.
 
@@ -209,7 +205,7 @@ def process_signal(raw_data: Dict[str, Any], current_balance: float = 0.0) -> Di
             - 'raw_search_agent_data': O relatório original completo do SearchAgent 360.
     """
     logger.info("Iniciando processamento de sinal reintegrado v3.1.0...")
-    
+
     config_data = load_config()
     suitability_mode = determine_suitability_mode(current_balance, config_data)
     mode_params = config_data.get("suitability_dynamic_gate", {}).get("modes", {}).get(suitability_mode, {})
@@ -217,7 +213,7 @@ def process_signal(raw_data: Dict[str, Any], current_balance: float = 0.0) -> Di
     # 1. Raciocínio e Análise com Qwen 3.5
     qwen_prompt = f"Analise os seguintes dados de mercado: {json.dumps(raw_data)}. Forneça análise técnica e score."
     qwen_analysis = get_llm_recommendation(qwen_prompt, QWEN_ENDPOINT_ID)
-    
+
     tech_conf = qwen_analysis.get("confidence_score", raw_data.get("tech_confidence", 0.0))
     sent_score = raw_data.get("sentiment_score", 0.0)
     visual_conf = raw_data.get("visual_confirmed", False)
@@ -227,14 +223,14 @@ def process_signal(raw_data: Dict[str, Any], current_balance: float = 0.0) -> Di
     if abs(sent_score) < mode_params.get("sentiment_threshold", 0.15):
         logger.warning(f"Sinal bloqueado: Sentimento insuficiente para modo {suitability_mode}")
         return {"status": "REJECTED", "reason": "Sentimento insuficiente"}
-    
+
     if mode_params.get("audit_required") and not audit_status:
         logger.warning("Sinal em HOLD: Aguardando Auditoria (Tijolo 10)")
         return {"status": "HOLD", "reason": "Aguardando Auditoria"}
 
     # 3. Cálculo da Probabilidade Final (Recuperado)
     final_prob = calculate_success_probability(tech_conf, sent_score, visual_conf, audit_status)
-    
+
     # 4. Filtro de Elite: 60 Agentes de Simulação com dados reais
     simulacao_result = None
     try:
@@ -247,7 +243,9 @@ def process_signal(raw_data: Dict[str, Any], current_balance: float = 0.0) -> Di
         logger.warning(f"Filtro de simulacao: {e}")
 
     # 5. Orquestração e Decisão Final com Kimi K2.5
-    kimi_prompt = f"Com base na análise (Prob: {final_prob}): {json.dumps(qwen_analysis)}, formate o pacote de execução final."
+    kimi_prompt = (
+        f"Com base na análise (Prob: {final_prob}): {json.dumps(qwen_analysis)}, formate o pacote de execução final."
+    )
     kimi_decision = get_llm_recommendation(kimi_prompt, KIMI_ENDPOINT_ID)
 
     # 6. Formatação do Pacote de Execução (Elite v3.1.0)
@@ -295,6 +293,7 @@ def process_signal(raw_data: Dict[str, Any], current_balance: float = 0.0) -> Di
 
     logger.info(f"Sinal processado: {execution_package['status']} (Prob: {final_prob:.4f})")
     return execution_package
+
 
 if __name__ == "__main__":
     print("Módulo Signal Bridge v3.1.0-REINTEGRATED carregado com sucesso!")

@@ -14,16 +14,15 @@ Hierarquia de carregamento (prioridade decrescente):
 
 USO:
   from src.core.secrets_manager import secrets
-  
+
   bybit_key = secrets.get("BYBIT_API_KEY")
   oci_compartment = secrets.get("OCI_COMPARTMENT_ID")
 """
 
-import os
-import json
 import logging
-from typing import Optional, Dict, Any
+import os
 from pathlib import Path
+from typing import Any
 
 # Configuração de Logging
 logger = logging.getLogger("ravena.secrets")
@@ -191,7 +190,7 @@ class SecretsManager:
     }
 
     def __init__(self):
-        self._cache: Dict[str, Optional[str]] = {}
+        self._cache: dict[str, str | None] = {}
         self._source: str = "unknown"
         self._loaded = False
         self._load()
@@ -227,6 +226,7 @@ class SecretsManager:
         """Carrega secrets do OCI Vault Service."""
         try:
             import oci
+
             config = oci.config.from_file()
             vault_client = oci.vault.VaultsClient(config)
             secrets_client = oci.secrets.SecretsClient(config)
@@ -246,6 +246,7 @@ class SecretsManager:
                     # Buscar o valor do secret
                     bundle = secrets_client.get_secret_bundle(secret_id=secret.id).data
                     import base64
+
                     value = base64.b64decode(bundle.secret_bundle_content.content).decode()
                     self._cache[secret.secret_name] = value
 
@@ -290,14 +291,14 @@ class SecretsManager:
             logger.debug("python-dotenv não instalado. Pulando .env.")
             return False
 
-    def get(self, key: str, required: bool = None) -> Optional[str]:
+    def get(self, key: str, required: bool = None) -> str | None:
         """
         Obtém o valor de um secret pelo nome.
-        
+
         Similar ao Google Colab:
           from google.colab import userdata
           userdata.get('OPENAI_API_KEY')
-        
+
         Aqui:
           from src.core.secrets_manager import secrets
           secrets.get('OPENAI_API_KEY')
@@ -318,10 +319,7 @@ class SecretsManager:
             is_required = required if required is not None else self.REGISTRY[key].get("required", False)
 
             if is_required and not default:
-                logger.error(
-                    f"⚠️ SECRET OBRIGATÓRIO NÃO ENCONTRADO: {key} "
-                    f"(módulo: {self.REGISTRY[key]['module']})"
-                )
+                logger.error(f"⚠️ SECRET OBRIGATÓRIO NÃO ENCONTRADO: {key} (módulo: {self.REGISTRY[key]['module']})")
                 return None
 
             return default
@@ -329,7 +327,7 @@ class SecretsManager:
         logger.warning(f"Secret '{key}' não está registrado no REGISTRY.")
         return None
 
-    def get_all(self) -> Dict[str, Dict[str, Any]]:
+    def get_all(self) -> dict[str, dict[str, Any]]:
         """Retorna o status de todos os secrets (sem valores, apenas status)."""
         status = {}
         for key, meta in self.REGISTRY.items():
@@ -343,7 +341,7 @@ class SecretsManager:
             }
         return status
 
-    def audit(self) -> Dict[str, Any]:
+    def audit(self) -> dict[str, Any]:
         """
         Executa auditoria de segurança nos secrets.
         Retorna relatório de conformidade.
@@ -391,7 +389,7 @@ secrets = SecretsManager()
 # ─────────────────────────────────────────────
 # FUNÇÕES DE CONVENIÊNCIA
 # ─────────────────────────────────────────────
-def get_secret(key: str) -> Optional[str]:
+def get_secret(key: str) -> str | None:
     """Atalho para secrets.get(key)."""
     return secrets.get(key)
 

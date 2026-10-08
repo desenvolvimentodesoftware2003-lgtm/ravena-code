@@ -6,14 +6,15 @@ Responsável por gerar conteúdo (texto, imagens, áudio) com nuances culturais 
 """
 
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 # Configuração de Logging
 logger = logging.getLogger("ravena.cultural_generation")
 
+
 class CulturalGeneration:
     """Núcleo de geração de conteúdo culturalmente sensível."""
-    
+
     def __init__(self):
         self.version = "3.2.6"
         logger.info(f"CulturalGeneration v{self.version} inicializado.")
@@ -26,14 +27,15 @@ class CulturalGeneration:
             return f"{base_text} (Adaptado com calor humano e expressões brasileiras)."
         return base_text
 
-    def sugerir_midia_cultural(self, intencao: str) -> Dict[str, Any]:
+    def sugerir_midia_cultural(self, intencao: str) -> dict[str, Any]:
         """Sugere tipos de mídia ou estilos visuais que ressoam com a cultura alvo."""
         logger.info(f"Sugerindo mídia para intenção: {intencao}")
         return {
             "estilo_visual": "vibrante_brasileiro",
             "tom_audio": "acolhedor",
-            "referencia": "estética_tropical_moderna"
+            "referencia": "estética_tropical_moderna",
         }
+
 
 if __name__ == "__main__":
     gen = CulturalGeneration()

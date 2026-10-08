@@ -1,13 +1,12 @@
 import os
 import sys
-import json
 import tempfile
+
 import pytest
-from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from src.analytics.analytics_core_v3_2_6 import AnalyticsCore, SystemMetrics, HEALTHY_THRESHOLD, WARNING_THRESHOLD
+from src.analytics.analytics_core_v3_2_6 import HEALTHY_THRESHOLD, WARNING_THRESHOLD, AnalyticsCore, SystemMetrics
 
 
 @pytest.fixture(autouse=True)
@@ -56,18 +55,24 @@ class TestAnalyticsCore:
 
     def test_calculate_health_score_ideal(self, temp_history):
         core = AnalyticsCore(history_path=temp_history)
-        score = core.calculate_health_score(cpu=10, memory=20, api_latency_ms=50, empathy_mes=0.95, rag_latency_ms=100, win_rate=0.8)
+        score = core.calculate_health_score(
+            cpu=10, memory=20, api_latency_ms=50, empathy_mes=0.95, rag_latency_ms=100, win_rate=0.8
+        )
         assert score > HEALTHY_THRESHOLD
         assert score <= 1.0
 
     def test_calculate_health_score_critico(self, temp_history):
         core = AnalyticsCore(history_path=temp_history)
-        score = core.calculate_health_score(cpu=95, memory=95, api_latency_ms=5000, empathy_mes=0.1, rag_latency_ms=10000, win_rate=0.0)
+        score = core.calculate_health_score(
+            cpu=95, memory=95, api_latency_ms=5000, empathy_mes=0.1, rag_latency_ms=10000, win_rate=0.0
+        )
         assert score < WARNING_THRESHOLD
 
     def test_calculate_health_score_api_indisponivel(self, temp_history):
         core = AnalyticsCore(history_path=temp_history)
-        score = core.calculate_health_score(cpu=30, memory=40, api_latency_ms=-1, empathy_mes=0.8, rag_latency_ms=-1, win_rate=0.5)
+        score = core.calculate_health_score(
+            cpu=30, memory=40, api_latency_ms=-1, empathy_mes=0.8, rag_latency_ms=-1, win_rate=0.5
+        )
         assert score > HEALTHY_THRESHOLD
 
     def test_get_summary_sem_dados(self, temp_history):
@@ -85,7 +90,14 @@ class TestAnalyticsCore:
 
     def test_health_check_tudo_ok(self, temp_history):
         core = AnalyticsCore(history_path=temp_history)
-        m = SystemMetrics(cpu_percent=30, memory_percent=40, api_latency_ms=100, empathy_mes=0.85, rag_latency_avg_ms=200, system_health_score=0.85)
+        m = SystemMetrics(
+            cpu_percent=30,
+            memory_percent=40,
+            api_latency_ms=100,
+            empathy_mes=0.85,
+            rag_latency_avg_ms=200,
+            system_health_score=0.85,
+        )
         core.register_snapshot(m)
         hc = core.health_check()
         assert hc["status"] == "HEALTHY"
@@ -93,7 +105,9 @@ class TestAnalyticsCore:
 
     def test_health_check_cpu_alta(self, temp_history):
         core = AnalyticsCore(history_path=temp_history)
-        m = SystemMetrics(cpu_percent=95, memory_percent=40, api_latency_ms=100, empathy_mes=0.85, system_health_score=0.85)
+        m = SystemMetrics(
+            cpu_percent=95, memory_percent=40, api_latency_ms=100, empathy_mes=0.85, system_health_score=0.85
+        )
         core.register_snapshot(m)
         hc = core.health_check()
         assert hc["subsystems"]["cpu"] is False
@@ -135,7 +149,9 @@ class TestAnalyticsCore:
 
     def test_integration_fluxo_completo(self, temp_history):
         core = AnalyticsCore(history_path=temp_history)
-        health = core.calculate_health_score(cpu=35, memory=50, api_latency_ms=120, empathy_mes=0.88, rag_latency_ms=400, win_rate=0.65)
+        health = core.calculate_health_score(
+            cpu=35, memory=50, api_latency_ms=120, empathy_mes=0.88, rag_latency_ms=400, win_rate=0.65
+        )
         m = SystemMetrics(
             cpu_percent=35,
             memory_percent=50,

@@ -1,24 +1,33 @@
 import ssl
+
 import eventlet
+
 eventlet.monkey_patch()
 
-from flask import Flask
-from flask_socketio import SocketIO
+from auth import close_db  # noqa: E402
+from flask import Flask  # noqa: E402
+from flask_socketio import SocketIO  # noqa: E402
+from routes import api  # noqa: E402
+from websocket import (  # noqa: E402
+    broadcast,
+    handle_connect,
+    handle_desktop_connect,
+    handle_desktop_disconnect,
+    handle_disconnect,
+    send_to_desktop,
+)
 
-from config import Config
-from routes import api
-from websocket import handle_connect, handle_disconnect, handle_desktop_connect, handle_desktop_disconnect, send_to_desktop, broadcast
-from auth import close_db
+from config import Config  # noqa: E402
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = Config.SECRET_KEY
+app.config["SECRET_KEY"] = Config.SECRET_KEY
 
 socketio = SocketIO(
     app,
-    cors_allowed_origins='*',
-    async_mode='eventlet',
+    cors_allowed_origins="*",
+    async_mode="eventlet",
     ping_interval=Config.WS_PING_INTERVAL,
-    ping_timeout=Config.WS_PING_TIMEOUT
+    ping_timeout=Config.WS_PING_TIMEOUT,
 )
 
 app.register_blueprint(api)
@@ -29,58 +38,50 @@ def teardown(exception):
     close_db(exception)
 
 
-@socketio.on('connect')
+@socketio.on("connect")
 def on_connect():
     from flask import request
+
     client_id = request.sid
-    handle_connect({'id': client_id, 'socket': None})
+    handle_connect({"id": client_id, "socket": None})
 
 
-@socketio.on('disconnect')
+@socketio.on("disconnect")
 def on_disconnect():
     from flask import request
+
     handle_disconnect(request.sid)
 
 
-@socketio.on('desktop_connect')
+@socketio.on("desktop_connect")
 def on_desktop_connect():
     from flask import request
+
     client_id = request.sid
-    handle_desktop_connect({'id': client_id, 'socket': None})
+    handle_desktop_connect({"id": client_id, "socket": None})
 
 
-@socketio.on('desktop_disconnect')
+@socketio.on("desktop_disconnect")
 def on_desktop_disconnect():
     handle_desktop_disconnect()
 
 
-@socketio.on('command')
+@socketio.on("command")
 def on_command(data):
-    from flask import request
-    command = data.get('command', '')
-    target = data.get('target', '')
-    result = send_to_desktop({
-        'type': 'command',
-        'action': command,
-        'target': target
-    })
-    return {'sent': result}
+    command = data.get("command", "")
+    target = data.get("target", "")
+    result = send_to_desktop({"type": "command", "action": command, "target": target})
+    return {"sent": result}
 
 
-@socketio.on('result')
+@socketio.on("result")
 def on_result(data):
-    broadcast({
-        'type': 'result',
-        'data': data
-    })
+    broadcast({"type": "result", "data": data})
 
 
-@socketio.on('status_update')
+@socketio.on("status_update")
 def on_status_update(data):
-    broadcast({
-        'type': 'status_update',
-        'data': data
-    })
+    broadcast({"type": "status_update", "data": data})
 
 
 def create_ssl_context():
@@ -90,12 +91,6 @@ def create_ssl_context():
     return ctx
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     ssl_ctx = create_ssl_context()
-    socketio.run(
-        app,
-        host=Config.HOST,
-        port=Config.PORT,
-        ssl_context=ssl_ctx,
-        debug=False
-    )
+    socketio.run(app, host=Config.HOST, port=Config.PORT, ssl_context=ssl_ctx, debug=False)

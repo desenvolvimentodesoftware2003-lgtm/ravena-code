@@ -15,22 +15,23 @@ Responsabilidades:
   - Registrar todos os eventos de saúde no log de auditoria.
 """
 
-import time
 import logging
-import json
-from typing import Dict, Any, Optional, Callable
+import time
+from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 logger = logging.getLogger("ravena.health_monitor")
 
 
 class SystemHealth(Enum):
     """Estado de saúde geral do sistema."""
-    HEALTHY   = "HEALTHY"    # Tudo funcionando normalmente
-    DEGRADED  = "DEGRADED"   # API lenta mas funcional
-    CRITICAL  = "CRITICAL"   # API fora do ar — fallback ativo
-    UNKNOWN   = "UNKNOWN"    # Estado não determinado
+
+    HEALTHY = "HEALTHY"  # Tudo funcionando normalmente
+    DEGRADED = "DEGRADED"  # API lenta mas funcional
+    CRITICAL = "CRITICAL"  # API fora do ar — fallback ativo
+    UNKNOWN = "UNKNOWN"  # Estado não determinado
 
 
 class HealthMonitor:
@@ -42,12 +43,7 @@ class HealthMonitor:
     quando a API da Bybit está instável.
     """
 
-    def __init__(
-        self,
-        api_timeout_ms: int = 800,
-        check_interval_sec: int = 30,
-        alert_callback: Optional[Callable] = None
-    ):
+    def __init__(self, api_timeout_ms: int = 800, check_interval_sec: int = 30, alert_callback: Callable | None = None):
         """
         Args:
             api_timeout_ms: Latência máxima tolerada antes de acionar fallback.
@@ -62,7 +58,7 @@ class HealthMonitor:
         self._api_latency_history = []
         self._bridge_reports = []
 
-    def check_api_health(self, bybit_url: str = "https://api.bybit.com") -> Dict[str, Any]:
+    def check_api_health(self, bybit_url: str = "https://api.bybit.com") -> dict[str, Any]:
         """
         Verifica a saúde da API Bybit medindo a latência do endpoint de tempo.
 
@@ -74,7 +70,7 @@ class HealthMonitor:
         ping_url = f"{bybit_url}/v5/market/time"
         start = time.time()
         try:
-            resp = requests.get(ping_url, timeout=2)
+            requests.get(ping_url, timeout=2)
             latency_ms = (time.time() - start) * 1000
             self._api_latency_history.append(latency_ms)
 
@@ -90,10 +86,7 @@ class HealthMonitor:
             elif latency_ms <= self.api_timeout_ms * 2:
                 self.system_health = SystemHealth.DEGRADED
                 execution_method = "API"  # Ainda tenta a API, mas com alerta
-                logger.warning(
-                    f"[HEALTH] API DEGRADADA: {latency_ms:.0f}ms "
-                    f"(threshold: {self.api_timeout_ms}ms)"
-                )
+                logger.warning(f"[HEALTH] API DEGRADADA: {latency_ms:.0f}ms (threshold: {self.api_timeout_ms}ms)")
             else:
                 self.system_health = SystemHealth.CRITICAL
                 execution_method = "CLICK_EMULATOR"
@@ -104,7 +97,7 @@ class HealthMonitor:
                 "latency_ms": round(latency_ms, 2),
                 "avg_latency_ms": round(avg_latency, 2),
                 "execution_method": execution_method,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
         except Exception as e:
@@ -117,10 +110,10 @@ class HealthMonitor:
                 "avg_latency_ms": -1,
                 "execution_method": "CLICK_EMULATOR",
                 "error": str(e),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
-    def receive_bridge_report(self, report: Dict[str, Any]) -> None:
+    def receive_bridge_report(self, report: dict[str, Any]) -> None:
         """
         Recebe o relatório de saúde da SignalBridge.
         A SignalBridge é o sensor primário do HealthMonitor.
@@ -135,39 +128,25 @@ class HealthMonitor:
 
         # Verificar se a bridge está em estado de fallback
         if report.get("status") == "FALLBACK":
-            logger.warning(
-                "[HEALTH] Bridge em modo FALLBACK — "
-                "Soberania Omega ativo via Emulador de Cliques."
-            )
+            logger.warning("[HEALTH] Bridge em modo FALLBACK — Soberania Omega ativo via Emulador de Cliques.")
             if self.alert_callback:
-                self.alert_callback(
-                    "WARNING",
-                    "⚡ Soberania Omega ativado: Bridge usando Emulador de Cliques."
-                )
+                self.alert_callback("WARNING", "⚡ Soberania Omega ativado: Bridge usando Emulador de Cliques.")
 
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> dict[str, Any]:
         """Retorna o status completo do sistema para o dashboard."""
         avg_latency = (
-            sum(self._api_latency_history) / len(self._api_latency_history)
-            if self._api_latency_history else -1
+            sum(self._api_latency_history) / len(self._api_latency_history) if self._api_latency_history else -1
         )
         return {
             "system_health": self.system_health.value,
             "api_avg_latency_ms": round(avg_latency, 2),
             "api_timeout_threshold_ms": self.api_timeout_ms,
             "bridge_reports_received": len(self._bridge_reports),
-            "last_bridge_status": (
-                self._bridge_reports[-1].get("status")
-                if self._bridge_reports else "N/A"
-            ),
-            "timestamp": datetime.now().isoformat()
+            "last_bridge_status": (self._bridge_reports[-1].get("status") if self._bridge_reports else "N/A"),
+            "timestamp": datetime.now().isoformat(),
         }
 
-    def _trigger_soberania_omega(
-        self,
-        latency_ms: float = 0,
-        timeout: bool = False
-    ) -> None:
+    def _trigger_soberania_omega(self, latency_ms: float = 0, timeout: bool = False) -> None:
         """
         Aciona o protocolo Soberania Omega quando a API falha.
         Notifica o sistema para redirecionar todos os comandos

@@ -1,13 +1,13 @@
-import os
-import sys
 import logging
+import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src" / "core"))
 sys.path.insert(0, str(PROJECT_ROOT / "src" / "security"))
 
-import importlib.util
+import importlib.util  # noqa: E402
+
 
 def _import_mod(module_name, file_path):
     spec = importlib.util.spec_from_file_location(module_name, file_path)
@@ -15,6 +15,7 @@ def _import_mod(module_name, file_path):
     sys.modules[module_name] = mod
     spec.loader.exec_module(mod)
     return mod
+
 
 omega_mod = _import_mod("omega_mod", PROJECT_ROOT / "src" / "core" / "omega_v3_2_6.py")
 juiz_mod = _import_mod("juiz_mod", PROJECT_ROOT / "src" / "security" / "juiz_universal.py")
@@ -25,6 +26,7 @@ JuizUniversal = juiz_mod.JuizUniversal
 RAGCore = rag_mod.RAGCore
 
 logger = logging.getLogger("ravena.modular_main")
+
 
 class RavenaModular:
     def __init__(self):
@@ -63,7 +65,10 @@ class RavenaModular:
         except Exception:
             pass
 
-        return f"[RAVENA] Entrada processada: {texto[:60]}... | Auditoria: OK | RAG: {'com contexto' if contexto else 'sem contexto'}"
+        return (
+            f"[RAVENA] Entrada processada: {texto[:60]}... | Auditoria: OK | RAG: "
+            f"{'com contexto' if contexto else 'sem contexto'}"
+        )
 
     def executar_comando_seguro(self, comando):
         seguro, msg = self.juiz.validar_comando(comando)
@@ -74,6 +79,7 @@ class RavenaModular:
 
     def obter_diagnostico(self):
         return self.omega.obter_diagnostico()
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

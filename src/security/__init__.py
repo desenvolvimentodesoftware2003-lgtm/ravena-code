@@ -12,14 +12,14 @@ Disponibiliza:
 - SegurancaIAIntegrator: integracao de patches de seguranca IA
 """
 
-from .juiz_universal import JuizUniversal
-from .auditor import Auditor, AnalisadorEstatico, SandboxExecutor, AnalisadorRede, AnalisadorEscopo
+from .auditor import AnalisadorEscopo, AnalisadorEstatico, AnalisadorRede, Auditor, SandboxExecutor
+from .engine_patch_seguranca_ia import SegurancaIAIntegrator
 from .hacker_agent import HackerAgent
 from .hacker_agent_v328_alpha import HackerAgentV328
 from .hacker_agent_v328_final import HackerAgentElite
-from .hacker_heuristic_layer import HeuristicLayer
 from .hacker_bypass_engine import BypassEngine
-from .engine_patch_seguranca_ia import SegurancaIAIntegrator
+from .hacker_heuristic_layer import HeuristicLayer
+from .juiz_universal import JuizUniversal
 
 __all__ = [
     "JuizUniversal",

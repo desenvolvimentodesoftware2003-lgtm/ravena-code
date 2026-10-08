@@ -1,18 +1,16 @@
+import json
 import os
 import sys
-import json
 import tempfile
-import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.sensors.sensors_core_v3_2_6 import (
-    SensorStatus,
-    DataIngestionSensor,
-    FileSensor,
     APISensor,
+    FileSensor,
     MetricSensor,
     SensorManager,
+    SensorStatus,
 )
 
 
@@ -67,8 +65,10 @@ class TestFileSensor:
 
     def test_registra_callback(self):
         results = []
+
         def cb(data):
             results.append(data)
+
         with tempfile.TemporaryDirectory() as tmpdir:
             with open(os.path.join(tmpdir, "a.log"), "w", encoding="utf-8") as f:
                 f.write("cb test")
@@ -174,8 +174,10 @@ class TestSensorManager:
 
     def test_callback_via_manager(self):
         results = []
+
         def cb(data):
             results.append(data["source"])
+
         with tempfile.TemporaryDirectory() as tmpdir:
             with open(os.path.join(tmpdir, "cb.log"), "w", encoding="utf-8") as f:
                 f.write("callback data")

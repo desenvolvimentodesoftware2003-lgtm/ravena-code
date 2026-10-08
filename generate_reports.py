@@ -5,17 +5,17 @@ Gera relatórios em Markdown (.md) e HTML (.html) a partir do JSON de health che
 """
 
 import json
-import os
-import sys
 from datetime import datetime
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent
 
+
 def load_report():
     report_path = PROJECT_ROOT / "tests" / "health_check_report.json"
-    with open(report_path, "r", encoding="utf-8") as f:
+    with open(report_path, encoding="utf-8") as f:
         return json.load(f)
+
 
 def generate_markdown(report):
     lines = []
@@ -25,8 +25,8 @@ def generate_markdown(report):
     lines.append(f"**Environment:** {report['environment']}  ")
     lines.append(f"**Verdict:** {report['verdict']}\n")
     lines.append("## Summary\n")
-    lines.append(f"| Metric | Value |")
-    lines.append(f"|--------|-------|")
+    lines.append("| Metric | Value |")
+    lines.append("|--------|-------|")
     lines.append(f"| Total | {report['summary']['total']} |")
     lines.append(f"| ✅ Passed | {report['summary']['passed']} |")
     lines.append(f"| ⚠️ Warned | {report['summary']['warned']} |")
@@ -36,9 +36,15 @@ def generate_markdown(report):
     # inteiro. Prontidao = a maquina esta configurada. Numa maquina de
     # desenvolvimento sem credencial a segunda e baixa e isso e correto.
     s = report["summary"]
-    lines.append(f"| **Integridade do codigo** | **{s['health_score']}%** ({s.get('code_passed', '?')}/{s.get('code_checks', '?')} checks) |")
+    lines.append(
+        f"| **Integridade do codigo** | **{s['health_score']}%** "
+        f"({s.get('code_passed', '?')}/{s.get('code_checks', '?')} checks) |"
+    )
     env = s.get("environment_score")
-    lines.append(f"| Prontidao do ambiente | {'n/a' if env is None else str(env) + '%'} ({s.get('environment_checks', 0)} checks) |\n")
+    lines.append(
+        f"| Prontidao do ambiente | {'n/a' if env is None else str(env) + '%'} ({s.get('environment_checks', 0)} "
+        f"checks) |\n"
+    )
     lines.append("## Module Results\n")
     lines.append("| # | Module | Status | Details | Time (ms) |")
     lines.append("|---|--------|--------|---------|-----------|")
@@ -49,13 +55,17 @@ def generate_markdown(report):
     lines.append(f"*Generated at {datetime.now().isoformat()}*")
     return "\n".join(lines)
 
+
 def generate_html(report):
-    md = generate_markdown(report)
+    generate_markdown(report)
     rows = ""
     for i, r in enumerate(report["results"], 1):
         icon = {"PASS": "✅", "WARN": "⚠️", "FAIL": "❌"}.get(r["status"], "❓")
         color = {"PASS": "green", "WARN": "orange", "FAIL": "red"}.get(r["status"], "gray")
-        rows += f"<tr><td>{i}</td><td>{r['module']}</td><td style='color:{color}'>{icon} {r['status']}</td><td>{r['details']}</td><td>{r['time_ms']}</td></tr>\n"
+        rows += (
+            f"<tr><td>{i}</td><td>{r['module']}</td><td style='color:{color}'>{icon} "
+            f"{r['status']}</td><td>{r['details']}</td><td>{r['time_ms']}</td></tr>\n"
+        )
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -63,7 +73,8 @@ def generate_html(report):
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ravena AIM — Health Check Report</title>
 <style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1200px; margin: 40px auto; padding: 0 20px; background: #0d1117; color: #c9d1d9; }}
+body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1200px;
+margin: 40px auto; padding: 0 20px; background: #0d1117; color: #c9d1d9; }}
 h1, h2, h3 {{ color: #58a6ff; }}
 table {{ border-collapse: collapse; width: 100%; margin: 16px 0; }}
 th, td {{ border: 1px solid #30363d; padding: 8px 12px; text-align: left; }}
@@ -71,7 +82,8 @@ th {{ background: #161b22; color: #8b949e; text-transform: uppercase; font-size:
 tr:nth-child(even) {{ background: #161b22; }}
 tr:hover {{ background: #1c2128; }}
 .summary {{ display: flex; gap: 20px; flex-wrap: wrap; }}
-.card {{ background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; min-width: 120px; text-align: center; }}
+.card {{ background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+padding: 16px; min-width: 120px; text-align: center; }}
 .card .value {{ font-size: 28px; font-weight: bold; }}
 .card .label {{ font-size: 12px; color: #8b949e; }}
 .green {{ color: #3fb950 !important; }}
@@ -85,16 +97,20 @@ tr:hover {{ background: #1c2128; }}
 </head>
 <body>
 <h1>Ravena AIM — Health Check Report</h1>
-<p><strong>Timestamp:</strong> {report['timestamp']} | <strong>Version:</strong> {report['version']} | <strong>Environment:</strong> {report['environment']}</p>
-<div class="verdict {'healthy' if report['verdict'] == 'HEALTHY' else 'partial' if report['verdict'] == 'PARTIAL' else 'unhealthy'}">{report['verdict']}</div>
+<p><strong>Timestamp:</strong> {report["timestamp"]} | <strong>Version:</strong> {report["version"]} |
+<strong>Environment:</strong> {report["environment"]}</p>
+<div class="verdict {
+        "healthy" if report["verdict"] == "HEALTHY" else "partial" if report["verdict"] == "PARTIAL" else "unhealthy"
+    }">{report["verdict"]}</div>
 <h2>Summary</h2>
 <div class="summary">
-<div class="card"><div class="value">{report['summary']['total']}</div><div class="label">Total</div></div>
-<div class="card"><div class="value green">{report['summary']['passed']}</div><div class="label">Passed</div></div>
-<div class="card"><div class="value orange">{report['summary']['warned']}</div><div class="label">Warned</div></div>
-<div class="card"><div class="value red">{report['summary']['failed']}</div><div class="label">Failed</div></div>
-<div class="card"><div class="value">{report['summary']['time_seconds']}s</div><div class="label">Time</div></div>
-<div class="card"><div class="value green">{report['summary']['health_score']}%</div><div class="label">Score</div></div>
+<div class="card"><div class="value">{report["summary"]["total"]}</div><div class="label">Total</div></div>
+<div class="card"><div class="value green">{report["summary"]["passed"]}</div><div class="label">Passed</div></div>
+<div class="card"><div class="value orange">{report["summary"]["warned"]}</div><div class="label">Warned</div></div>
+<div class="card"><div class="value red">{report["summary"]["failed"]}</div><div class="label">Failed</div></div>
+<div class="card"><div class="value">{report["summary"]["time_seconds"]}s</div><div class="label">Time</div></div>
+<div class="card"><div class="value green">{report["summary"]["health_score"]}%</div>
+<div class="label">Score</div></div>
 </div>
 <h2>Module Results</h2>
 <table>
@@ -108,6 +124,7 @@ tr:hover {{ background: #1c2128; }}
 </body>
 </html>"""
     return html
+
 
 if __name__ == "__main__":
     report = load_report()

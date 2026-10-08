@@ -1,7 +1,6 @@
 import json
 import logging
-import threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 logger = logging.getLogger("mobcrypt.server")
 
@@ -105,10 +104,13 @@ class ScanHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
             return
-        self._respond(200, {
-            "status": "running",
-            "message": "MobCrypt Desktop - POST /scan com {\"url\": \"...\"}",
-        })
+        self._respond(
+            200,
+            {
+                "status": "running",
+                "message": 'MobCrypt Desktop - POST /scan com {"url": "..."}',
+            },
+        )
 
     def _respond(self, code: int, data: dict):
         body = json.dumps(data).encode()

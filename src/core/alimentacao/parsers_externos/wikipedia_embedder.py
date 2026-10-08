@@ -1,8 +1,8 @@
-import os
-import json
 import hashlib
+import json
 import logging
-from typing import List, Dict, Optional, Any
+import os
+from typing import Any
 
 logger = logging.getLogger("ravena.alimentacao.wikipedia_embedder")
 
@@ -23,6 +23,7 @@ class WikipediaEmbedder:
     def modelo(self):
         if self._modelo is None:
             from sentence_transformers import SentenceTransformer
+
             logger.info(f"Carregando modelo: {self._modelo_nome}")
             self._modelo = SentenceTransformer(self._modelo_nome)
         return self._modelo
@@ -32,6 +33,7 @@ class WikipediaEmbedder:
         if self._client is None:
             import chromadb
             from chromadb.config import Settings
+
             path = os.path.abspath(CAMINHO_CHROMA)
             logger.info(f"Conectando ChromaDB: {path}")
             self._client = chromadb.PersistentClient(
@@ -44,6 +46,7 @@ class WikipediaEmbedder:
     def collection(self):
         if self._collection is None:
             import chromadb.utils.embedding_functions as ef
+
             fn = ef.SentenceTransformerEmbeddingFunction(model_name=self._modelo_nome)
             self._collection = self.client.get_or_create_collection(
                 name=self._colecao_nome,
@@ -63,7 +66,7 @@ class WikipediaEmbedder:
         except Exception:
             return set()
 
-    def indexar_jsonl(self, caminho_jsonl: str, lote: int = 64) -> Dict[str, int]:
+    def indexar_jsonl(self, caminho_jsonl: str, lote: int = 64) -> dict[str, int]:
         if not os.path.exists(caminho_jsonl):
             logger.warning(f"Arquivo nao encontrado: {caminho_jsonl}")
             return {"lidos": 0, "inseridos": 0, "ignorados": 0}
@@ -71,7 +74,7 @@ class WikipediaEmbedder:
         logger.info(f"Indexando: {caminho_jsonl}")
         existentes = self._ids_existentes()
         registros = []
-        with open(caminho_jsonl, "r", encoding="utf-8") as f:
+        with open(caminho_jsonl, encoding="utf-8") as f:
             for linha in f:
                 linha = linha.strip()
                 if not linha:
@@ -117,7 +120,7 @@ class WikipediaEmbedder:
         logger.info(f"Indexado: {lidos} lidos, {inseridos} inseridos, {ignorados} ignorados")
         return {"lidos": lidos, "inseridos": inseridos, "ignorados": ignorados}
 
-    def _inserir_lote(self, buffer: List[Dict]) -> int:
+    def _inserir_lote(self, buffer: list[dict]) -> int:
         textos = [b["document"] for b in buffer]
         logger.info(f"Gerando embeddings para lote de {len(textos)} documentos...")
         embeddings = self.modelo.encode(textos, show_progress_bar=False).tolist()
@@ -130,7 +133,7 @@ class WikipediaEmbedder:
         logger.info(f"Lote inserido: {len(buffer)} documentos")
         return len(buffer)
 
-    def indexar_todos(self, diretorio: str) -> Dict[str, int]:
+    def indexar_todos(self, diretorio: str) -> dict[str, int]:
         totais = {"lidos": 0, "inseridos": 0, "ignorados": 0}
         for f in sorted(os.listdir(diretorio)):
             if f.endswith(".jsonl") and f != "manifest.json":
@@ -141,7 +144,7 @@ class WikipediaEmbedder:
         logger.info(f"Indexacao total: {totais}")
         return totais
 
-    def buscar(self, consulta: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    def buscar(self, consulta: str, top_k: int = 5) -> list[dict[str, Any]]:
         logger.info(f"Buscando: '{consulta}' (top_k={top_k})")
         resultados = self.collection.query(
             query_texts=[consulta],
@@ -150,15 +153,17 @@ class WikipediaEmbedder:
         items = []
         if resultados and resultados.get("ids"):
             for i in range(len(resultados["ids"][0])):
-                items.append({
-                    "id": resultados["ids"][0][i],
-                    "documento": resultados["documents"][0][i] if resultados.get("documents") else "",
-                    "distancia": resultados["distances"][0][i] if resultados.get("distances") else 0.0,
-                    "metadata": resultados["metadatas"][0][i] if resultados.get("metadatas") else {},
-                })
+                items.append(
+                    {
+                        "id": resultados["ids"][0][i],
+                        "documento": resultados["documents"][0][i] if resultados.get("documents") else "",
+                        "distancia": resultados["distances"][0][i] if resultados.get("distances") else 0.0,
+                        "metadata": resultados["metadatas"][0][i] if resultados.get("metadatas") else {},
+                    }
+                )
         return items
 
-    def status(self) -> Dict[str, Any]:
+    def status(self) -> dict[str, Any]:
         try:
             col = self.collection
             total = col.count()

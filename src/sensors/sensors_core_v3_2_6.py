@@ -1,13 +1,13 @@
-import os
-import json
-import time
-import logging
 import hashlib
+import json
+import logging
+import os
 from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import Dict, List, Any, Optional, Callable
-from enum import Enum
 from collections import deque
+from collections.abc import Callable
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger("ravena.sensors_core")
 
@@ -20,26 +20,26 @@ class SensorStatus(Enum):
 
 
 class DataIngestionSensor(ABC):
-    def __init__(self, name: str, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: str, config: dict[str, Any] | None = None):
         self.name = name
         self.config = config or {}
         self.status = SensorStatus.INACTIVE
-        self.last_run: Optional[str] = None
+        self.last_run: str | None = None
         self.items_ingested = 0
         self.errors = 0
-        self._callbacks: List[Callable] = []
+        self._callbacks: list[Callable] = []
 
-    def register_callback(self, callback: Callable[[Dict[str, Any]], None]):
+    def register_callback(self, callback: Callable[[dict[str, Any]], None]):
         self._callbacks.append(callback)
 
-    def _notify(self, data: Dict[str, Any]):
+    def _notify(self, data: dict[str, Any]):
         for cb in self._callbacks:
             try:
                 cb(data)
             except Exception as e:
                 logger.error(f"Callback error in sensor '{self.name}': {e}")
 
-    def _make_record(self, source: str, content: Any, content_type: str = "raw") -> Dict[str, Any]:
+    def _make_record(self, source: str, content: Any, content_type: str = "raw") -> dict[str, Any]:
         raw = json.dumps(content, default=str) if not isinstance(content, str) else content
         return {
             "id": hashlib.md5(raw.encode()).hexdigest()[:12],
@@ -51,10 +51,10 @@ class DataIngestionSensor(ABC):
         }
 
     @abstractmethod
-    def collect(self) -> List[Dict[str, Any]]:
+    def collect(self) -> list[dict[str, Any]]:
         pass
 
-    def run_once(self) -> List[Dict[str, Any]]:
+    def run_once(self) -> list[dict[str, Any]]:
         try:
             records = self.collect()
             self.items_ingested += len(records)
@@ -69,7 +69,7 @@ class DataIngestionSensor(ABC):
             logger.error(f"Sensor '{self.name}' failed: {e}")
             return []
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "status": self.status.value,
@@ -80,13 +80,15 @@ class DataIngestionSensor(ABC):
 
 
 class FileSensor(DataIngestionSensor):
-    def __init__(self, name: str, watch_dir: str, extensions: Optional[List[str]] = None, config: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self, name: str, watch_dir: str, extensions: list[str] | None = None, config: dict[str, Any] | None = None
+    ):
         super().__init__(name, config)
         self.watch_dir = watch_dir
         self.extensions = extensions or [".json", ".log", ".txt", ".csv"]
         self._processed_files: set = set()
 
-    def collect(self) -> List[Dict[str, Any]]:
+    def collect(self) -> list[dict[str, Any]]:
         records = []
         if not os.path.isdir(self.watch_dir):
             logger.warning(f"Watch dir '{self.watch_dir}' not found")
@@ -101,7 +103,7 @@ class FileSensor(DataIngestionSensor):
             if fpath in self._processed_files:
                 continue
             try:
-                with open(fpath, "r", encoding="utf-8", errors="replace") as f:
+                with open(fpath, encoding="utf-8", errors="replace") as f:
                     content = f.read()
                 self._processed_files.add(fpath)
                 records.append(self._make_record(source=fname, content=content, content_type=ext.lstrip(".")))
@@ -110,7 +112,7 @@ class FileSensor(DataIngestionSensor):
                 logger.error(f"FileSensor '{self.name}' error reading {fname}: {e}")
         return records
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         info = super().get_info()
         info["watch_dir"] = self.watch_dir
         info["processed_files"] = len(self._processed_files)
@@ -118,18 +120,31 @@ class FileSensor(DataIngestionSensor):
 
 
 class APISensor(DataIngestionSensor):
-    def __init__(self, name: str, endpoint: str, method: str = "GET", headers: Optional[Dict[str, str]] = None, config: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        name: str,
+        endpoint: str,
+        method: str = "GET",
+        headers: dict[str, str] | None = None,
+        config: dict[str, Any] | None = None,
+    ):
         super().__init__(name, config)
         self.endpoint = endpoint
         self.method = method.upper()
         self.headers = headers or {}
 
-    def collect(self) -> List[Dict[str, Any]]:
+    def collect(self) -> list[dict[str, Any]]:
         import requests
+
         if self.method == "GET":
             resp = requests.get(self.endpoint, headers=self.headers, timeout=self.config.get("timeout", 10))
         elif self.method == "POST":
-            resp = requests.post(self.endpoint, headers=self.headers, json=self.config.get("body", {}), timeout=self.config.get("timeout", 10))
+            resp = requests.post(
+                self.endpoint,
+                headers=self.headers,
+                json=self.config.get("body", {}),
+                timeout=self.config.get("timeout", 10),
+            )
         else:
             logger.warning(f"Unsupported method {self.method}")
             return []
@@ -138,12 +153,16 @@ class APISensor(DataIngestionSensor):
                 data = resp.json()
             except Exception:
                 data = resp.text
-            return [self._make_record(source=self.endpoint, content=data, content_type="json" if isinstance(data, dict) else "text")]
+            return [
+                self._make_record(
+                    source=self.endpoint, content=data, content_type="json" if isinstance(data, dict) else "text"
+                )
+            ]
         else:
             logger.warning(f"APISensor '{self.name}' returned {resp.status_code}")
             return []
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         info = super().get_info()
         info["endpoint"] = self.endpoint
         info["method"] = self.method
@@ -151,12 +170,13 @@ class APISensor(DataIngestionSensor):
 
 
 class MetricSensor(DataIngestionSensor):
-    def __init__(self, name: str, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: str, config: dict[str, Any] | None = None):
         super().__init__(name, config)
 
-    def collect(self) -> List[Dict[str, Any]]:
+    def collect(self) -> list[dict[str, Any]]:
         try:
             import psutil
+
             metrics = {
                 "cpu_percent": psutil.cpu_percent(interval=0),
                 "memory_percent": psutil.virtual_memory().percent,
@@ -171,17 +191,17 @@ class MetricSensor(DataIngestionSensor):
 
 class SensorManager:
     def __init__(self):
-        self.sensors: Dict[str, DataIngestionSensor] = {}
+        self.sensors: dict[str, DataIngestionSensor] = {}
         self._run_history: deque = deque(maxlen=200)
 
     def register(self, sensor: DataIngestionSensor):
         self.sensors[sensor.name] = sensor
         logger.info(f"Sensor registered: {sensor.name}")
 
-    def get(self, name: str) -> Optional[DataIngestionSensor]:
+    def get(self, name: str) -> DataIngestionSensor | None:
         return self.sensors.get(name)
 
-    def run_all(self) -> Dict[str, Any]:
+    def run_all(self) -> dict[str, Any]:
         results = {}
         for name, sensor in self.sensors.items():
             records = sensor.run_once()
@@ -190,7 +210,7 @@ class SensorManager:
                 self._run_history.append(record)
         return results
 
-    def run_sensor(self, name: str) -> Optional[List[Dict[str, Any]]]:
+    def run_sensor(self, name: str) -> list[dict[str, Any]] | None:
         sensor = self.sensors.get(name)
         if not sensor:
             logger.warning(f"Sensor '{name}' not found")
@@ -200,10 +220,10 @@ class SensorManager:
             self._run_history.append(record)
         return records
 
-    def get_all_info(self) -> Dict[str, Any]:
+    def get_all_info(self) -> dict[str, Any]:
         return {name: s.get_info() for name, s in self.sensors.items()}
 
-    def health_check(self) -> Dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         total = len(self.sensors)
         active = sum(1 for s in self.sensors.values() if s.status == SensorStatus.ACTIVE)
         errors = sum(1 for s in self.sensors.values() if s.status == SensorStatus.ERROR)
@@ -215,7 +235,7 @@ class SensorManager:
             "all_ok": errors == 0 and total > 0,
         }
 
-    def get_recent_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_recent_history(self, limit: int = 50) -> list[dict[str, Any]]:
         return list(self._run_history)[-limit:]
 
     def clear_history(self):

@@ -4,9 +4,9 @@ Gerador de Relatórios - Sandbox Ravena
 Gera relatórios detalhados dos testes de segurança
 """
 
-import psycopg2
-import json
 from datetime import datetime
+
+import psycopg2
 from jinja2 import Template
 
 # ============================================
@@ -14,10 +14,10 @@ from jinja2 import Template
 # ============================================
 
 DB_CONFIG = {
-    'host': 'localhost',
-    'database': 'ravena_sandbox',
-    'user': 'ravena_test',
-    'password': 'sandbox_password_123'
+    "host": "localhost",
+    "database": "ravena_sandbox",
+    "user": "ravena_test",
+    "password": "sandbox_password_123",
 }
 
 # ============================================
@@ -184,29 +184,30 @@ REPORT_TEMPLATE = """
                 <div class="number">{{ successful_attacks }}</div>
                 <div class="label">Bem-sucedidos</div>
             </div>
-            <div class="stat-box {{ 'success' if success_rate >= 90 else 'warning' if success_rate >= 70 else 'critical' }}">
+            <div class="stat-box {{ 'success' if success_rate >= 90 else 'warning'
+                    if success_rate >= 70 else 'critical' }}">
                 <div class="number">{{ "%.1f"|format(success_rate) }}%</div>
                 <div class="label">Taxa de Bloqueio</div>
             </div>
         </div>
-        
+
         <div class="progress-bar">
             <div class="progress-fill" style="width: {{ success_rate }}%"></div>
         </div>
-        
+
         {% if success_rate < 70 %}
         <div class="alert alert-danger">
-            <strong>⚠️ ALERTA CRÍTICO:</strong> A taxa de bloqueio está abaixo de 70%. 
+            <strong>⚠️ ALERTA CRÍTICO:</strong> A taxa de bloqueio está abaixo de 70%.
             Ações imediatas são necessárias para melhorar a segurança do sistema.
         </div>
         {% elif success_rate < 90 %}
         <div class="alert alert-warning">
-            <strong>⚡ ATENÇÃO:</strong> A taxa de bloqueio está entre 70-90%. 
+            <strong>⚡ ATENÇÃO:</strong> A taxa de bloqueio está entre 70-90%.
             Recomenda-se implementar melhorias adicionais.
         </div>
         {% else %}
         <div class="alert alert-success">
-            <strong>✅ BOM:</strong> A taxa de bloqueio está acima de 90%. 
+            <strong>✅ BOM:</strong> A taxa de bloqueio está acima de 90%.
             O sistema está respondendo adequadamente aos ataques.
         </div>
         {% endif %}
@@ -305,7 +306,7 @@ REPORT_TEMPLATE = """
                 <li>Implementar rate limiting rigoroso</li>
             </ul>
         </div>
-        
+
         <div class="alert alert-warning">
             <h3>Preventivas (1-7 dias)</h3>
             <ul>
@@ -315,7 +316,7 @@ REPORT_TEMPLATE = """
                 <li>Revisar permissões de banco de dados</li>
             </ul>
         </div>
-        
+
         <div class="alert alert-success">
             <h3>Detecção (7-30 dias)</h3>
             <ul>
@@ -339,65 +340,64 @@ REPORT_TEMPLATE = """
 # FUNÇÕES
 # ============================================
 
+
 def get_db_connection():
     """Obtém conexão com o banco"""
     return psycopg2.connect(**DB_CONFIG)
+
 
 def get_statistics():
     """Obtém estatísticas do banco"""
     conn = get_db_connection()
     cursor = conn.cursor()
-    
+
     stats = {}
-    
+
     # Total de ataques
     cursor.execute("SELECT COUNT(*) FROM attack_log")
-    stats['total_attacks'] = cursor.fetchone()[0]
-    
+    stats["total_attacks"] = cursor.fetchone()[0]
+
     # Ataques bloqueados
     cursor.execute("SELECT COUNT(*) FROM attack_log WHERE blocked = TRUE")
-    stats['blocked_attacks'] = cursor.fetchone()[0]
-    
+    stats["blocked_attacks"] = cursor.fetchone()[0]
+
     # Ataques bem-sucedidos
-    stats['successful_attacks'] = stats['total_attacks'] - stats['blocked_attacks']
-    
+    stats["successful_attacks"] = stats["total_attacks"] - stats["blocked_attacks"]
+
     # Taxa de bloqueio
-    stats['success_rate'] = (stats['blocked_attacks'] / stats['total_attacks'] * 100) if stats['total_attacks'] > 0 else 0
-    
+    stats["success_rate"] = (
+        (stats["blocked_attacks"] / stats["total_attacks"] * 100) if stats["total_attacks"] > 0 else 0
+    )
+
     # Ataques por tipo
     cursor.execute("""
-        SELECT attack_type, 
+        SELECT attack_type,
                COUNT(*) as total,
                SUM(CASE WHEN blocked THEN 1 ELSE 0 END) as blocked
         FROM attack_log
         GROUP BY attack_type
     """)
-    
+
     attacks_by_type = []
     for row in cursor.fetchall():
         attack_type = row[0]
         total = row[1]
         blocked = row[2]
-        
+
         # Determinar severidade
-        if attack_type in ['sql_injection', 'remote_code_execution']:
-            severity = 'critical'
-        elif attack_type in ['brute_force', 'session_hijack']:
-            severity = 'high'
-        elif attack_type in ['xss', 'idor']:
-            severity = 'medium'
+        if attack_type in ["sql_injection", "remote_code_execution"]:
+            severity = "critical"
+        elif attack_type in ["brute_force", "session_hijack"]:
+            severity = "high"
+        elif attack_type in ["xss", "idor"]:
+            severity = "medium"
         else:
-            severity = 'low'
-        
-        attacks_by_type.append({
-            'type': attack_type,
-            'total': total,
-            'blocked': blocked,
-            'severity': severity
-        })
-    
-    stats['attacks_by_type'] = attacks_by_type
-    
+            severity = "low"
+
+        attacks_by_type.append({"type": attack_type, "total": total, "blocked": blocked, "severity": severity})
+
+    stats["attacks_by_type"] = attacks_by_type
+
     # Últimos ataques
     cursor.execute("""
         SELECT attack_type, endpoint, blocked, ip_address, timestamp
@@ -405,80 +405,82 @@ def get_statistics():
         ORDER BY timestamp DESC
         LIMIT 10
     """)
-    
-    stats['recent_attacks'] = [
+
+    stats["recent_attacks"] = [
         {
-            'attack_type': row[0],
-            'endpoint': row[1],
-            'blocked': row[2],
-            'ip_address': str(row[3]) if row[3] else 'N/A',
-            'timestamp': row[4].strftime('%Y-%m-%d %H:%M:%S') if row[4] else 'N/A'
+            "attack_type": row[0],
+            "endpoint": row[1],
+            "blocked": row[2],
+            "ip_address": str(row[3]) if row[3] else "N/A",
+            "timestamp": row[4].strftime("%Y-%m-%d %H:%M:%S") if row[4] else "N/A",
         }
         for row in cursor.fetchall()
     ]
-    
+
     # Outras estatísticas
     cursor.execute("SELECT COUNT(*) FROM users")
-    stats['total_users'] = cursor.fetchone()[0]
-    
+    stats["total_users"] = cursor.fetchone()[0]
+
     cursor.execute("SELECT COUNT(*) FROM transactions")
-    stats['total_transactions'] = cursor.fetchone()[0]
-    
+    stats["total_transactions"] = cursor.fetchone()[0]
+
     cursor.execute("SELECT COUNT(*) FROM sessions WHERE expires_at > NOW()")
-    stats['active_sessions'] = cursor.fetchone()[0]
-    
+    stats["active_sessions"] = cursor.fetchone()[0]
+
     cursor.execute("SELECT COUNT(*) FROM audit_log")
-    stats['total_logs'] = cursor.fetchone()[0]
-    
+    stats["total_logs"] = cursor.fetchone()[0]
+
     conn.close()
     return stats
+
 
 def generate_html_report(stats):
     """Gera relatório HTML"""
     template = Template(REPORT_TEMPLATE)
-    
-    html = template.render(
-        report_date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        **stats
-    )
-    
+
+    html = template.render(report_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"), **stats)
+
     return html
+
 
 def save_report(html, filename):
     """Salva relatório em arquivo"""
-    with open(filename, 'w', encoding='utf-8') as f:
+    with open(filename, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"[OK] Relatório salvo em: {filename}")
+
 
 # ============================================
 # EXECUÇÃO PRINCIPAL
 # ============================================
 
+
 def main():
     """Função principal"""
-    print("="*60)
+    print("=" * 60)
     print("GERADOR DE RELATÓRIOS - SANDBOX RAVENA")
-    print("="*60)
-    
+    print("=" * 60)
+
     try:
         # Obter estatísticas
         print("[INFO] Obtendo estatísticas do banco...")
         stats = get_statistics()
-        
+
         # Gerar HTML
         print("[INFO] Gerando relatório HTML...")
         html = generate_html_report(stats)
-        
+
         # Salvar arquivo
         filename = f"relatorio_seguranca_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
         save_report(html, filename)
-        
+
         print("[OK] Relatório gerado com sucesso!")
         print(f"[INFO] Abra o arquivo {filename} no navegador")
-        
+
     except Exception as e:
         print(f"[ERRO] Falha ao gerar relatório: {e}")
         raise
+
 
 if __name__ == "__main__":
     main()

@@ -6,15 +6,15 @@ Unifica a lógica de conectores (Instagram, Telegram, etc.) e facilita a adiçã
 """
 
 import logging
-import json
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 # Configuração de Logging
 logger = logging.getLogger("ravena.utils.api_manager")
 
+
 class ExternalAPIManager:
     """Gerenciador Unificado de Conectores Externos."""
-    
+
     def __init__(self):
         self.version = "3.2.6"
         self.conectores = {}
@@ -25,7 +25,7 @@ class ExternalAPIManager:
         self.conectores[nome] = conector_instancia
         logger.info(f"Conector '{nome}' registrado com sucesso.")
 
-    def executar_acao(self, conector_nome: str, acao: str, **kwargs) -> Dict[str, Any]:
+    def executar_acao(self, conector_nome: str, acao: str, **kwargs) -> dict[str, Any]:
         """
         Executa uma ação em um conector específico.
         Ex: executar_acao('instagram', 'publicar_post', imagem='...', legenda='...')
@@ -33,12 +33,12 @@ class ExternalAPIManager:
         if conector_nome not in self.conectores:
             logger.error(f"Conector '{conector_nome}' não encontrado.")
             return {"status": "error", "message": f"Conector '{conector_nome}' não registrado."}
-        
+
         conector = self.conectores[conector_nome]
         if not hasattr(conector, acao):
             logger.error(f"Ação '{acao}' não suportada pelo conector '{conector_nome}'.")
             return {"status": "error", "message": f"Ação '{acao}' não suportada."}
-        
+
         logger.info(f"Executando '{acao}' no conector '{conector_nome}'...")
         try:
             metodo = getattr(conector, acao)
@@ -48,9 +48,10 @@ class ExternalAPIManager:
             logger.exception(f"Erro ao executar '{acao}' no conector '{conector_nome}': {str(e)}")
             return {"status": "error", "message": str(e)}
 
-    def listar_conectores_ativos(self) -> List[str]:
+    def listar_conectores_ativos(self) -> list[str]:
         """Retorna a lista de conectores registrados."""
         return list(self.conectores.keys())
+
 
 # Exemplo de uso (Simulado)
 if __name__ == "__main__":

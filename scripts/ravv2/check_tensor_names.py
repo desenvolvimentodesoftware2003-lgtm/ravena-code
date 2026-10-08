@@ -1,11 +1,16 @@
-import json, urllib.request
+import json
+import urllib.request
+
 
 def get(url, raw=False):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req, timeout=90) as r:
         return r.read() if raw else json.load(r)
 
-idx = get("https://huggingface.co/DavidAU/Qwen3.6-27B-Fable-Fusion-711-Uncensored-Heretic-NM-DAU-MTP/raw/main/model.safetensors.index.json")
+
+idx = get(
+    "https://huggingface.co/DavidAU/Qwen3.6-27B-Fable-Fusion-711-Uncensored-Heretic-NM-DAU-MTP/raw/main/model.safetensors.index.json"
+)
 wm = idx["weight_map"]
 ks = list(wm.keys())
 print("total tensores:", len(ks))

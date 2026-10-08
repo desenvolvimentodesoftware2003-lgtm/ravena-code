@@ -1,21 +1,31 @@
 import sys
-import os
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import clarividencia as cv
 
 
 class TestClarividencia(unittest.TestCase):
-
     def test_get_sentiment_btc(self):
         sent = cv.get_sentiment("BTCUSDT")
         self.assertIsNotNone(sent)
         self.assertEqual(sent.simbolo, "BTCUSDT")
-        self.assertIn(sent.classificacao, ["bullish_forte", "bullish", "levemente_bullish", "neutro", "levemente_bearish", "bearish", "bearish_forte"])
+        self.assertIn(
+            sent.classificacao,
+            [
+                "bullish_forte",
+                "bullish",
+                "levemente_bullish",
+                "neutro",
+                "levemente_bearish",
+                "bearish",
+                "bearish_forte",
+            ],
+        )
 
     def test_get_sinais_btc(self):
         sinal = cv.get_sinais("BTCUSDT")
@@ -37,7 +47,7 @@ class TestClarividencia(unittest.TestCase):
         self.assertIsInstance(results, list)
 
     def test_get_ultimas_noticias(self):
-        with patch.object(cv, '_MOCK_MODE', True):
+        with patch.object(cv, "_MOCK_MODE", True):
             n = cv.get_ultimas_noticias(3)
             self.assertIsInstance(n, list)
 

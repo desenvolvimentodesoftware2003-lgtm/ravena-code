@@ -1,29 +1,46 @@
 import logging
-from datetime import datetime
-from typing import Dict, List, Any, Tuple, Optional
 from collections import deque
+from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger("ravena.lockdown")
 
 _PALAVRAS_AMEACA = [
-    "hackear", "explorar vulnerabilidade", "acesso indevido",
-    "ataque ddos", "invadir", "roubar dados", "sql injection",
-    "malware", "ransomware", "keylogger"
+    "hackear",
+    "explorar vulnerabilidade",
+    "acesso indevido",
+    "ataque ddos",
+    "invadir",
+    "roubar dados",
+    "sql injection",
+    "malware",
+    "ransomware",
+    "keylogger",
 ]
 
 _COMANDOS_SISTEMA = [
-    "rm -rf", "sudo", "format c:", "delete database",
-    "drop table", "truncate", "shutdown -s", "del /f /s /q"
+    "rm -rf",
+    "sudo",
+    "format c:",
+    "delete database",
+    "drop table",
+    "truncate",
+    "shutdown -s",
+    "del /f /s /q",
 ]
 
 _FRASES_ENGENHARIA_SOCIAL = [
-    "minha senha", "seus segredos", "me de acesso",
-    "faca isso por mim", "ignore as regras", "bypass"
+    "minha senha",
+    "seus segredos",
+    "me de acesso",
+    "faca isso por mim",
+    "ignore as regras",
+    "bypass",
 ]
 
+
 class Lockdown:
-    def __init__(self, alerta: float = 0.55, bloqueio: float = 0.60,
-                 violacoes_emergencia: int = 3):
+    def __init__(self, alerta: float = 0.55, bloqueio: float = 0.60, violacoes_emergencia: int = 3):
         self._alerta = alerta
         self._bloqueio = bloqueio
         self._violacoes_emergencia = violacoes_emergencia
@@ -35,22 +52,18 @@ class Lockdown:
         self._modo_arquiteto: bool = False
         logger.info(f"Lockdown ativo — alerta: {alerta}, bloqueio: {bloqueio}")
 
-    def _registrar(self, evento: str, detalhes: Optional[Dict[str, Any]] = None):
-        entrada = {
-            "timestamp": datetime.now().isoformat(),
-            "evento": evento,
-            "detalhes": detalhes or {}
-        }
+    def _registrar(self, evento: str, detalhes: dict[str, Any] | None = None):
+        entrada = {"timestamp": datetime.now().isoformat(), "evento": evento, "detalhes": detalhes or {}}
         self._log.append(entrada)
         logger.info(f"Lockdown: {evento}")
 
-    def avaliar(self, entrada: str) -> Dict[str, Any]:
+    def avaliar(self, entrada: str) -> dict[str, Any]:
         resultado = {
             "score": 0.0,
             "bloqueado": False,
             "mensagem": "",
             "em_custodia": self._em_custodia,
-            "violacoes": self._violacoes
+            "violacoes": self._violacoes,
         }
 
         if self._em_custodia:
@@ -104,7 +117,7 @@ class Lockdown:
 
         return resultado
 
-    def comando_arquiteto(self, comando: str, parametros: Optional[Dict[str, Any]] = None) -> str:
+    def comando_arquiteto(self, comando: str, parametros: dict[str, Any] | None = None) -> str:
         if comando == "liberar_custodia":
             self._em_custodia = False
             self._db_read_only = False
@@ -113,10 +126,12 @@ class Lockdown:
             self._registrar("Custodia liberada pelo arquiteto")
             return "Custodia liberada. Sistema operacional."
         elif comando == "status":
-            return (f"Lockdown: custodia={self._em_custodia}, "
-                    f"violacoes={self._violacoes}, "
-                    f"read_only={self._db_read_only}, "
-                    f"nivel_0={self._nivel_0_pendente}")
+            return (
+                f"Lockdown: custodia={self._em_custodia}, "
+                f"violacoes={self._violacoes}, "
+                f"read_only={self._db_read_only}, "
+                f"nivel_0={self._nivel_0_pendente}"
+            )
         elif comando == "log":
             return str(list(self._log)[-10:])
         elif comando == "modo_arquiteto":
@@ -125,7 +140,7 @@ class Lockdown:
         else:
             return f"Comando '{comando}' nao reconhecido."
 
-    def obter_estado(self) -> Dict[str, Any]:
+    def obter_estado(self) -> dict[str, Any]:
         return {
             "em_custodia": self._em_custodia,
             "db_read_only": self._db_read_only,
@@ -135,7 +150,7 @@ class Lockdown:
             "alerta": self._alerta,
             "bloqueio": self._bloqueio,
             "eventos_registrados": len(self._log),
-            "ultimos_eventos": list(self._log)[-5:] if self._log else []
+            "ultimos_eventos": list(self._log)[-5:] if self._log else [],
         }
 
     def resetar(self):

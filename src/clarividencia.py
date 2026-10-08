@@ -14,8 +14,8 @@ import logging
 import os
 import random
 import time
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Tuple
+from dataclasses import dataclass
+from typing import Any
 
 import requests
 
@@ -27,24 +27,42 @@ CACHE_DURATION = 300
 
 _MOCK_MODE = os.getenv("CLARIVIDENCIA_MOCK_MODE", "").lower() in ("true", "1", "yes")
 _MOCK_DATA = {
-    "BTC":     {"score": 0.65, "label": "bullish",  "signal": "buy",    "confidence": 0.72},
-    "ETH":     {"score": 0.40, "label": "bullish",  "signal": "buy",    "confidence": 0.55},
-    "SOL":     {"score": 0.30, "label": "neutral",  "signal": "hold",   "confidence": 0.50},
-    "ADA":     {"score":-0.20, "label": "bearish",  "signal": "sell",   "confidence": 0.45},
-    "DOGE":    {"score": 0.10, "label": "neutral",  "signal": "neutral","confidence": 0.30},
-    "DEFAULT": {"score": 0.00, "label": "neutral",  "signal": "neutral","confidence": 0.00},
+    "BTC": {"score": 0.65, "label": "bullish", "signal": "buy", "confidence": 0.72},
+    "ETH": {"score": 0.40, "label": "bullish", "signal": "buy", "confidence": 0.55},
+    "SOL": {"score": 0.30, "label": "neutral", "signal": "hold", "confidence": 0.50},
+    "ADA": {"score": -0.20, "label": "bearish", "signal": "sell", "confidence": 0.45},
+    "DOGE": {"score": 0.10, "label": "neutral", "signal": "neutral", "confidence": 0.30},
+    "DEFAULT": {"score": 0.00, "label": "neutral", "signal": "neutral", "confidence": 0.00},
 }
 
 _COINGECKO_IDS = {
-    "BTC": "bitcoin", "ETH": "ethereum", "SOL": "solana",
-    "ADA": "cardano", "DOGE": "dogecoin", "BNB": "binancecoin",
-    "XRP": "ripple", "DOT": "polkadot", "LINK": "chainlink",
-    "AVAX": "avalanche-2", "MATIC": "matic-network", "UNI": "uniswap",
-    "TRX": "tron", "SHIB": "shiba-inu", "LTC": "litecoin",
-    "ATOM": "cosmos", "NEAR": "near", "OP": "optimism",
-    "ARB": "arbitrum", "PEPE": "pepe", "INJ": "injective-protocol",
-    "TIA": "celestia", "SEI": "sei-network", "SUI": "sui",
-    "APT": "aptos", "FET": "fetch-ai", "RENDER": "render-token",
+    "BTC": "bitcoin",
+    "ETH": "ethereum",
+    "SOL": "solana",
+    "ADA": "cardano",
+    "DOGE": "dogecoin",
+    "BNB": "binancecoin",
+    "XRP": "ripple",
+    "DOT": "polkadot",
+    "LINK": "chainlink",
+    "AVAX": "avalanche-2",
+    "MATIC": "matic-network",
+    "UNI": "uniswap",
+    "TRX": "tron",
+    "SHIB": "shiba-inu",
+    "LTC": "litecoin",
+    "ATOM": "cosmos",
+    "NEAR": "near",
+    "OP": "optimism",
+    "ARB": "arbitrum",
+    "PEPE": "pepe",
+    "INJ": "injective-protocol",
+    "TIA": "celestia",
+    "SEI": "sei-network",
+    "SUI": "sui",
+    "APT": "aptos",
+    "FET": "fetch-ai",
+    "RENDER": "render-token",
 }
 
 random.seed(42)
@@ -69,10 +87,10 @@ class SinalMercado:
 
 class CacheSimples:
     def __init__(self, duracao: int = CACHE_DURATION):
-        self._dados: Dict[str, Tuple[float, Any]] = {}
+        self._dados: dict[str, tuple[float, Any]] = {}
         self._duracao = duracao
 
-    def get(self, chave: str) -> Optional[Any]:
+    def get(self, chave: str) -> Any | None:
         if chave in self._dados:
             ts, valor = self._dados[chave]
             if time.time() - ts < self._duracao:
@@ -92,12 +110,12 @@ def _extrair_ativo(simbolo: str) -> str:
     return simbolo.replace("USDT", "").replace("USDC", "").replace("/", "").upper()
 
 
-def _coingecko_id(simbolo: str) -> Optional[str]:
+def _coingecko_id(simbolo: str) -> str | None:
     ativo = _extrair_ativo(simbolo)
     return _COINGECKO_IDS.get(ativo)
 
 
-def _buscar_dados_mercado(simbolo: str) -> Optional[dict]:
+def _buscar_dados_mercado(simbolo: str) -> dict | None:
     cache_key = f"mercado:{simbolo}"
     cached = _cache.get(cache_key)
     if cached:
@@ -114,14 +132,17 @@ def _buscar_dados_mercado(simbolo: str) -> Optional[dict]:
             ids_usados.add(cid)
             simbolo_id_map.setdefault(cid, []).append(s)
 
-    data = _get("/coins/markets", {
-        "vs_currency": "usd",
-        "ids": ",".join(sorted(ids_usados)),
-        "order": "market_cap_desc",
-        "per_page": 250,
-        "sparkline": "false",
-        "price_change_percentage": "7d",
-    })
+    data = _get(
+        "/coins/markets",
+        {
+            "vs_currency": "usd",
+            "ids": ",".join(sorted(ids_usados)),
+            "order": "market_cap_desc",
+            "per_page": 250,
+            "sparkline": "false",
+            "price_change_percentage": "7d",
+        },
+    )
     if data and isinstance(data, list):
         normalizado = {}
         for item in data:
@@ -153,7 +174,7 @@ def _buscar_dados_mercado(simbolo: str) -> Optional[dict]:
     return None
 
 
-def _sentimento_por_preco(pct_24h: float) -> Tuple[float, str]:
+def _sentimento_por_preco(pct_24h: float) -> tuple[float, str]:
     if pct_24h > 5.0:
         return 0.9, "bullish_forte"
     if pct_24h > 2.0:
@@ -169,7 +190,7 @@ def _sentimento_por_preco(pct_24h: float) -> Tuple[float, str]:
     return -0.9, "bearish_forte"
 
 
-def _sinal_por_preco(pct_24h: float, pct_7d: float, volume_mc_ratio: float) -> Tuple[str, float]:
+def _sinal_por_preco(pct_24h: float, pct_7d: float, volume_mc_ratio: float) -> tuple[str, float]:
     momentum = (pct_24h * 0.5) + (pct_7d * 0.5)
     if momentum > 3.0 and volume_mc_ratio > 0.05:
         return "buy", min(abs(momentum) / 10.0, 0.95)
@@ -182,7 +203,7 @@ def _sinal_por_preco(pct_24h: float, pct_7d: float, volume_mc_ratio: float) -> T
     return "neutral", max(0.0, 0.5 - abs(momentum) / 20.0)
 
 
-def _get(endpoint: str, params: dict = None) -> Optional[dict]:
+def _get(endpoint: str, params: dict = None) -> dict | None:
     if _MOCK_MODE:
         ativo = (params or {}).get("asset") or (params or {}).get("q") or "DEFAULT"
         ativo = ativo.upper().replace("USDT", "").replace("/", "")
@@ -192,29 +213,40 @@ def _get(endpoint: str, params: dict = None) -> Optional[dict]:
         if endpoint == "/coins/sinal":
             return {"action": m["signal"], "confidence": m["confidence"]}
         if endpoint == "/global":
-            return {"value": random.randint(25, 75), "classification": random.choice(["Fear", "Greed", "Neutral"]), "timestamp": time.time()}
+            return {
+                "value": random.randint(25, 75),
+                "classification": random.choice(["Fear", "Greed", "Neutral"]),
+                "timestamp": time.time(),
+            }
         if endpoint == "/news":
             mock_articles = []
             for i in range(params.get("limit", 5) if params else 5):
-                mock_articles.append({
-                    "title": f"{ativo} {random.choice(['surges', 'drops', 'holds steady', 'shows strength'])} amid market {random.choice(['rallly', 'correction', 'uncertainty', 'optimism'])}",
-                    "description": f"Analysts weigh in on {ativo} price action as trading volume {random.choice(['increases', 'decreases', 'remains flat'])}.",
-                    "url": f"https://example.com/news/{ativo.lower()}-{i}",
-                    "source": random.choice(["CoinTelegraph", "CoinDesk", "Decrypt", "The Block", "CryptoSlate"]),
-                    "score": round(random.uniform(0.3, 0.95), 2),
-                })
+                mock_articles.append(
+                    {
+                        "title": f"{ativo} {random.choice(['surges', 'drops', 'holds steady', 'shows strength'])} "
+                        f"amid market {random.choice(['rallly', 'correction', 'uncertainty', 'optimism'])}",
+                        "description": f"Analysts weigh in on {ativo} price action as trading volume "
+                        f"{random.choice(['increases', 'decreases', 'remains flat'])}.",
+                        "url": f"https://example.com/news/{ativo.lower()}-{i}",
+                        "source": random.choice(["CoinTelegraph", "CoinDesk", "Decrypt", "The Block", "CryptoSlate"]),
+                        "score": round(random.uniform(0.3, 0.95), 2),
+                    }
+                )
             return {"articles": mock_articles, "results": mock_articles}
         if endpoint == "/search":
             mock_results = []
             q = (params or {}).get("q", ativo)
             for i in range(params.get("limit", 5) if params else 5):
-                mock_results.append({
-                    "title": f"{q}: {random.choice(['Breaking', 'Analysis', 'Update', 'Report', 'Insight'])} #{i+1}",
-                    "description": f"Latest developments and market analysis for {q}.",
-                    "url": f"https://example.com/search/{q.lower().replace(' ', '-')}-{i}",
-                    "source": random.choice(["CoinTelegraph", "CoinDesk", "Decrypt", "The Block"]),
-                    "score": round(random.uniform(0.4, 0.98), 2),
-                })
+                mock_results.append(
+                    {
+                        "title": f"{q}: {random.choice(['Breaking', 'Analysis', 'Update', 'Report', 'Insight'])} "
+                        f"#{i + 1}",
+                        "description": f"Latest developments and market analysis for {q}.",
+                        "url": f"https://example.com/search/{q.lower().replace(' ', '-')}-{i}",
+                        "source": random.choice(["CoinTelegraph", "CoinDesk", "Decrypt", "The Block"]),
+                        "score": round(random.uniform(0.4, 0.98), 2),
+                    }
+                )
             return {"articles": mock_results, "results": mock_results}
         return None
 
@@ -236,7 +268,7 @@ def _get(endpoint: str, params: dict = None) -> Optional[dict]:
         return None
 
 
-def triangulate_query(topic: str) -> List[str]:
+def triangulate_query(topic: str) -> list[str]:
     cache_key = f"triangulate:{topic}"
     cached = _cache.get(cache_key)
     if cached:
@@ -253,7 +285,7 @@ def triangulate_query(topic: str) -> List[str]:
     return queries
 
 
-def search_sources(queries: List[str]) -> List[Dict[str, Any]]:
+def search_sources(queries: list[str]) -> list[dict[str, Any]]:
     results = []
     seen_urls = set()
     for q in queries[:3]:
@@ -264,24 +296,26 @@ def search_sources(queries: List[str]) -> List[Dict[str, Any]]:
                 url = item.get("url", item.get("link", ""))
                 if url and url not in seen_urls:
                     seen_urls.add(url)
-                    results.append({
-                        "title": item.get("title", ""),
-                        "snippet": item.get("description", item.get("snippet", "")),
-                        "link": url,
-                        "source": item.get("source", item.get("source_title", "")),
-                        "score": item.get("score", 0.5),
-                    })
+                    results.append(
+                        {
+                            "title": item.get("title", ""),
+                            "snippet": item.get("description", item.get("snippet", "")),
+                            "link": url,
+                            "source": item.get("source", item.get("source_title", "")),
+                            "score": item.get("score", 0.5),
+                        }
+                    )
     return results
 
 
-def filter_judge(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def filter_judge(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
     if not results:
         return []
     scored = sorted(results, key=lambda x: x.get("score", 0), reverse=True)
     return scored[:5]
 
 
-def get_sentiment(simbolo: str) -> Optional[SentimentoMercado]:
+def get_sentiment(simbolo: str) -> SentimentoMercado | None:
     cache_key = f"sentiment:{simbolo}"
     cached = _cache.get(cache_key)
     if cached:
@@ -314,13 +348,15 @@ def get_sentiment(simbolo: str) -> Optional[SentimentoMercado]:
             timestamp=time.time(),
         )
         _cache.set(cache_key, resultado)
-        logger.info(f"Sentimento {simbolo} (CG): {resultado.score:.2f} ({resultado.classificacao}) via price {pct_24h:+.2f}%")
+        logger.info(
+            f"Sentimento {simbolo} (CG): {resultado.score:.2f} ({resultado.classificacao}) via price {pct_24h:+.2f}%"
+        )
         return resultado
 
     return SentimentoMercado(simbolo=simbolo, score=0.0, classificacao="neutro", fontes=0, timestamp=time.time())
 
 
-def get_fear_greed() -> Optional[Dict[str, Any]]:
+def get_fear_greed() -> dict[str, Any] | None:
     cached = _cache.get("fear_greed")
     if cached:
         return cached
@@ -364,7 +400,7 @@ def get_fear_greed() -> Optional[Dict[str, Any]]:
     return None
 
 
-def get_sinais(simbolo: str) -> Optional[SinalMercado]:
+def get_sinais(simbolo: str) -> SinalMercado | None:
     cache_key = f"sinais:{simbolo}"
     cached = _cache.get(cache_key)
     if cached:
@@ -419,7 +455,7 @@ _RSS_FEEDS = [
 _RSS_CACHE_DURATION = 600
 
 
-def _parse_rss() -> List[Dict[str, Any]]:
+def _parse_rss() -> list[dict[str, Any]]:
     cached = _cache.get("rss_all")
     if cached:
         return cached
@@ -431,14 +467,16 @@ def _parse_rss() -> List[Dict[str, Any]]:
         try:
             feed = feedparser.parse(url)
             for entry in feed.entries[:10]:
-                todas.append({
-                    "title": entry.get("title", ""),
-                    "snippet": entry.get("summary", "")[:300],
-                    "link": entry.get("link", ""),
-                    "source": nome,
-                    "published": entry.get("published", ""),
-                    "score": 0.5,
-                })
+                todas.append(
+                    {
+                        "title": entry.get("title", ""),
+                        "snippet": entry.get("summary", "")[:300],
+                        "link": entry.get("link", ""),
+                        "source": nome,
+                        "published": entry.get("published", ""),
+                        "score": 0.5,
+                    }
+                )
         except Exception as e:
             logger.warning(f"RSS {nome} falhou: {e}")
 
@@ -448,7 +486,7 @@ def _parse_rss() -> List[Dict[str, Any]]:
     return todas
 
 
-def get_ultimas_noticias(limite: int = 10, filtro: str = "") -> List[Dict[str, Any]]:
+def get_ultimas_noticias(limite: int = 10, filtro: str = "") -> list[dict[str, Any]]:
     if _MOCK_MODE:
         data = _get("/news", {"limit": limite})
         if data:
@@ -464,12 +502,13 @@ def get_ultimas_noticias(limite: int = 10, filtro: str = "") -> List[Dict[str, A
 
 class MarkdownReader:
     @staticmethod
-    def fetch_and_clean(url: str) -> Optional[str]:
+    def fetch_and_clean(url: str) -> str | None:
         try:
             r = requests.get(url, timeout=REQUEST_TIMEOUT)
             if r.status_code == 200:
                 texto = r.text
                 import re
+
                 texto = re.sub(r"<[^>]+>", " ", texto)
                 texto = re.sub(r"\s+", " ", texto).strip()
                 return texto[:5000]
@@ -484,19 +523,19 @@ class ClarividenciaExterna:
         self.api_key = api_key
         logger.info("Clarividencia v1.1.0 (CoinGecko) inicializada.")
 
-    def triangulate_query(self, topic: str) -> List[str]:
+    def triangulate_query(self, topic: str) -> list[str]:
         return triangulate_query(topic)
 
-    def search_sources(self, queries: List[str]) -> List[Dict[str, Any]]:
+    def search_sources(self, queries: list[str]) -> list[dict[str, Any]]:
         return search_sources(queries)
 
-    def filter_judge(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def filter_judge(self, results: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return filter_judge(results)
 
 
 if __name__ == "__main__":
     print(f"Mock Mode: {_MOCK_MODE}")
-    print(f"Fonte: CoinGecko API")
+    print("Fonte: CoinGecko API")
     for ativo in ("BTC", "ETH", "SOL", "ADA", "DOGE"):
         sent = get_sentiment(ativo)
         print(f"  {ativo}: score={sent.score:.2f}, {sent.classificacao}")

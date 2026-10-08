@@ -9,12 +9,12 @@ Disponibiliza:
 """
 
 from .sensors_core_v3_2_6 import (
-    SensorStatus,
+    APISensor,
     DataIngestionSensor,
     FileSensor,
-    APISensor,
     MetricSensor,
     SensorManager,
+    SensorStatus,
 )
 
 __all__ = [

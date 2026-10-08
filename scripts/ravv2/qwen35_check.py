@@ -1,9 +1,12 @@
-import json, urllib.request
+import json
+import urllib.request
+
 
 def get(url):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req, timeout=60) as r:
         return json.load(r)
+
 
 for repo in ["Qwen/Qwen3.5-8B", "Qwen/Qwen3.5-4B", "Qwen/Qwen3.5-1.7B", "Qwen/Qwen3.5-14B"]:
     try:

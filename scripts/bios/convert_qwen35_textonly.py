@@ -6,16 +6,22 @@ e patcheia config.json para architectures=[Qwen3_5ForCausalLM].
 Funciona streaming por shard (RAM baixa). Uso:
   convert_qwen35_textonly.py <dir-origem> <dir-destino>
 """
-import sys, os, json, shutil
+
+import json
+import os
+import shutil
+import sys
 from pathlib import Path
 
 SRC = Path(sys.argv[1])
 DST = Path(sys.argv[2])
 
+
 def convert_shard(src_file, dst_file, keep_map):
     """Reescreve um safetensors renomeando chaves conforme keep_map."""
     from safetensors import safe_open
     from safetensors.torch import save_file
+
     out = {}
     with safe_open(str(src_file), framework="pt", device="cpu") as f:
         for k in f.keys():
@@ -24,6 +30,7 @@ def convert_shard(src_file, dst_file, keep_map):
                 out[nk] = f.get_tensor(k)
     save_file(out, str(dst_file))
     return len(out)
+
 
 def main():
     os.makedirs(DST, exist_ok=True)
@@ -38,7 +45,7 @@ def main():
     keep_map = {}
     for k, f in wm.items():
         if k.startswith("model.language_model."):
-            keep_map[k] = "model." + k[len("model.language_model."):]
+            keep_map[k] = "model." + k[len("model.language_model.") :]
         elif k == "lm_head.weight":
             keep_map[k] = k
         else:
@@ -67,15 +74,24 @@ def main():
     cfg = json.loads((SRC / "config.json").read_text())
     cfg["architectures"] = ["Qwen3_5ForCausalLM"]
     (DST / "config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
-    for f in ["tokenizer.json", "tokenizer_config.json", "vocab.json", "merges.txt",
-              "generation_config.json", "chat_template.json", "tokenizer.model",
-              "special_tokens_map.json", "added_tokens.json"]:
+    for f in [
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "vocab.json",
+        "merges.txt",
+        "generation_config.json",
+        "chat_template.json",
+        "tokenizer.model",
+        "special_tokens_map.json",
+        "added_tokens.json",
+    ]:
         s = SRC / f
         if s.exists():
             shutil.copy2(s, DST / f)
     print("DONE. destino:", DST)
     total_kept = sum(1 for k in keep_map)
     print("tensores mantidos:", total_kept, "| descartados:", len(wm) - total_kept)
+
 
 if __name__ == "__main__":
     main()

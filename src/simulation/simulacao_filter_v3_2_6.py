@@ -5,23 +5,22 @@ Filtro de Elite baseado em 60 Agentes de Simulacao com dados reais.
 Conectado a Clarividencia (CoinGecko) e integrado ao SignalBridge.
 """
 
-import random
-import time
-import logging
 import asyncio
+import logging
+import random
 from dataclasses import dataclass
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 logger = logging.getLogger("ravena.simulation_filter")
 
 try:
-    from src.clarividencia import get_sentiment, get_sinais, get_fear_greed
+    from src.clarividencia import get_fear_greed, get_sentiment, get_sinais
+
     _CG_DISPONIVEL = True
 except ImportError:
     _CG_DISPONIVEL = False
 
-ESTILOS = ["momentum", "contrarian", "swing", "scalping", "grid",
-           "breakout", "reversal", "dca", "hodl", "arbitrage"]
+ESTILOS = ["momentum", "contrarian", "swing", "scalping", "grid", "breakout", "reversal", "dca", "hodl", "arbitrage"]
 
 
 @dataclass
@@ -77,8 +76,7 @@ class SimulacaoFilter:
         self._cache_mercado[simbolo] = dados
         return dados
 
-    async def _simular_agente(self, agente_id: int, sinal: Dict[str, Any],
-                              dados_mercado: dict) -> ResultadoSimulacao:
+    async def _simular_agente(self, agente_id: int, sinal: dict[str, Any], dados_mercado: dict) -> ResultadoSimulacao:
         """Simula um agente usando dados reais de mercado + variacao de estilo."""
         await asyncio.sleep(random.uniform(0.005, 0.02))
 
@@ -88,7 +86,7 @@ class SimulacaoFilter:
         sent_score = dados_mercado.get("sentiment_score", 0.0)
         fg_value = dados_mercado.get("fear_greed_value", 50)
         signal_conf = dados_mercado.get("signal_confidence", 0.0)
-        signal_action = dados_mercado.get("signal_action", "neutral")
+        dados_mercado.get("signal_action", "neutral")
 
         # Probabilidade base vinda do mercado real
         base_prob = 0.5 + (sent_score * 0.15) + ((50 - fg_value) / 100 * 0.15) + (signal_conf * 0.1)
@@ -137,7 +135,7 @@ class SimulacaoFilter:
             estilo=estilo,
         )
 
-    async def validar_sinal(self, sinal: Dict[str, Any]) -> Dict[str, Any]:
+    async def validar_sinal(self, sinal: dict[str, Any]) -> dict[str, Any]:
         """
         Executa 60 simulacoes em paralelo usando dados reais de mercado.
         Retorna score de brutalidade para o SignalBridge.
@@ -180,6 +178,7 @@ class SimulacaoFilter:
             "dados_mercado": dados_mercado,
             "estilos": estilo_stats,
         }
+
 
 # Exemplo de uso (para testes internos)
 if __name__ == "__main__":

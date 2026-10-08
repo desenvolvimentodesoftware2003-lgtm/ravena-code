@@ -12,23 +12,17 @@ Metodos implementados:
 """
 
 import os
-import sys
-import json
-import time
-import shutil
 import subprocess
-import threading
 from datetime import datetime
 from pathlib import Path
 
 # Modulo EDL real (Sahara + Firehose)
 from edl_firehose import (
-    remove_frp_edl,
-    check_edl_mode,
-    list_available_loaders,
-    get_loader_for_soc,
     XIAOMI_LOADERS,
-    EDLDevice,
+    check_edl_mode,
+    get_loader_for_soc,
+    list_available_loaders,
+    remove_frp_edl,
 )
 
 # --- Configuracoes ------------------------------------------------------------
@@ -55,6 +49,7 @@ XIAOMI_PIDS = {65344, 65352}
 
 # --- Logging ------------------------------------------------------------------
 
+
 def log(msg, level="INFO"):
     ts = datetime.now().strftime("%H:%M:%S.%f")[:12]
     line = f"{ts} [{level}] {msg}"
@@ -62,18 +57,18 @@ def log(msg, level="INFO"):
     try:
         with open(LOG_FILE, "a", encoding="utf-8") as f:
             f.write(line + "\n")
-    except:
+    except Exception:
         pass
 
+
 # --- Utilitarios --------------------------------------------------------------
+
 
 def run_cmd(cmd, timeout=30, check=True):
     """Executa um comando e retorna (stdout, stderr, rc)."""
     log(f"$ {cmd}")
     try:
-        proc = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout
-        )
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         out = proc.stdout.strip()
         err = proc.stderr.strip()
         rc = proc.returncode
@@ -89,16 +84,20 @@ def run_cmd(cmd, timeout=30, check=True):
         log(f"Comando nao encontrado: {cmd[0]}", "ERROR")
         return "", "not_found", -1
 
+
 def check_tool(path, name):
     if not path.exists():
         log(f"{name} nao encontrado em: {path}", "WARN")
         return False
     return True
 
+
 def clear_screen():
     os.system("cls" if os.name == "nt" else "clear")
 
+
 # --- Deteccao de dispositivos -------------------------------------------------
+
 
 def get_adb_devices():
     """Retorna lista de dispositivos ADB conectados."""
@@ -110,6 +109,7 @@ def get_adb_devices():
             devices.append(parts[0])
     return devices
 
+
 def get_fastboot_devices():
     """Retorna lista de dispositivos fastboot."""
     out, _, _ = run_cmd([str(FASTBOOT_PATH), "devices"], timeout=5)
@@ -119,6 +119,7 @@ def get_fastboot_devices():
         if len(parts) >= 2 and parts[1] == "fastboot":
             devices.append(parts[0])
     return devices
+
 
 def get_device_info_adb(serial):
     """Obtem informacoes do dispositivo via ADB."""
@@ -132,26 +133,22 @@ def get_device_info_adb(serial):
         ("sdk", "ro.build.version.sdk"),
     ]
     for key, prop in props:
-        out, _, _ = run_cmd(
-            [str(ADB_PATH), "-s", serial, "shell", f"getprop {prop}"],
-            timeout=5
-        )
+        out, _, _ = run_cmd([str(ADB_PATH), "-s", serial, "shell", f"getprop {prop}"], timeout=5)
         info[key] = out.strip()
     return info
+
 
 def get_device_info_fastboot(serial):
     """Obtem informacoes do dispositivo via fastboot."""
     info = {}
-    out, _, _ = run_cmd(
-        [str(FASTBOOT_PATH), "-s", serial, "getvar", "all"],
-        timeout=5
-    )
+    out, _, _ = run_cmd([str(FASTBOOT_PATH), "-s", serial, "getvar", "all"], timeout=5)
     for line in out.splitlines():
         line = line.replace("(bootloader) ", "").strip()
         if ":" in line:
             key, val = line.split(":", 1)
             info[key.strip()] = val.strip()
     return info
+
 
 def detect_device():
     """Detecta o estado atual do dispositivo e retorna um dicionario."""
@@ -162,7 +159,7 @@ def detect_device():
         "model": None,
         "product": None,
         "bootloader_unlocked": None,
-        "info": {}
+        "info": {},
     }
 
     # Verifica ADB
@@ -193,40 +190,53 @@ def detect_device():
         device["info"] = info
         device["product"] = info.get("product")
         device["bootloader_unlocked"] = info.get("unlocked") == "yes"
-        
-        log(f"Produto: {info.get('product', 'N/A')} | Bootloader: {'[OK] DESTRAVADO' if device['bootloader_unlocked'] else '[BL] TRAVADO'}")
+
+        log(
+            f"Produto: {info.get('product', 'N/A')} | Bootloader: "
+            f"{'[OK] DESTRAVADO' if device['bootloader_unlocked'] else '[BL] TRAVADO'}"
+        )
         return device
 
     # Verifica EDL 9008 (Qualcomm)
     try:
         result = subprocess.run(
-            'powershell "Get-PnpDevice | Where-Object { $_.FriendlyName -match \'9008|QDLoader|EDL\' } | Select-Object -ExpandProperty FriendlyName"',
-            capture_output=True, text=True, shell=True, timeout=5
+            "powershell \"Get-PnpDevice | Where-Object { $_.FriendlyName -match '9008|QDLoader|EDL' } | "
+            'Select-Object -ExpandProperty FriendlyName"',
+            capture_output=True,
+            text=True,
+            shell=True,
+            timeout=5,
         )
         if result.stdout.strip():
-            log(f"Modo EDL 9008 detectado via USB!")
+            log("Modo EDL 9008 detectado via USB!")
             device["mode"] = "edl"
             return device
-    except:
+    except Exception:
         pass
 
     # Verifica MTK BROM
     try:
         result = subprocess.run(
-            'powershell "Get-PnpDevice | Where-Object { $_.FriendlyName -match \'MediaTek|MTK|BROM|DA\' } | Select-Object -ExpandProperty FriendlyName"',
-            capture_output=True, text=True, shell=True, timeout=5
+            "powershell \"Get-PnpDevice | Where-Object { $_.FriendlyName -match 'MediaTek|MTK|BROM|DA' } | "
+            'Select-Object -ExpandProperty FriendlyName"',
+            capture_output=True,
+            text=True,
+            shell=True,
+            timeout=5,
         )
         if result.stdout.strip():
-            log(f"Modo MTK BROM detectado via USB!")
+            log("Modo MTK BROM detectado via USB!")
             device["mode"] = "mtk_brom"
             return device
-    except:
+    except Exception:
         pass
 
     log("Nenhum dispositivo Xiaomi/Redmi detectado", "WARN")
     return device
 
+
 # --- Estrategias ADB Bypass --------------------------------------------------
+
 
 class ADBBypass:
     """Implementa as estrategias de bypass via ADB (analisadas do 4uKey)."""
@@ -369,7 +379,7 @@ class ADBBypass:
     def remove_frp_all_steps(self):
         """RemoveFrpAllStep: Executa todas as estrategias em sequencia."""
         log("========== RemoveFrpAllStep: Executando todas as estrategias ==========")
-        
+
         strategies = [
             ("FRPNewPlan", self.plan_new_remove_accounts),
             ("FRPPlanO", self.plan_o_disable_gsf),
@@ -379,7 +389,7 @@ class ADBBypass:
             ("FRPPlanTH", self.plan_th_open_settings),
             ("FRPPlanT", self.plan_t_add_account),
         ]
-        
+
         for name, func in strategies:
             log(f"[{name}] Executando...")
             try:
@@ -390,16 +400,18 @@ class ADBBypass:
 
         return self.results
 
+
 # --- Fastboot -----------------------------------------------------------------
+
 
 def fastboot_erase_all(serial):
     """Executa fastboot erase quando bootloader esta destravado."""
     log("========== Fastboot: Apagando particoes ==========")
     fb = [str(FASTBOOT_PATH), "-s", serial]
-    
+
     partitions = ["frp", "userdata", "cache", "misc"]
     results = {}
-    
+
     for part in partitions:
         log(f"Apagando {part}...")
         out, err, rc = run_cmd(fb + ["erase", part], timeout=30)
@@ -409,39 +421,47 @@ def fastboot_erase_all(serial):
         else:
             log(f"  {part}: FALHOU - {err[:100]}", "WARN")
             results[part] = False
-    
+
     # Se erase falhou, tenta format
     if not results.get("userdata"):
         log("Tentando format userdata...")
         run_cmd(fb + ["format", "userdata"], timeout=60)
-    
+
     return results
+
 
 def fastboot_reboot(serial):
     """Reinicia via fastboot."""
     log("Reiniciando dispositivo...")
     run_cmd([str(FASTBOOT_PATH), "-s", serial, "reboot"], timeout=10)
 
+
 # --- EDL Mode -----------------------------------------------------------------
+
 
 def edl_check_9008():
     """Verifica se dispositivo esta em modo EDL 9008."""
     try:
         result = subprocess.run(
-            'powershell "Get-PnpDevice | Where-Object { $_.FriendlyName -match \'9008|QDLoader\' } | Select-Object FriendlyName, InstanceId"',
-            capture_output=True, text=True, shell=True, timeout=5
+            "powershell \"Get-PnpDevice | Where-Object { $_.FriendlyName -match '9008|QDLoader' } | Select-Object "
+            'FriendlyName, InstanceId"',
+            capture_output=True,
+            text=True,
+            shell=True,
+            timeout=5,
         )
         if "9008" in result.stdout:
             log("Dispositivo em modo EDL 9008 detectado!")
             return True
-    except:
+    except Exception:
         pass
     return False
 
+
 def edl_remove_frp():
     """Usa o EDL tool do 4uKey para remover FRP via protocolo Firehose.
-       Equivalente a: My_EDL_frp::Frp_Edl_Remove() e Config_Edl_Remove()"""
-    
+    Equivalente a: My_EDL_frp::Frp_Edl_Remove() e Config_Edl_Remove()"""
+
     if not EDL_EXE.exists():
         log("EDL tool do 4uKey nao encontrado", "ERROR")
         return False
@@ -455,7 +475,7 @@ def edl_remove_frp():
         return False
 
     log("========== EDL Mode: Removendo FRP ==========")
-    
+
     # Tenta encontrar loader apropriado nos loaders do 4uKey
     loaders = []
     if EDL_LOADERS.exists():
@@ -463,20 +483,20 @@ def edl_remove_frp():
             for f in files:
                 if f.endswith(".bin") or f.endswith(".mbn") or f.endswith(".elf"):
                     loaders.append(Path(root) / f)
-    
+
     if not loaders:
         log("Nenhum loader firehose encontrado", "ERROR")
         return False
-    
+
     log(f"Loaders disponiveis: {len(loaders)}")
-    
+
     # Tenta cada loader
     # O 4uKey usa edl.exe com: --loader=<path> --memory=ufs --lun=<n>
     # Edl_Get_UfsOrEmmcAndLun() detecta UFS vs eMMC e qual LUN usar
-    
+
     for loader in loaders:
         log(f"Tentando loader: {loader.name}")
-        
+
         # --memory=ufs (Redmi Note 9S e UFS, mas pode ser emmc)
         for mem_type in ["ufs", "emmc"]:
             cmd = [
@@ -495,26 +515,33 @@ def edl_remove_frp():
     log("Nenhum loader funcionou para este dispositivo", "ERROR")
     return False
 
+
 # --- MTK BROM Mode ------------------------------------------------------------
+
 
 def mtk_enter_brom():
     """Verifica se dispositivo esta em modo MTK BROM."""
     try:
         result = subprocess.run(
-            'powershell "Get-PnpDevice | Where-Object { $_.FriendlyName -match \'MediaTek|MTK|BROM|DA\' } | Select-Object FriendlyName"',
-            capture_output=True, text=True, shell=True, timeout=5
+            "powershell \"Get-PnpDevice | Where-Object { $_.FriendlyName -match 'MediaTek|MTK|BROM|DA' } | "
+            'Select-Object FriendlyName"',
+            capture_output=True,
+            text=True,
+            shell=True,
+            timeout=5,
         )
         if "MediaTek" in result.stdout or "MTK" in result.stdout:
             log("Dispositivo em modo MTK BROM!")
             return True
-    except:
+    except Exception:
         pass
     return False
 
+
 def mtk_remove_frp():
     """Usa o MTK tool do 4uKey para remover FRP.
-       Equivalente a: MTKFrpSupportWrapper::EnterMTKMode() + removeFRP_MTK()"""
-    
+    Equivalente a: MTKFrpSupportWrapper::EnterMTKMode() + removeFRP_MTK()"""
+
     if not MTK_EXE.exists():
         log("MTK tool do 4uKey nao encontrado", "ERROR")
         return False
@@ -529,32 +556,34 @@ def mtk_remove_frp():
         return False
 
     log("========== MTK BROM: Removendo FRP ==========")
-    
+
     # Busca DA especifico para Xiaomi
     da_files = []
     if MTK_LOADERS.exists():
         da_files = list(MTK_LOADERS.glob("*.bin"))
-    
+
     xiaomi_da = [d for d in da_files if "xiaomi" in d.name.lower()]
     if xiaomi_da:
         log(f"DA Xiaomi encontrado: {xiaomi_da[0].name}")
     elif da_files:
         log(f"Usando DA generico: {da_files[0].name}")
-    
+
     # O main.exe e um PyInstaller bundle, nao temos args exatos
     # Mas podemos tentar executa-lo diretamente com o DA
     log("O MTK tool do 4uKey requer parametros especificos.")
     log("Tente executar manualmente pelo terminal de depuracao:")
     log(f'  cd /d "{MTK_EXE.parent}"')
-    log(f'  {MTK_EXE} --da=xiaomi_9_DA_6765_6785_6768_6873_6885_6853.bin')
-    
+    log(f"  {MTK_EXE} --da=xiaomi_9_DA_6765_6785_6768_6873_6885_6853.bin")
+
     return False
+
 
 # --- Interface do Usuario -----------------------------------------------------
 
+
 def print_banner():
     clear_screen()
-    banner =     """
+    banner = """
     +---------------------------------------+
     |       XiaomiFRPTool v1.0             |
     |  Ferramenta Nativa de Remocao FRP    |
@@ -563,14 +592,15 @@ def print_banner():
     """
     print(banner)
 
+
 def print_device_info(device):
     if not device["serial"] and not device["mode"]:
         print("  [!] Nenhum dispositivo detectado")
         return
-    
+
     print(f"  Serial    : {device['serial'] or 'N/A'}")
     print(f"  Modo      : {device['mode'] or 'N/A'}")
-    
+
     if device["mode"] == "adb":
         print(f"  Fabricante: {device['manufacturer'] or 'N/A'}")
         print(f"  Modelo    : {device['model'] or 'N/A'}")
@@ -578,19 +608,20 @@ def print_device_info(device):
             print(f"  MIUI      : {device['info']['miui_version']}")
         if device["info"].get("android_version"):
             print(f"  Android   : {device['info']['android_version']}")
-    
+
     elif device["mode"] == "fastboot":
         print(f"  Produto   : {device['product'] or 'N/A'}")
         unlocked = device["bootloader_unlocked"]
         print(f"  Bootloader: {'[OK] DESTRAVADO' if unlocked else '[BL] TRAVADO'}")
-    
+
     elif device["mode"] == "edl":
-        print(f"  Estado    : [OK] Modo EDL 9008 ativo")
-        print(f"  Acao      : Pressione 3 (novo EDL real) ou 8 (EDL legado 4uKey)")
-    
+        print("  Estado    : [OK] Modo EDL 9008 ativo")
+        print("  Acao      : Pressione 3 (novo EDL real) ou 8 (EDL legado 4uKey)")
+
     elif device["mode"] == "mtk_brom":
-        print(f"  Estado    : [OK] Modo MTK BROM ativo")
+        print("  Estado    : [OK] Modo MTK BROM ativo")
     print()
+
 
 def print_menu():
     print("  +--- MENU -------------------------------+")
@@ -606,37 +637,38 @@ def print_menu():
     print("  |  [0]  Sair                             |")
     print("  +----------------------------------------+")
 
+
 def main():
     print_banner()
     print("  Inicializando...\n")
-    
+
     # Verifica dependencias
     adb_ok = check_tool(ADB_PATH, "ADB")
     fb_ok = check_tool(FASTBOOT_PATH, "Fastboot")
     edl_ok = check_tool(EDL_EXE, "EDL tool")
     mtk_ok = check_tool(MTK_EXE, "MTK tool")
-    
+
     print()
     print(f"  ADB       : {'[OK]' if adb_ok else '[--]'} {ADB_PATH}")
     print(f"  Fastboot  : {'[OK]' if fb_ok else '[--]'} {FASTBOOT_PATH}")
     print(f"  EDL tool  : {'[OK]' if edl_ok else '[--]'} {EDL_EXE}")
     print(f"  MTK tool  : {'[OK]' if mtk_ok else '[--]'} {MTK_EXE}")
     print()
-    
+
     if not adb_ok or not fb_ok:
         log("ADB ou Fastboot nao encontrados. O 4uKey esta instalado?", "WARN")
-    
+
     input("  Pressione Enter para continuar...")
-    
+
     device = {}
-    
+
     while True:
         print_banner()
         print_device_info(device)
         print_menu()
-        
+
         choice = input("\n  Opcao: ").strip()
-        
+
         if choice == "1":
             print_banner()
             print("  Detectando dispositivo...\n")
@@ -646,39 +678,39 @@ def main():
             else:
                 log("Nenhum dispositivo encontrado", "WARN")
             input("\n  Pressione Enter...")
-        
+
         elif choice == "2":
             if device.get("mode") != "adb":
                 print("\n  [!] Dispositivo nao esta em modo ADB")
                 print("  [!] Conecte o celular e certifique-se que USB debugging esta ativo")
                 input("\n  Pressione Enter...")
                 continue
-            
+
             print_banner()
             print(f"  Dispositivo: {device['serial']}")
             print("  Executando ADB Bypass...\n")
-            
+
             bypass = ADBBypass(device["serial"])
-            
+
             # Primeiro verifica estado
             bypass.check_locked_state()
             bypass.get_miui_version()
             bypass.get_miui_region()
-            
+
             print()
-            
+
             # Executa todas as estrategias
             results = bypass.remove_frp_all_steps()
-            
+
             print("\n  -- Resultados --")
             for name, cmd, ok in results:
                 status = "[OK]" if ok else "[--]"
                 print(f"  {status} [{name}] {cmd}")
-            
+
             print("\n  [OK] Bypass concluido! Se funcionou, reinicie o celular.")
             print("  [DICA] Se nao funcionou, tente opcao 3 (EDL REAL) ou 5 (Fastboot)")
             input("\n  Pressione Enter...")
-        
+
         elif choice == "3":
             print_banner()
             print("  EDL REAL - Sahara + Firehose (FRP)\n")
@@ -722,13 +754,13 @@ def main():
                     if input("  Tentar reboot-edl via fastboot? (s/N): ").strip().lower() == "s":
                         run_cmd([str(FASTBOOT_PATH), "-s", device["serial"], "oem", "reboot-edl"], timeout=10)
                         print("  Comando enviado!")
-            
+
             input("\n  Pressione Enter...")
-        
+
         elif choice == "4":
             print_banner()
             print("  Modo MTK BROM (MediaTek)\n")
-            
+
             if mtk_enter_brom():
                 print("  ✅ Dispositivo em modo MTK BROM!")
                 mtk_remove_frp()
@@ -740,19 +772,19 @@ def main():
                 print("  2. Remova a bateria (se possivel)")
                 print("  3. Segure Volume+ e conecte USB")
                 print("  4. Instale o driver VCOM se necessario")
-            
+
             input("\n  Pressione Enter...")
-        
+
         elif choice == "5":
             if device.get("mode") != "fastboot":
                 print("\n  [!] Dispositivo nao esta em modo Fastboot")
                 print("  [!] Para entrar: desligue e segure Volume- + Power")
                 input("\n  Pressione Enter...")
                 continue
-            
+
             print_banner()
             print(f"  Dispositivo: {device['serial']} ({device.get('product', 'N/A')})")
-            
+
             unlocked = device.get("bootloader_unlocked", False)
             if unlocked:
                 print("  ✅ Bootloader DESTRAVADO")
@@ -774,21 +806,21 @@ def main():
                 print("  1. Habilite 'OEM Unlock' nas opcoes desenvolvedor")
                 print("  2. Use: fastboot oem unlock")
                 print("  (Isso vai apagar todos os dados!)")
-            
+
             input("\n  Pressione Enter...")
-        
+
         elif choice == "6":
             print_banner()
             print("  -- Ultimas linhas do log --\n")
             try:
-                with open(LOG_FILE, "r", encoding="utf-8") as f:
+                with open(LOG_FILE, encoding="utf-8") as f:
                     lines = f.readlines()
                     for line in lines[-30:]:
                         print(f"  {line.strip()}")
-            except:
+            except Exception:
                 print("  (log vazio)")
             input("\n  Pressione Enter...")
-        
+
         elif choice == "7":
             print_banner()
             print("  XiaomiFRPTool v1.0")
@@ -810,7 +842,7 @@ def main():
             print("  Creditos: Eng. reversa do 4uKey for Android")
             print("  Proposito educacional / backup pessoal")
             input("\n  Pressione Enter...")
-        
+
         elif choice == "8":
             print_banner()
             print("  EDL Legado (via 4uKey tools)\n")
@@ -872,10 +904,11 @@ def main():
         elif choice == "0":
             print("\n  Saindo...")
             break
-        
+
         else:
             print("\n  Opcao invalida!")
             input("  Pressione Enter...")
+
 
 if __name__ == "__main__":
     try:
@@ -885,6 +918,7 @@ if __name__ == "__main__":
     except Exception as e:
         log(f"Erro fatal: {e}", "ERROR")
         import traceback
+
         traceback.print_exc()
     finally:
         print(f"\n  Log salvo em: {LOG_FILE}")

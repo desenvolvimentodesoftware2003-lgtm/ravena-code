@@ -1,14 +1,11 @@
-import os
 import logging
-from typing import List, Dict, Any, Optional, Callable
+import os
+from collections.abc import Callable
+from typing import Any
 
-from src.core.alimentacao.manifest import ManifestIngestao
-from src.core.alimentacao.validador import ValidadorRegra1
-from src.core.alimentacao.parser import ParserArquivo, ItemParseado
-from src.core.alimentacao.chunker import Chunker
-from src.core.alimentacao.templates import GeradorPergunta
-from src.core.alimentacao.ingestao import PipelineIngestao, ResultadoIngestao
 from src.core.alimentacao.estrategica import Estrategica
+from src.core.alimentacao.ingestao import PipelineIngestao, ResultadoIngestao
+from src.core.alimentacao.manifest import ManifestIngestao
 
 logger = logging.getLogger("ravena.alimentacao")
 
@@ -19,50 +16,48 @@ _TEMAS_PADRAO = {
         "diretorios": ["src/core"],
         "extensoes": {".py", ".md"},
         "modo_chunk": "hierarquico",
-        "descricao": "P1 - Ravena Core (scripts, logica, estrutura)"
+        "descricao": "P1 - Ravena Core (scripts, logica, estrutura)",
     },
     "docs_pessoais": {
         "diretorios": ["."],
         "extensoes": {".md", ".py", ".txt", ".json"},
         "modo_chunk": "hierarquico",
-        "descricao": "P2 - Docs Pessoais (Oracle Cloud, bot trade, versionamento)"
+        "descricao": "P2 - Docs Pessoais (Oracle Cloud, bot trade, versionamento)",
     },
     "base_tecnica": {
         "diretorios": ["docs"],
         "extensoes": {".md", ".txt", ".pdf"},
         "modo_chunk": "hierarquico",
-        "descricao": "P3 - Base Tecnica (APIs, criptografia, unix)"
+        "descricao": "P3 - Base Tecnica (APIs, criptografia, unix)",
     },
     "corpus_medio": {
         "diretorios": [],
         "extensoes": {".md", ".txt", ".pdf"},
         "modo_chunk": "resumo",
-        "descricao": "P4 - Corpus Medio (papers, artigos)"
+        "descricao": "P4 - Corpus Medio (papers, artigos)",
     },
     "corpus_grande": {
         "diretorios": [],
         "extensoes": {".txt"},
         "modo_chunk": "cluster",
-        "descricao": "P5 - Corpus Grande (dados brutos, mercado)"
+        "descricao": "P5 - Corpus Grande (dados brutos, mercado)",
     },
     "nomad_wikipedia": {
         "diretorios": [],
         "extensoes": {".txt", ".md"},
         "modo_chunk": "cluster",
-        "descricao": "P6 - Protocolo Nomad / Wikipedia"
-    }
+        "descricao": "P6 - Protocolo Nomad / Wikipedia",
+    },
 }
 
+
 class Alimentador:
-    def __init__(self, projeto_raiz: str,
-                 caminho_manifesto: Optional[str] = None):
+    def __init__(self, projeto_raiz: str, caminho_manifesto: str | None = None):
         self._projeto_raiz = projeto_raiz
-        caminho_manifesto = caminho_manifesto or os.path.join(
-            projeto_raiz, "data", "manifest_ingestao.json"
-        )
+        caminho_manifesto = caminho_manifesto or os.path.join(projeto_raiz, "data", "manifest_ingestao.json")
         self._pipeline = PipelineIngestao(caminho_manifesto)
         self._estrategica = Estrategica()
-        self._ensinado_fn: Optional[Callable] = None
+        self._ensinado_fn: Callable | None = None
 
     def conectar_pith(self, pith_instance) -> bool:
         try:
@@ -76,22 +71,22 @@ class Alimentador:
     def conectar_ensinado(self, funcao: Callable):
         self._ensinado_fn = funcao
 
-    def ingerir_arquivo(self, caminho: str, tema: str,
-                        modo_chunk: str = "hierarquico",
-                        forcar: bool = False) -> ResultadoIngestao:
+    def ingerir_arquivo(
+        self, caminho: str, tema: str, modo_chunk: str = "hierarquico", forcar: bool = False
+    ) -> ResultadoIngestao:
         return self._pipeline.executar(
-            caminho=caminho,
-            tema=tema,
-            ensinar_fn=self._ensinado_fn,
-            modo_chunk=modo_chunk,
-            forcar=forcar
+            caminho=caminho, tema=tema, ensinar_fn=self._ensinado_fn, modo_chunk=modo_chunk, forcar=forcar
         )
 
-    def ingerir_diretorio(self, diretorio: str, tema: str,
-                           extensoes: Optional[set] = None,
-                           modo_chunk: str = "hierarquico",
-                           recursivo: bool = True,
-                           forcar: bool = False) -> List[ResultadoIngestao]:
+    def ingerir_diretorio(
+        self,
+        diretorio: str,
+        tema: str,
+        extensoes: set | None = None,
+        modo_chunk: str = "hierarquico",
+        recursivo: bool = True,
+        forcar: bool = False,
+    ) -> list[ResultadoIngestao]:
         extensoes = extensoes or _EXTENSOES_PADRAO
         if not os.path.isdir(diretorio):
             logger.warning(f"Diretorio nao encontrado: {diretorio}")
@@ -117,8 +112,7 @@ class Alimentador:
 
         return resultados
 
-    def ingerir_tema(self, tema: str, base_dir: Optional[str] = None,
-                      forcar: bool = False) -> List[ResultadoIngestao]:
+    def ingerir_tema(self, tema: str, base_dir: str | None = None, forcar: bool = False) -> list[ResultadoIngestao]:
         config = _TEMAS_PADRAO.get(tema)
         if not config:
             logger.warning(f"Tema desconhecido: {tema}")
@@ -131,10 +125,7 @@ class Alimentador:
             if os.path.isdir(dir_path):
                 logger.info(f"Ingerindo tema '{tema}' de {dir_path}")
                 r = self.ingerir_diretorio(
-                    dir_path, tema,
-                    extensoes=config["extensoes"],
-                    modo_chunk=config["modo_chunk"],
-                    forcar=forcar
+                    dir_path, tema, extensoes=config["extensoes"], modo_chunk=config["modo_chunk"], forcar=forcar
                 )
                 resultados.extend(r)
             else:
@@ -142,7 +133,7 @@ class Alimentador:
 
         return resultados
 
-    def ingerir_todos_temas(self, base_dir: Optional[str] = None) -> Dict[str, List[ResultadoIngestao]]:
+    def ingerir_todos_temas(self, base_dir: str | None = None) -> dict[str, list[ResultadoIngestao]]:
         resultados_por_tema = {}
         for tema in _TEMAS_PADRAO:
             if tema in ("corpus_medio", "corpus_grande", "nomad_wikipedia"):
@@ -152,8 +143,7 @@ class Alimentador:
             logger.info(f"Tema '{tema}': {sum(r.itens_gerados for r in resultados)} itens gerados")
         return resultados_por_tema
 
-    def ingerir_estrategica(self, textos: List[str],
-                             prefixo_pergunta: str = "topicos") -> int:
+    def ingerir_estrategica(self, textos: list[str], prefixo_pergunta: str = "topicos") -> int:
         representantes = self._estrategica.selecionar_representantes(textos)
         itens_gerados = 0
         for pergunta, conteudo in representantes:
@@ -164,21 +154,20 @@ class Alimentador:
                         pergunta=pergunta_final,
                         conteudo=conteudo,
                         fonte="alimentacao:estrategica",
-                        metadata={"tipo": "cluster", "prefixo": prefixo_pergunta}
+                        metadata={"tipo": "cluster", "prefixo": prefixo_pergunta},
                     )
                     itens_gerados += 1
                 except Exception as e:
                     logger.warning(f"Erro ao ensinar item estrategico: {e}")
         return itens_gerados
 
-    def verificar_similaridade(self, texto_novo: str,
-                                textos_existentes: List[str]) -> float:
+    def verificar_similaridade(self, texto_novo: str, textos_existentes: list[str]) -> float:
         return self._estrategica.verificar_similaridade(texto_novo, textos_existentes)
 
-    def estatisticas(self) -> Dict[str, Any]:
+    def estatisticas(self) -> dict[str, Any]:
         return self._pipeline.estatisticas()
 
-    def listar_temas_disponiveis(self) -> Dict[str, str]:
+    def listar_temas_disponiveis(self) -> dict[str, str]:
         return {k: v["descricao"] for k, v in _TEMAS_PADRAO.items()}
 
     def resetar_manifesto(self):

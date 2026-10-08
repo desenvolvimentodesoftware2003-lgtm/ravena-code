@@ -4,7 +4,7 @@ import sys
 import threading
 
 from .browser import open_via_tor
-from .delay import generate_delay, format_delay, wait
+from .delay import format_delay, generate_delay, wait
 from .server import MobCryptServer
 from .tor import TorManager
 
@@ -65,15 +65,15 @@ def main():
     print(line)
     print()
     ip = _get_local_ip()
-    print(f"  Escaneie o QR code no celular e envie POST para:")
+    print("  Escaneie o QR code no celular e envie POST para:")
     print(f"  http://{ip}:{args.port}/scan")
-    print(f'  Body: {{"url": "https://exemplo.com/auth/qr..."}}')
+    print('  Body: {"url": "https://exemplo.com/auth/qr..."}')
     print()
     print(f"  Delay QR: {args.delay_min}s ~ {args.delay_max}s (aleatorio quebrado)")
     if args.rotate > 0:
         print(f"  Rotacao IP: a cada ~{args.rotate}s (NEWNYM periodico)")
     else:
-        print(f"  Rotacao IP: desligada (use --rotate)")
+        print("  Rotacao IP: desligada (use --rotate)")
     print(f"  Proxy Tor: {tor.proxy_url}")
     print(line)
     print()
@@ -103,6 +103,7 @@ def main():
         threading.Thread(target=task, daemon=True).start()
 
     if args.rotate > 0:
+
         def rotate_loop():
             while True:
                 interval = generate_delay(args.rotate_min, args.rotate_max)
@@ -110,6 +111,7 @@ def main():
                 wait(interval)
                 logger.info("Rodando nova identidade Tor...")
                 tor.new_identity()
+
         threading.Thread(target=rotate_loop, daemon=True).start()
 
     server = MobCryptServer(args.host, args.port, handle_scan)
@@ -126,6 +128,7 @@ def main():
 
 def _get_local_ip() -> str:
     import socket
+
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         s.connect(("10.255.255.255", 1))

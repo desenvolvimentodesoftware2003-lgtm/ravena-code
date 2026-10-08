@@ -12,17 +12,16 @@ Loop interativo:
 Uso: python scripts/sessao_conversacional.py
 """
 
+import json
 import os
 import sys
-import json
-from datetime import datetime
 
 _projeto_raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _projeto_raiz not in sys.path:
     sys.path.insert(0, _projeto_raiz)
 
-from src.core.omega import obter_omega, Omega, ResultadoMissao
-from src.core.professor import Professor
+from src.core.omega import Omega, ResultadoMissao, obter_omega  # noqa: E402
+from src.core.professor import Professor  # noqa: E402
 
 # ── Palavras-chave para auto-classificacao ──
 _AUTO_ASSUNTO = {
@@ -41,7 +40,7 @@ _AUTO_ASSUNTO = {
     "auto_meta": ["meta", "objetivo", "proposito", "finalidade", "planejamento"],
     "auto_colaboracao": ["colaboracao", "equipe", "cooperacao", "grupo", "junto"],
     "auto_resiliencia": ["resiliencia", "falha", "erro", "recuperacao", "superar", "adaptacao"],
-    "geral": []
+    "geral": [],
 }
 
 
@@ -95,14 +94,17 @@ def _mostrar_boletim(prof: Professor):
         print(f"    Nivel: {info.get('nivel', 'N/A')}  |  Nota: {info.get('nota', 'N/A')}")
         comps = info.get("competencias", {})
         if comps:
-            print(f"    Comp.: {', '.join(f'{k}={v:.2f}' for k, v in sorted(comps.items()) if isinstance(v, (int, float)))}")
+            print(
+                f"    Comp.: "
+                f"{', '.join(f'{k}={v:.2f}' for k, v in sorted(comps.items()) if isinstance(v, (int, float)))}"
+            )
     print(f"Exemplos expert: {boletim.get('total_exemplos_expert', 0)}")
     print()
 
 
 def _mostrar_boletim_llm(prof: Professor):
     boletim = prof.boletim_llm()
-    print(f"\n=== BOLETIM LLM ===")
+    print("\n=== BOLETIM LLM ===")
     print(boletim)
     print()
 
@@ -151,6 +153,7 @@ def processar_pergunta(omega: Omega, prof: Professor, pergunta: str, assunto: st
 
 def main():
     import sys
+
     modo_one_shot = len(sys.argv) > 1 and not sys.argv[1].startswith("/")
     if not modo_one_shot:
         print("=" * 66)
@@ -201,7 +204,7 @@ def main():
         if resultado["diagnostico"]["modulos_usados"]:
             print(f"  Modulos: {', '.join(resultado['diagnostico']['modulos_usados'])}")
         if resultado["avaliacao_professor"]:
-            print(f"\n  --- Professor ---")
+            print("\n  --- Professor ---")
             print(_formatar_avaliacao(resultado["avaliacao_professor"]))
         if resultado["erro"]:
             print(f"\n  [!] {resultado['erro']}: {resultado.get('sugestao', '')}")
@@ -215,7 +218,7 @@ def main():
     # ── Loop conversacional ──
     while True:
         try:
-            perfil_tag = omega._perfil_nome[:4] if hasattr(omega, '_perfil_nome') and omega._perfil_nome else "???"
+            perfil_tag = omega._perfil_nome[:4] if hasattr(omega, "_perfil_nome") and omega._perfil_nome else "???"
             entrada = input(f"\n[Voce] ({assunto_atual}) [{perfil_tag}] > ").strip()
         except (EOFError, KeyboardInterrupt):
             print()
@@ -249,14 +252,17 @@ def main():
                 print(f"  Perfil alterado para: {nome_perfil}")
             else:
                 perfis = omega.listar_perfis()
-                print(f"  Perfil '{nome_perfil}' nao encontrado. Disponiveis: {', '.join(perfis['perfis_disponiveis'].keys())}")
+                print(
+                    f"  Perfil '{nome_perfil}' nao encontrado. Disponiveis: "
+                    f"{', '.join(perfis['perfis_disponiveis'].keys())}"
+                )
             continue
         if entrada.lower() == "/perfis":
             perfis = omega.listar_perfis()
             print(f"  Perfil ativo: {perfis['perfil_atual']}")
             print("  Disponiveis:")
-            for nome, info in perfis['perfis_disponiveis'].items():
-                ativo = " <<" if nome == perfis['perfil_atual'] else ""
+            for nome, info in perfis["perfis_disponiveis"].items():
+                ativo = " <<" if nome == perfis["perfil_atual"] else ""
                 print(f"    {nome:15s} - {info['label']:<15s} {info['descricao'][:50]}{ativo}")
             continue
         if entrada.lower() in ("/help", "/?"):
@@ -289,9 +295,11 @@ def main():
 
         if resultado["avaliacao_professor"]:
             av = resultado["avaliacao_professor"]
-            print(f"\n  --- Professor ---")
+            print("\n  --- Professor ---")
             print(_formatar_avaliacao(av))
-            historico.append({"pergunta": entrada, "assunto": assunto_usado, "resposta": resultado["resposta"], "avaliacao": av})
+            historico.append(
+                {"pergunta": entrada, "assunto": assunto_usado, "resposta": resultado["resposta"], "avaliacao": av}
+            )
 
             # ── Monta resposta_dict para correcao ──
             resp_dict = {

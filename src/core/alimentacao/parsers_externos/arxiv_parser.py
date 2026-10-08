@@ -1,25 +1,27 @@
+import logging
 import re
 import time
-import logging
-from typing import List, Optional
 from dataclasses import dataclass
 
 try:
     import arxiv
+
     _ARXIV_DISPONIVEL = True
 except ImportError:
     _ARXIV_DISPONIVEL = False
 
 logger = logging.getLogger("ravena.alimentacao.arxiv")
 
+
 @dataclass
 class ItemArxiv:
     titulo: str
     resumo: str
-    autores: List[str]
+    autores: list[str]
     ano: str
     url: str
-    categorias: List[str]
+    categorias: list[str]
+
 
 class ArxivParser:
     def __init__(self):
@@ -27,7 +29,7 @@ class ArxivParser:
             logger.warning("biblioteca 'arxiv' nao instalada. pip install arxiv")
         self._client = arxiv.Client(page_size=10, delay_seconds=3, num_retries=3) if _ARXIV_DISPONIVEL else None
 
-    def buscar(self, query: str, max_resultados: int = 10) -> List[ItemArxiv]:
+    def buscar(self, query: str, max_resultados: int = 10) -> list[ItemArxiv]:
         if not self._client:
             return []
         try:
@@ -40,35 +42,32 @@ class ArxivParser:
                     autores=[a.name for a in resultado.authors[:5]],
                     ano=str(resultado.published.year),
                     url=resultado.entry_id,
-                    categorias=resultado.categories[:5]
+                    categorias=resultado.categories[:5],
                 )
                 itens.append(item)
-            logger.info("arXiv '%s': %d resultados" % (query[:50], len(itens)))
+            logger.info(f"arXiv '{query[:50]}': {len(itens)} resultados")
             return itens
         except Exception as e:
-            logger.warning("Erro arXiv busca '%s': %s" % (query[:30], e))
+            logger.warning(f"Erro arXiv busca '{query[:30]}': {e}")
             return []
 
     def gerar_item_pith(self, item: ItemArxiv) -> tuple:
         autor_str = ", ".join(item.autores[:3])
-        pergunta = "resumo de %s" % item.titulo.lower().rstrip(".")
-        resumo_limpo = re.sub(r'\s+', ' ', item.resumo).strip()
+        pergunta = "resumo de {}".format(item.titulo.lower().rstrip("."))
+        resumo_limpo = re.sub(r"\s+", " ", item.resumo).strip()
         if len(resumo_limpo) > 2000:
             resumo_limpo = resumo_limpo[:2000] + "..."
-        conteudo = "Titulo: %s\nAutores: %s\nAno: %s\nResumo: %s" % (
-            item.titulo, autor_str, item.ano, resumo_limpo
-        )
+        conteudo = f"Titulo: {item.titulo}\nAutores: {autor_str}\nAno: {item.ano}\nResumo: {resumo_limpo}"
         metadados = {
             "fonte": "arxiv",
             "autores": item.autores[:5],
             "ano": item.ano,
             "url": item.url,
-            "categorias": item.categorias
+            "categorias": item.categorias,
         }
         return pergunta, conteudo, metadados
 
-    def ingerir_por_keywords(self, keywords: List[str], alimentador,
-                              itens_por_kw: int = 5) -> int:
+    def ingerir_por_keywords(self, keywords: list[str], alimentador, itens_por_kw: int = 5) -> int:
         total = 0
         for kw in keywords:
             itens = self.buscar(kw, max_resultados=itens_por_kw)
@@ -77,14 +76,11 @@ class ArxivParser:
                 if hasattr(alimentador, "_ensinado_fn") and alimentador._ensinado_fn:
                     try:
                         alimentador._ensinado_fn(
-                            pergunta=pergunta,
-                            conteudo=conteudo,
-                            fonte="arxiv",
-                            metadata=metadados
+                            pergunta=pergunta, conteudo=conteudo, fonte="arxiv", metadata=metadados
                         )
                         total += 1
                     except Exception as e:
-                        logger.warning("Erro ao ingerir arXiv: %s" % e)
+                        logger.warning(f"Erro ao ingerir arXiv: {e}")
                 time.sleep(0.5)
-        logger.info("arXiv ingestao: %d itens de %d keywords" % (total, len(keywords)))
+        logger.info(f"arXiv ingestao: {total} itens de {len(keywords)} keywords")
         return total

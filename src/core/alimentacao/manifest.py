@@ -1,21 +1,22 @@
-import os
-import json
 import hashlib
+import json
 import logging
+import os
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 logger = logging.getLogger("ravena.alimentacao.manifest")
+
 
 class ManifestIngestao:
     def __init__(self, caminho_manifesto: str):
         self._caminho = caminho_manifesto
-        self._dados: Dict[str, Any] = self._carregar()
+        self._dados: dict[str, Any] = self._carregar()
 
-    def _carregar(self) -> Dict[str, Any]:
+    def _carregar(self) -> dict[str, Any]:
         if os.path.exists(self._caminho):
             try:
-                with open(self._caminho, "r", encoding="utf-8") as f:
+                with open(self._caminho, encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
                 logger.warning(f"Erro ao carregar manifesto: {e}")
@@ -39,7 +40,7 @@ class ManifestIngestao:
     def hash_texto(self, texto: str) -> str:
         return hashlib.sha256(texto.encode("utf-8")).hexdigest()
 
-    def verificar(self, caminho: str) -> Optional[Dict[str, Any]]:
+    def verificar(self, caminho: str) -> dict[str, Any] | None:
         hash_atual = self.hash_arquivo(caminho)
         registros = self._dados.get("arquivos", {})
         caminho_norm = os.path.normpath(caminho)
@@ -50,9 +51,15 @@ class ManifestIngestao:
                 break
         return None
 
-    def registrar(self, caminho: str, tema: str, status: str,
-                  itens_gerados: int = 0, motivo_pulo: Optional[str] = None,
-                  metadados: Optional[Dict[str, Any]] = None):
+    def registrar(
+        self,
+        caminho: str,
+        tema: str,
+        status: str,
+        itens_gerados: int = 0,
+        motivo_pulo: str | None = None,
+        metadados: dict[str, Any] | None = None,
+    ):
         if os.path.isfile(caminho):
             hash_val = self.hash_arquivo(caminho)
         else:
@@ -64,7 +71,7 @@ class ManifestIngestao:
             "motivo_pulo": motivo_pulo,
             "itens_gerados": itens_gerados,
             "timestamp": datetime.now().isoformat(),
-            "metadados": metadados or {}
+            "metadados": metadados or {},
         }
         self._salvar()
 
@@ -75,11 +82,11 @@ class ManifestIngestao:
             registro["timestamp"] = datetime.now().isoformat()
             self._salvar()
 
-    def estatisticas(self) -> Dict[str, Any]:
+    def estatisticas(self) -> dict[str, Any]:
         arquivos = self._dados.get("arquivos", {})
         total = len(arquivos)
-        por_status: Dict[str, int] = {}
-        por_tema: Dict[str, int] = {}
+        por_status: dict[str, int] = {}
+        por_tema: dict[str, int] = {}
         total_itens = 0
         for info in arquivos.values():
             s = info.get("status", "desconhecido")
@@ -92,17 +99,15 @@ class ManifestIngestao:
             "por_status": por_status,
             "por_tema": por_tema,
             "total_itens_gerados": total_itens,
-            "versao_manifesto": self._dados.get("versao", "1.0")
+            "versao_manifesto": self._dados.get("versao", "1.0"),
         }
 
-    def listar_pendentes(self) -> List[str]:
+    def listar_pendentes(self) -> list[str]:
         return [
-            caminho for caminho, info in self._dados.get("arquivos", {}).items()
-            if info.get("status") == "pendente"
+            caminho for caminho, info in self._dados.get("arquivos", {}).items() if info.get("status") == "pendente"
         ]
 
-    def listar_ingeridos(self) -> List[str]:
+    def listar_ingeridos(self) -> list[str]:
         return [
-            caminho for caminho, info in self._dados.get("arquivos", {}).items()
-            if info.get("status") == "ingerido"
+            caminho for caminho, info in self._dados.get("arquivos", {}).items() if info.get("status") == "ingerido"
         ]

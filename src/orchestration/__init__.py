@@ -7,7 +7,7 @@ Disponibiliza:
 - TelegramBot: bot do Telegram para interface com usuario
 """
 
-from .telegram_bot import TelegramBot, RateLimiter
+from .telegram_bot import RateLimiter, TelegramBot
 
 __all__ = [
     "TelegramBot",

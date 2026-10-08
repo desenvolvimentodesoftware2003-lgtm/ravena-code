@@ -6,7 +6,6 @@ Valida a integridade do pipeline E2E: módulos, testes, relatórios e configura�
 
 import importlib.util
 import json
-import os
 import sys
 import time
 from datetime import datetime
@@ -31,12 +30,14 @@ except (AttributeError, ValueError):
 results = []
 start_time = time.time()
 
+
 def check(label, ok, detail=""):
     elapsed = round(time.time() - start_time, 3)
     status = "PASS" if ok else "FAIL"
     icon = "✅" if ok else "❌"
     print(f"  {icon} {label}: {status} | {detail}")
     results.append({"check": label, "status": status, "detail": detail, "time_ms": int(elapsed * 1000)})
+
 
 def import_from_file(module_name, file_path):
     spec = importlib.util.spec_from_file_location(module_name, file_path)
@@ -45,6 +46,7 @@ def import_from_file(module_name, file_path):
     spec.loader.exec_module(module)
     return module
 
+
 print("=" * 60)
 print("  RAVENA AIM — E2E INTEGRITY VALIDATOR v3.2.6")
 print(f"  Started: {datetime.now().isoformat()}")
@@ -52,9 +54,16 @@ print("=" * 60)
 
 print("\n--- Phase 1: Directory Structure ---")
 dirs = [
-    "src/core", "src/security", "src/trading", "src/rag",
-    "src/learning", "src/orchestration", "src/simulation",
-    "src/utils", "tests", ".github/workflows"
+    "src/core",
+    "src/security",
+    "src/trading",
+    "src/rag",
+    "src/learning",
+    "src/orchestration",
+    "src/simulation",
+    "src/utils",
+    "tests",
+    ".github/workflows",
 ]
 for d in dirs:
     check(f"Directory {d}", (PROJECT_ROOT / d).exists())
@@ -153,10 +162,14 @@ if report_path.exists():
 
         # Todo check de codigo tem de estar PASS. Um WARN em check de
         # codigo e codigo carregando com fallback — nunca aceitavel.
-        warns_codigo = [r["module"] for r in data["results"]
-                        if r.get("scope", "code") == "code" and r["status"] != "PASS"]
-        check("No code check below PASS", not warns_codigo,
-              f"{len(warns_codigo)}: {warns_codigo}" if warns_codigo else "Todos os checks de codigo em PASS")
+        warns_codigo = [
+            r["module"] for r in data["results"] if r.get("scope", "code") == "code" and r["status"] != "PASS"
+        ]
+        check(
+            "No code check below PASS",
+            not warns_codigo,
+            f"{len(warns_codigo)}: {warns_codigo}" if warns_codigo else "Todos os checks de codigo em PASS",
+        )
     except Exception as e:
         check("JSON Integrity", False, str(e))
 else:
@@ -167,7 +180,7 @@ passed = sum(1 for r in results if r["status"] == "PASS")
 failed = sum(1 for r in results if r["status"] == "FAIL")
 
 print(f"\n{'=' * 60}")
-print(f"  VALIDATION COMPLETE")
+print("  VALIDATION COMPLETE")
 print(f"  Total checks: {len(results)}")
 print(f"  ✅ PASS: {passed}")
 print(f"  ❌ FAIL: {failed}")
@@ -178,7 +191,7 @@ report = {
     "version": "3.2.6",
     "summary": {"total": len(results), "passed": passed, "failed": failed, "time_seconds": total_time},
     "results": results,
-    "verdict": "PASS" if failed == 0 else "FAIL"
+    "verdict": "PASS" if failed == 0 else "FAIL",
 }
 
 out_path = PROJECT_ROOT / "tests" / "e2e_integrity_report.json"

@@ -7,21 +7,25 @@ Suporta tres modos:
 - oci:     Oracle Cloud Infrastructure (Qwen 3.5 / Kimi K2.5)
 """
 
-import os
 import logging
+import os
 import time
 
 try:
     from dotenv import load_dotenv
 except ImportError:
-    def load_dotenv(): pass
+
+    def load_dotenv():
+        pass
+
 
 logger = logging.getLogger("ravena.model")
 
 # ── Dependencias opcionais ──
 try:
     import torch
-    from transformers import AutoTokenizer, AutoModelForCausalLM
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
     _HF_DISPONIVEL = True
 except ImportError:
     _HF_DISPONIVEL = False
@@ -33,15 +37,14 @@ except ImportError:
 
 try:
     import llama_cpp
+
     _LLAMA_DISPONIVEL = True
 except ImportError:
     _LLAMA_DISPONIVEL = False
 
 _PROJETO_RAIZ = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-_CAMINHO_GGUF_PADRAO = os.path.join(
-    _PROJETO_RAIZ, "data", "models", "qwen2.5-1.5b-instruct-q4_k_m.gguf"
-)
+_CAMINHO_GGUF_PADRAO = os.path.join(_PROJETO_RAIZ, "data", "models", "qwen2.5-1.5b-instruct-q4_k_m.gguf")
 _SYSTEM_PROMPT = (
     "Voce e a Ravena, uma assistente objetiva e tecnica. "
     "Seja direta. Responda apenas com a informacao solicitada, sem rodeios.\n\n"
@@ -54,14 +57,11 @@ _SYSTEM_PROMPT = (
 
 
 class RavenaModel:
-    def __init__(self, modelo: str = "gguf", nome_modelo: str = None,
-                 caminho_gguf: str = None):
+    def __init__(self, modelo: str = "gguf", nome_modelo: str = None, caminho_gguf: str = None):
         load_dotenv()
         self.modo = modelo
         self.nome_modelo = nome_modelo or _CAMINHO_GGUF_PADRAO
-        self.caminho_gguf = caminho_gguf or (
-            self.nome_modelo if self.nome_modelo.endswith(".gguf") else None
-        )
+        self.caminho_gguf = caminho_gguf or (self.nome_modelo if self.nome_modelo.endswith(".gguf") else None)
         # fallback: se caminho_gguf foi passado, força modo gguf
         if self.caminho_gguf:
             self.modo = "gguf"
@@ -98,7 +98,7 @@ class RavenaModel:
             logger.error(f"Arquivo GGUF nao encontrado: {caminho}")
             return False
         try:
-            logger.info(f"Carregando GGUF: {caminho} ({os.path.getsize(caminho)/1e6:.0f} MB)")
+            logger.info(f"Carregando GGUF: {caminho} ({os.path.getsize(caminho) / 1e6:.0f} MB)")
             inicio = time.time()
             self._llama = llama_cpp.Llama(
                 model_path=caminho,
@@ -106,7 +106,7 @@ class RavenaModel:
                 n_threads=4,
                 verbose=False,
             )
-            logger.info(f"GGUF carregado em {time.time()-inicio:.1f}s")
+            logger.info(f"GGUF carregado em {time.time() - inicio:.1f}s")
             self._carregado = True
             return True
         except Exception as e:
@@ -122,12 +122,10 @@ class RavenaModel:
             self._tokenizer = AutoTokenizer.from_pretrained(self.nome_modelo)
             logger.info(f"Carregando modelo: {self.nome_modelo} (CPU, float32)")
             inicio = time.time()
-            self._model = AutoModelForCausalLM.from_pretrained(
-                self.nome_modelo, dtype=torch.float32
-            )
+            self._model = AutoModelForCausalLM.from_pretrained(self.nome_modelo, dtype=torch.float32)
             self._model.to("cpu")
             self._model.eval()
-            logger.info(f"Modelo carregado em {time.time()-inicio:.1f}s")
+            logger.info(f"Modelo carregado em {time.time() - inicio:.1f}s")
             self._carregado = True
             return True
         except Exception as e:
@@ -184,9 +182,7 @@ class RavenaModel:
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user", "content": prompt},
             ]
-            text = self._tokenizer.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True
-            )
+            text = self._tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
             inputs = self._tokenizer(text, return_tensors="pt")
             with torch.no_grad():
                 outputs = self._model.generate(
@@ -237,15 +233,17 @@ class RavenaModel:
         self._llama = None
         self._carregado = False
         import gc
+
         gc.collect()
         logger.info("Modelo descarregado da memoria")
 
 
 if __name__ == "__main__":
     import sys
+
     modo = sys.argv[1] if len(sys.argv) > 1 else "gguf"
     model = RavenaModel(modelo=modo)
     t0 = time.time()
     r = model.gerar_resposta("Qual a capital do Brasil?", max_tokens=30)
     print(f"Resposta: {r}")
-    print(f"Tempo total: {time.time()-t0:.1f}s")
+    print(f"Tempo total: {time.time() - t0:.1f}s")

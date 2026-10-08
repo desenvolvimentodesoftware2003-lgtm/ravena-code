@@ -1,15 +1,17 @@
-import os
 import logging
-from typing import List, Dict, Any, Optional, Callable
+import os
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
-from src.core.alimentacao.manifest import ManifestIngestao
-from src.core.alimentacao.validador import ValidadorRegra1
-from src.core.alimentacao.parser import ParserArquivo, ItemParseado
 from src.core.alimentacao.chunker import Chunker
+from src.core.alimentacao.manifest import ManifestIngestao
+from src.core.alimentacao.parser import ItemParseado, ParserArquivo
 from src.core.alimentacao.templates import GeradorPergunta
+from src.core.alimentacao.validador import ValidadorRegra1
 
 logger = logging.getLogger("ravena.alimentacao.ingestao")
+
 
 @dataclass
 class ResultadoIngestao:
@@ -18,7 +20,8 @@ class ResultadoIngestao:
     status: str
     itens_gerados: int
     itens_rejeitados: int
-    erro: Optional[str] = None
+    erro: str | None = None
+
 
 class PipelineIngestao:
     def __init__(self, caminho_manifesto: str):
@@ -28,15 +31,22 @@ class PipelineIngestao:
         self._chunker = Chunker()
         self._gerador = GeradorPergunta()
 
-    def executar(self, caminho: str, tema: str,
-                 ensinar_fn: Optional[Callable] = None,
-                 modo_chunk: str = "hierarquico",
-                 forcar: bool = False) -> ResultadoIngestao:
+    def executar(
+        self,
+        caminho: str,
+        tema: str,
+        ensinar_fn: Callable | None = None,
+        modo_chunk: str = "hierarquico",
+        forcar: bool = False,
+    ) -> ResultadoIngestao:
         if not os.path.isfile(caminho):
             return ResultadoIngestao(
-                arquivo=caminho, tema=tema,
-                status="erro", itens_gerados=0, itens_rejeitados=0,
-                erro="arquivo_nao_encontrado"
+                arquivo=caminho,
+                tema=tema,
+                status="erro",
+                itens_gerados=0,
+                itens_rejeitados=0,
+                erro="arquivo_nao_encontrado",
             )
 
         if not forcar:
@@ -44,9 +54,7 @@ class PipelineIngestao:
             if existente and existente.get("status") == "ingerido":
                 logger.info(f"Arquivo ja ingerido: {caminho} (hash identico)")
                 return ResultadoIngestao(
-                    arquivo=caminho, tema=tema,
-                    status="pulado", itens_gerados=0, itens_rejeitados=0,
-                    erro="ja_ingerido"
+                    arquivo=caminho, tema=tema, status="pulado", itens_gerados=0, itens_rejeitados=0, erro="ja_ingerido"
                 )
 
         try:
@@ -55,18 +63,18 @@ class PipelineIngestao:
             logger.warning(f"Erro ao parsear {caminho}: {e}")
             self._manifest.registrar(caminho, tema, "erro", motivo_pulo=str(e))
             return ResultadoIngestao(
-                arquivo=caminho, tema=tema,
-                status="erro", itens_gerados=0, itens_rejeitados=0,
-                erro=str(e)
+                arquivo=caminho, tema=tema, status="erro", itens_gerados=0, itens_rejeitados=0, erro=str(e)
             )
 
         if not itens_parseados:
-            self._manifest.registrar(caminho, tema, "pulado",
-                                      motivo_pulo="sem_itens_extraidos")
+            self._manifest.registrar(caminho, tema, "pulado", motivo_pulo="sem_itens_extraidos")
             return ResultadoIngestao(
-                arquivo=caminho, tema=tema,
-                status="pulado", itens_gerados=0, itens_rejeitados=0,
-                erro="sem_itens_extraidos"
+                arquivo=caminho,
+                tema=tema,
+                status="pulado",
+                itens_gerados=0,
+                itens_rejeitados=0,
+                erro="sem_itens_extraidos",
             )
 
         itens_validados = []
@@ -80,13 +88,14 @@ class PipelineIngestao:
                 logger.debug(f"Item rejeitado de {caminho}: {motivo}")
 
         if not itens_validados:
-            self._manifest.registrar(caminho, tema, "pulado",
-                                      motivo_pulo="todos_itens_rejeitados")
+            self._manifest.registrar(caminho, tema, "pulado", motivo_pulo="todos_itens_rejeitados")
             return ResultadoIngestao(
-                arquivo=caminho, tema=tema,
-                status="pulado", itens_gerados=0,
+                arquivo=caminho,
+                tema=tema,
+                status="pulado",
+                itens_gerados=0,
                 itens_rejeitados=itens_rejeitados,
-                erro="todos_itens_rejeitados"
+                erro="todos_itens_rejeitados",
             )
 
         itens_para_ensinar = self._aplicar_chunking(itens_validados, modo_chunk)
@@ -101,7 +110,7 @@ class PipelineIngestao:
                         conteudo=item.conteudo,
                         fonte="alimentacao",
                         metadata={**item.metadados, "fonte_original": item.fonte},
-                        grupo=grupo
+                        grupo=grupo,
                     )
                     itens_ensinados += 1
                 except Exception as e:
@@ -110,18 +119,17 @@ class PipelineIngestao:
         else:
             itens_gerados = len(itens_para_ensinar)
 
-        self._manifest.registrar(caminho, tema, "ingerido",
-                                  itens_gerados=itens_gerados)
+        self._manifest.registrar(caminho, tema, "ingerido", itens_gerados=itens_gerados)
 
         return ResultadoIngestao(
-            arquivo=caminho, tema=tema,
+            arquivo=caminho,
+            tema=tema,
             status="ingerido",
             itens_gerados=itens_gerados,
-            itens_rejeitados=itens_rejeitados
+            itens_rejeitados=itens_rejeitados,
         )
 
-    def _aplicar_chunking(self, itens: List[ItemParseado],
-                           modo: str) -> List[ItemParseado]:
+    def _aplicar_chunking(self, itens: list[ItemParseado], modo: str) -> list[ItemParseado]:
         if modo == "nenhum":
             return itens
 
@@ -134,23 +142,27 @@ class PipelineIngestao:
                 pergunta = self._gerador.gerar(
                     titulo_chunk,
                     tipo=item.metadados.get("tipo", "md_section"),
-                    nome_arquivo=item.metadados.get("arquivo")
+                    nome_arquivo=item.metadados.get("arquivo"),
                 )
-                resultado.append(ItemParseado(
-                    pergunta=pergunta or item.pergunta,
-                    conteudo=conteudo_chunk,
-                    grupo=item.grupo,
-                    fonte=item.fonte,
-                    hash_item=item.hash_item,
-                    metadados={**item.metadados, "chunk_de": item.pergunta}
-                ))
+                resultado.append(
+                    ItemParseado(
+                        pergunta=pergunta or item.pergunta,
+                        conteudo=conteudo_chunk,
+                        grupo=item.grupo,
+                        fonte=item.fonte,
+                        hash_item=item.hash_item,
+                        metadados={**item.metadados, "chunk_de": item.pergunta},
+                    )
+                )
         return resultado or itens
 
     def _classificar_grupo(self, pergunta: str, conteudo: str) -> str:
         try:
-            from src.core.conhecimento import _GRUPOS_PADRAO
             import re
-            palavras_texto = set(re.findall(r'\w+', f"{pergunta} {conteudo}".lower()))
+
+            from src.core.conhecimento import _GRUPOS_PADRAO
+
+            palavras_texto = set(re.findall(r"\w+", f"{pergunta} {conteudo}".lower()))
             melhor_grupo = "geral"
             melhor_pontuacao = 0
             for grupo, config in _GRUPOS_PADRAO.items():
@@ -164,5 +176,5 @@ class PipelineIngestao:
         except ImportError:
             return "geral"
 
-    def estatisticas(self) -> Dict[str, Any]:
+    def estatisticas(self) -> dict[str, Any]:
         return self._manifest.estatisticas()

@@ -7,12 +7,9 @@ Uso exclusivo de SecretsManager — sem tokens hardcoded.
 Seguranca: whitelist de chat_ids, rate limiting, sem acesso a arquivos.
 """
 
-import json
 import logging
 import time
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 import httpx
 
@@ -22,10 +19,10 @@ logger = logging.getLogger("ravena.telegram_bot")
 
 API_BASE = "https://api.telegram.org"
 RATE_LIMIT_SECONDS = 2
-AUTHORIZED_CHAT_IDS: List[str] = []
+AUTHORIZED_CHAT_IDS: list[str] = []
 
 
-def _carregar_chat_ids() -> List[str]:
+def _carregar_chat_ids() -> list[str]:
     ids_str = secrets.get("TELEGRAM_CHAT_ID", required=False)
     if not ids_str:
         return []
@@ -40,7 +37,7 @@ def _is_authorized(chat_id: int) -> bool:
 
 class RateLimiter:
     def __init__(self, max_per_second: float = 1.0):
-        self._last_time: Dict[int, float] = {}
+        self._last_time: dict[int, float] = {}
         self._cooldown = 1.0 / max_per_second
 
     def check(self, user_id: int) -> bool:
@@ -55,9 +52,10 @@ class RateLimiter:
 _rate_limiter = RateLimiter()
 
 
-def _get_omega_diagnostic() -> Dict[str, Any]:
+def _get_omega_diagnostic() -> dict[str, Any]:
     try:
         from src.core.omega_v3_2_6 import obter_omega
+
         return obter_omega().obter_diagnostico()
     except Exception as e:
         logger.error(f"Omega diagnostic error: {e}")
@@ -72,7 +70,7 @@ class TelegramBot:
         self._offset = 0
         self._running = True
 
-    def _api(self, method: str, data: dict = None) -> Optional[dict]:
+    def _api(self, method: str, data: dict = None) -> dict | None:
         url = f"{self.base}/{method}"
         try:
             r = self.client.post(url, json=data or {}, timeout=15.0)
@@ -93,23 +91,29 @@ class TelegramBot:
             logger.error(f"Telegram API error: {e}")
             return None
 
-    def get_me(self) -> Optional[dict]:
+    def get_me(self) -> dict | None:
         return self._api("getMe")
 
     def send_message(self, chat_id: int, text: str, parse_mode: str = "HTML") -> bool:
-        result = self._api("sendMessage", {
-            "chat_id": chat_id,
-            "text": text[:4096],
-            "parse_mode": parse_mode,
-        })
+        result = self._api(
+            "sendMessage",
+            {
+                "chat_id": chat_id,
+                "text": text[:4096],
+                "parse_mode": parse_mode,
+            },
+        )
         return result is not None
 
-    def get_updates(self) -> List[dict]:
-        result = self._api("getUpdates", {
-            "offset": self._offset,
-            "timeout": 10,
-            "allowed_updates": ["message"],
-        })
+    def get_updates(self) -> list[dict]:
+        result = self._api(
+            "getUpdates",
+            {
+                "offset": self._offset,
+                "timeout": 10,
+                "allowed_updates": ["message"],
+            },
+        )
         return result or []
 
     def handle_update(self, update: dict):
@@ -138,25 +142,27 @@ class TelegramBot:
         args = parts[1] if len(parts) > 1 else ""
 
         if cmd == "/start":
-            self.send_message(chat_id,
-                "Ola! Sou o <b>Ravena AIM</b>.\n"
-                "Use /help para ver os comandos.")
+            self.send_message(chat_id, "Ola! Sou o <b>Ravena AIM</b>.\nUse /help para ver os comandos.")
         elif cmd == "/help":
-            self.send_message(chat_id,
+            self.send_message(
+                chat_id,
                 "Comandos:\n"
                 "/start - Inicia\n"
                 "/help - Ajuda\n"
                 "/status - Status do sistema\n"
                 "/chat <msg> - Enviar para Ravena\n\n"
-                "Ou digite qualquer mensagem.")
+                "Ou digite qualquer mensagem.",
+            )
         elif cmd == "/status":
             diag = _get_omega_diagnostic()
-            self.send_message(chat_id,
+            self.send_message(
+                chat_id,
                 f"<b>Ravena AIM - Status</b>\n\n"
                 f"Versao: {diag.get('versao', 'N/A')}\n"
                 f"Status: {diag.get('status', 'N/A')}\n"
                 f"Uptime: {diag.get('uptime_segundos', 0):.0f}s\n"
-                f"Secrets: {secrets.source}")
+                f"Secrets: {secrets.source}",
+            )
         elif cmd == "/chat":
             if not args:
                 self.send_message(chat_id, "Use: /chat <mensagem>")
@@ -203,7 +209,7 @@ class TelegramBot:
         self._running = False
 
 
-def create_bot() -> Optional[TelegramBot]:
+def create_bot() -> TelegramBot | None:
     token = secrets.get("TELEGRAM_BOT_TOKEN", required=False)
     if not token:
         logger.error("TELEGRAM_BOT_TOKEN nao configurado no SecretsManager.")

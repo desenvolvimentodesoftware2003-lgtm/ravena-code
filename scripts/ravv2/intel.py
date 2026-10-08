@@ -10,18 +10,30 @@
 #   intel 24h             - noticias das ultimas 24h
 #   intel ao vivo         - modo monitor (atualiza a cada 3 min)
 #   intel link <id>       - abre a noticia no navegador (w3m)
-import sys, json, time, urllib.request, urllib.parse, re, os
+import json
+import os
+import re
+import sys
+import time
+import urllib.parse
+import urllib.request
 
 API = "https://www.war-watch.com/api/articles"
 TIMEOUT = 25
 
 C = {
-    "red": "\033[0;31m", "yel": "\033[0;33m", "grn": "\033[0;32m",
-    "cyn": "\033[0;36m", "dim": "\033[2m", "bld": "\033[1m", "rst": "\033[0m",
+    "red": "\033[0;31m",
+    "yel": "\033[0;33m",
+    "grn": "\033[0;32m",
+    "cyn": "\033[0;36m",
+    "dim": "\033[2m",
+    "bld": "\033[1m",
+    "rst": "\033[0m",
 }
 
 SPAM_SOURCES = ("Clash Report",)
 SPAM_PAT = re.compile(r"^(Trump|trump|clash report)[\s:]*$", re.I)
+
 
 def fetch(params):
     url = API + "?" + urllib.parse.urlencode(params)
@@ -29,30 +41,41 @@ def fetch(params):
     with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
         return json.loads(r.read().decode("utf-8"))
 
+
 def time_ago(iso):
     try:
         import datetime
+
         t = datetime.datetime.fromisoformat(iso.replace("Z", "+00:00"))
-        d = datetime.datetime.now(datetime.timezone.utc) - t
+        d = datetime.datetime.now(datetime.UTC) - t
         s = int(d.total_seconds())
-        if s < 0: s = 0
-        if s < 3600: return f"{s//60}m"
-        if s < 86400: return f"{s//3600}h"
-        return f"{s//86400}d"
+        if s < 0:
+            s = 0
+        if s < 3600:
+            return f"{s // 60}m"
+        if s < 86400:
+            return f"{s // 3600}h"
+        return f"{s // 86400}d"
     except Exception:
         return "?"
 
-MARKET_KW = re.compile(r"\b(energy|oil|petro|gas|commodit|gold|dollar|sanction|tariff|war|missile|nuclear|naval|shipping|supply|market|stock|debt|inflation|export|import|trade|bank|rate|bond|barrel)\b", re.I)
+
+MARKET_KW = re.compile(
+    r"\b(energy|oil|petro|gas|commodit|gold|dollar|sanction|tariff|war|missile|nuclear|naval|shipping|supply|market|stock|debt|inflation|export|import|trade|bank|rate|bond|barrel)\b",
+    re.I,
+)
+
 
 def clean(articles, drop_spam=True):
     out = []
     for a in articles:
-        src = (a.get("source") or "")
-        title = (a.get("title") or "")
+        src = a.get("source") or ""
+        title = a.get("title") or ""
         if drop_spam and src in SPAM_SOURCES and SPAM_PAT.match(title):
             continue
         out.append(a)
     return out
+
 
 def show(articles, link_mode=False, src=True):
     if not articles:
@@ -68,15 +91,19 @@ def show(articles, link_mode=False, src=True):
         ag = time_ago(a.get("publishedAt") or "")
         aid = (a.get("id") or "")[:8]
         if link_mode:
-            print(f"[{aid}] {col}{tag:8}{C['rst']} {C['cyn']}{ag}{C['rst']} {C['bld']}{(a.get('title','') or '')[:110]}{C['rst']}")
-            print(f"      {C['dim']}{a.get('url','')}{C['rst']}")
+            print(
+                f"[{aid}] {col}{tag:8}{C['rst']} {C['cyn']}{ag}{C['rst']} "
+                f"{C['bld']}{(a.get('title', '') or '')[:110]}{C['rst']}"
+            )
+            print(f"      {C['dim']}{a.get('url', '')}{C['rst']}")
         else:
             print(f"[{aid}] {col}{tag:8}{C['rst']} {C['cyn']}{ag:<4}{C['rst']} {C['dim']}{reg:<12}{typ:<16}{C['rst']}")
-            print(f"      {C['bld']}{(a.get('title','') or '')[:140]}{C['rst']}")
+            print(f"      {C['bld']}{(a.get('title', '') or '')[:140]}{C['rst']}")
         if src:
-            print(f"      {C['dim']}{a.get('source','')} | {(a.get('summary','') or '')[:120]}{C['rst']}")
+            print(f"      {C['dim']}{a.get('source', '')} | {(a.get('summary', '') or '')[:120]}{C['rst']}")
         n += 1
     return n
+
 
 def main():
     args = sys.argv[1:]
@@ -156,24 +183,33 @@ def main():
 
     arts = clean(data.get("articles", []))
     if cmd in ("mercado", "market"):
-        arts = [a for a in arts if MARKET_KW.search(((a.get("title","") or "") + " " + (a.get("summary","") or ""))[:400])]
+        arts = [
+            a for a in arts if MARKET_KW.search(((a.get("title", "") or "") + " " + (a.get("summary", "") or ""))[:400])
+        ]
     elif cmd in ("buscar", "search", "busca"):
         kw = " ".join(args[1:]).lower()
-        arts = [a for a in arts if kw in ((a.get("title","") or "") + " " + (a.get("summary","") or "")).lower()]
+        arts = [a for a in arts if kw in ((a.get("title", "") or "") + " " + (a.get("summary", "") or "")).lower()]
 
     order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
     arts.sort(key=lambda a: (order.get((a.get("priority") or "LOW").upper(), 9), a.get("publishedAt") or ""))
 
     title = "RAVENA INTEL - WarWatch"
-    if cmd in ("top", "critico"): title += " [CRITICAL]"
-    elif cmd in ("mercado", "market"): title += " [IMPACTO MERCADO]"
-    elif cmd in ("24h", "hoje"): title += " [24H]"
-    elif cmd in ("regiao", "reg", "region"): title += f" [REGIAO: {params.get('region')}]"
-    elif cmd in ("tipo", "type"): title += f" [TIPO: {params.get('conflictType')}]"
-    elif cmd in ("buscar", "search", "busca"): title += f" [BUSCA: {' '.join(args[1:])}]"
+    if cmd in ("top", "critico"):
+        title += " [CRITICAL]"
+    elif cmd in ("mercado", "market"):
+        title += " [IMPACTO MERCADO]"
+    elif cmd in ("24h", "hoje"):
+        title += " [24H]"
+    elif cmd in ("regiao", "reg", "region"):
+        title += f" [REGIAO: {params.get('region')}]"
+    elif cmd in ("tipo", "type"):
+        title += f" [TIPO: {params.get('conflictType')}]"
+    elif cmd in ("buscar", "search", "busca"):
+        title += f" [BUSCA: {' '.join(args[1:])}]"
     print(f"{C['bld']}{title}{C['rst']}  ({time.strftime('%d/%m %H:%M')})\n")
     n = show(arts[:30], link_mode=True, src=True)
     print(f"\n{C['dim']}{n} noticias | intel link <id> p/ abrir | intel ao vivo | intel -h{C['rst']}")
+
 
 if __name__ == "__main__":
     main()

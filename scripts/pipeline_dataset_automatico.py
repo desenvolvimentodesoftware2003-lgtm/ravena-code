@@ -12,25 +12,25 @@ Uso:
   python scripts/pipeline_dataset_automatico.py --status  # status apenas
 """
 
-import os
-import sys
 import json
 import logging
+import os
+import sys
 from datetime import datetime
 
 _PROJETO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _PROJETO)
 
-from src.core.professor import Professor
-from scripts.extrair_exemplos_dataset import (
+from scripts.extrair_exemplos_dataset import (  # noqa: E402
     _is_error_log,
+    carregar_logs_processados,
     classificar_pergunta,
     extrair_assunto,
     gerar_correcao,
     log_para_resposta_original,
-    carregar_logs_processados,
     salvar_logs_processados,
 )
+from src.core.professor import Professor  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger("pipeline_dataset")
@@ -47,7 +47,7 @@ def verificar_status() -> dict:
     caminho_logs = os.path.join(_PROJETO, "data", "cognitive_treino.jsonl")
     total_logs = 0
     if os.path.exists(caminho_logs):
-        with open(caminho_logs, "r", encoding="utf-8") as f:
+        with open(caminho_logs, encoding="utf-8") as f:
             total_logs = sum(1 for line in f if line.strip())
 
     return {
@@ -60,7 +60,7 @@ def verificar_status() -> dict:
         "minimo_necessario": 50,
         "materias_avaliadas": diag["materias_cadastradas"],
         "competencias_mapeadas": diag["total_competencias_mapeadas"],
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
 
@@ -76,7 +76,7 @@ def executar_pipeline(force: bool = False) -> dict:
     processados = carregar_logs_processados(caminho_tracking)
     processados_nesta_exec = set()
 
-    with open(caminho_logs, "r", encoding="utf-8") as f:
+    with open(caminho_logs, encoding="utf-8") as f:
         logs = [json.loads(line) for line in f if line.strip()]
 
     if force:
@@ -118,8 +118,7 @@ def executar_pipeline(force: bool = False) -> dict:
             processados_nesta_exec.add(log_id)
             novos += 1
             logger.info(
-                f"[{novos}] {pergunta[:40]:42s} -> {disciplina:20s} "
-                f"expert#{resultado['total_exemplos_expert']}"
+                f"[{novos}] {pergunta[:40]:42s} -> {disciplina:20s} expert#{resultado['total_exemplos_expert']}"
             )
         except Exception as e:
             logger.error(f"Erro no log {i}: {e}")
@@ -129,7 +128,7 @@ def executar_pipeline(force: bool = False) -> dict:
     salvar_logs_processados(caminho_tracking, processados)
 
     llm = prof.boletim_llm()
-    logger.info(f"\nPipeline concluido:")
+    logger.info("\nPipeline concluido:")
     logger.info(f"  Novos: {novos} | Excluidos(erro/bug): {excluidos} | Erros: {erros}")
     logger.info(f"  Total acumulado: {llm['total_exemplos_expert']}")
     logger.info(f"  Status: {llm['status']}")
@@ -143,12 +142,13 @@ def executar_pipeline(force: bool = False) -> dict:
         "exemplos": llm["total_exemplos_expert"],
         "novos_processados": novos,
         "excluidos": excluidos,
-        "erros": erros
+        "erros": erros,
     }
 
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(
         description="Pipeline automatico de extracao de exemplos expert para dataset Ravena LLM"
     )
@@ -158,7 +158,7 @@ def main():
 
     if args.status:
         status = verificar_status()
-        print(f"\nStatus do Dataset Ravena LLM:")
+        print("\nStatus do Dataset Ravena LLM:")
         print(f"  Exemplos expert: {status['total_exemplos_expert']}/{status['minimo_necessario']}")
         print(f"  Status: {status['status']}")
         print(f"  Progresso: {status['progresso']}%")

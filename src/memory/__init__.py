@@ -6,6 +6,6 @@ Disponibiliza:
 - SemanticMemory: memoria de longo prazo (fatos e conhecimento categorizado)
 """
 
-from .memory_core_v3_2_6 import MemoryManager, EpisodicMemory, SemanticMemory
+from .memory_core_v3_2_6 import EpisodicMemory, MemoryManager, SemanticMemory
 
 __all__ = ["MemoryManager", "EpisodicMemory", "SemanticMemory"]

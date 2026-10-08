@@ -1,12 +1,9 @@
+import json
+import logging
 import os
 import re
-import json
-import copy
-import logging
-import hashlib
-from datetime import datetime
-from typing import Dict, List, Any, Optional, Tuple
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger("ravena.treinador")
 
@@ -103,7 +100,7 @@ class ExemploTreino:
     resposta_modelo: str = ""
     acertou: bool = False
 
-    def para_chat(self) -> List[Dict[str, str]]:
+    def para_chat(self) -> list[dict[str, str]]:
         return [
             {"role": "system", "content": _SYSTEM_PROMPT_RAVENA},
             {"role": "user", "content": self.pergunta},
@@ -116,18 +113,20 @@ class ExemploTreino:
     def __eq__(self, other):
         if not isinstance(other, ExemploTreino):
             return False
-        return (self.pergunta.lower().strip() == other.pergunta.lower().strip()
-                and self.resposta_esperada.lower().strip() == other.resposta_esperada.lower().strip())
+        return (
+            self.pergunta.lower().strip() == other.pergunta.lower().strip()
+            and self.resposta_esperada.lower().strip() == other.resposta_esperada.lower().strip()
+        )
 
 
 class Treinador:
     def __init__(self):
-        self.exemplos: List[ExemploTreino] = []
+        self.exemplos: list[ExemploTreino] = []
         self._carregar_existentes()
 
     # ─── COLETA ────────────────────────────────────────────────────────────────
 
-    def coletar_pipeline(self, pipeline_resultados: List[Dict[str, Any]]) -> int:
+    def coletar_pipeline(self, pipeline_resultados: list[dict[str, Any]]) -> int:
         adicionados = 0
         for r in pipeline_resultados:
             ex = ExemploTreino(
@@ -149,7 +148,7 @@ class Treinador:
             logger.warning(f"Arquivo nao encontrado: {caminho}")
             return 0
         adicionados = 0
-        with open(caminho, "r", encoding="utf-8") as f:
+        with open(caminho, encoding="utf-8") as f:
             for linha in f:
                 linha = linha.strip()
                 if not linha:
@@ -176,7 +175,7 @@ class Treinador:
 
     # ─── AUMENTACAO ───────────────────────────────────────────────────────────
 
-    def _categoria_para_templates(self, pergunta: str) -> List[str]:
+    def _categoria_para_templates(self, pergunta: str) -> list[str]:
         pl = pergunta.lower()
         if re.search(r"capital\s+(d[eo]s?|d(a|o))?\s+\w+", pl) or re.search(r"capital d", pl):
             return _TEMPLATES_PARAFRASE["capital"]
@@ -192,7 +191,7 @@ class Treinador:
             return _TEMPLATES_PARAFRASE["velocidade"]
         return []
 
-    def _extrair_entidade(self, pergunta: str) -> Optional[str]:
+    def _extrair_entidade(self, pergunta: str) -> str | None:
         pl = pergunta.lower()
         m = re.search(r"(capital\s+d[eo]s?\s+)(.+)", pl)
         if m:
@@ -205,7 +204,7 @@ class Treinador:
             return m.group(2).strip().rstrip("?")
         return None
 
-    def _extrair_funcao(self, pergunta: str) -> Optional[str]:
+    def _extrair_funcao(self, pergunta: str) -> str | None:
         pl = pergunta.lower()
         m = re.search(r"orgao\s+(do corpo\s+)?(que|responsavel por)\s+(.+)", pl)
         if m:
@@ -215,7 +214,7 @@ class Treinador:
             return m.group(2).strip().rstrip("?")
         return None
 
-    def _gerar_parafrases(self, ex: ExemploTreino) -> List[ExemploTreino]:
+    def _gerar_parafrases(self, ex: ExemploTreino) -> list[ExemploTreino]:
         parafrases = []
         templates = self._categoria_para_templates(ex.pergunta)
 
@@ -280,14 +279,20 @@ class Treinador:
                 if chave in vistos:
                     continue
                 vistos.add(chave)
-                f.write(json.dumps({
-                    "pergunta": ex.pergunta,
-                    "resposta_esperada": ex.resposta_esperada,
-                    "topico": ex.topico,
-                    "fonte": ex.fonte,
-                    "resposta_modelo": ex.resposta_modelo,
-                    "acertou": ex.acertou,
-                }, ensure_ascii=False) + "\n")
+                f.write(
+                    json.dumps(
+                        {
+                            "pergunta": ex.pergunta,
+                            "resposta_esperada": ex.resposta_esperada,
+                            "topico": ex.topico,
+                            "fonte": ex.fonte,
+                            "resposta_modelo": ex.resposta_modelo,
+                            "acertou": ex.acertou,
+                        },
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
         logger.info(f"{len(vistos)} exemplos salvos em {caminho}")
         return caminho
 
@@ -296,7 +301,7 @@ class Treinador:
             if os.path.exists(caminho):
                 self.coletar_jsonl(caminho, fonte=os.path.basename(caminho).replace(".jsonl", ""))
 
-    def estatisticas(self) -> Dict[str, Any]:
+    def estatisticas(self) -> dict[str, Any]:
         acertos = sum(1 for ex in self.exemplos if ex.acertou)
         erros = sum(1 for ex in self.exemplos if not ex.acertou and ex.resposta_modelo)
         sem_resposta = sum(1 for ex in self.exemplos if not ex.resposta_modelo)

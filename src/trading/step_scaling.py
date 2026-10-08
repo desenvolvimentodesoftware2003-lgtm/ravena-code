@@ -11,18 +11,18 @@ Responsabilidades:
 """
 
 import logging
-import time
 import os
 import sys
+import time
 from dataclasses import dataclass
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 _MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.abspath(os.path.join(_MODULE_DIR, ".."))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from core.secrets_manager import secrets
+from core.secrets_manager import secrets  # noqa: E402
 
 logger = logging.getLogger("ravena.step_scaling")
 
@@ -46,6 +46,7 @@ class StepScaling:
     def _bybit(self):
         if self._session is None:
             from pybit.unified_trading import HTTP
+
             api_key = secrets.get("BYBIT_API_KEY", required=False)
             api_secret = secrets.get("BYBIT_API_SECRET", required=False)
             modo = secrets.get("BYBIT_MODE", required=False)
@@ -57,7 +58,7 @@ class StepScaling:
             )
         return self._session
 
-    def obter_preco_atual(self, simbolo: str) -> Optional[float]:
+    def obter_preco_atual(self, simbolo: str) -> float | None:
         try:
             ticker = self._bybit.get_tickers(category="linear", symbol=simbolo)
             return float(ticker["result"]["list"][0]["lastPrice"])
@@ -93,7 +94,7 @@ class StepScaling:
         num_passos: int = 3,
         dist_percentual: float = 0.01,
         multiplicador: float = 1.5,
-    ) -> List[EscalaPasso]:
+    ) -> list[EscalaPasso]:
         """
         Pendura ordens limitadas em grade.
         - lado: 'buy' ou 'sell'
@@ -144,7 +145,7 @@ class StepScaling:
         lote_base: float,
         num_passos: int = 3,
         dist_percentual: float = 0.01,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         preco = self.obter_preco_atual(simbolo)
         if not preco:
             return {"status": "ERRO", "motivo": "Preco nao disponivel"}
@@ -160,7 +161,10 @@ class StepScaling:
             "lado": lado,
             "lote_base": lote_base,
             "preco_entrada": preco,
-            "passos": [{"nivel": p.nivel, "lado": p.lado, "qty": p.quantidade, "preco": p.preco, "status": p.status} for p in passos],
+            "passos": [
+                {"nivel": p.nivel, "lado": p.lado, "qty": p.quantidade, "preco": p.preco, "status": p.status}
+                for p in passos
+            ],
             "timestamp": time.time(),
         }
 

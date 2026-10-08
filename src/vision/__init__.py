@@ -9,15 +9,15 @@ Disponibiliza:
 """
 
 from .vision_pipeline_v3_2_6 import (
-    TipoEntradaVisual,
-    NivelAmeaca,
-    TipoAnomalia,
+    AnalisadorDePadroes,
+    ExtratorDeFeaturesVisuais,
     FeatureVisual,
+    ModuloPercepcaoVisual,
+    NivelAmeaca,
     PadreDetectado,
     SnapshotVisual,
-    ExtratorDeFeaturesVisuais,
-    AnalisadorDePadroes,
-    ModuloPercepcaoVisual,
+    TipoAnomalia,
+    TipoEntradaVisual,
     VisionPipeline,
     inicializar_visao,
     obter_visao,

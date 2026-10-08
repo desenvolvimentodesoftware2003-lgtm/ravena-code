@@ -1,12 +1,13 @@
-import sys
 import os
+import sys
 import tempfile
-import json
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 sys.path.insert(0, str(Path(__file__).parent.parent / "src" / "memory"))
 
 import importlib.util
+
 p = Path(__file__).parent.parent / "src" / "memory" / "memory_core_v3_2_6.py"
 spec = importlib.util.spec_from_file_location("mem_mod", p)
 mem = importlib.util.module_from_spec(spec)
@@ -15,11 +16,10 @@ EpisodicMemory = mem.EpisodicMemory
 SemanticMemory = mem.SemanticMemory
 MemoryManager = mem.MemoryManager
 
-import unittest
+import unittest  # noqa: E402
 
 
 class TestEpisodicMemory(unittest.TestCase):
-
     def setUp(self):
         self.tmp = tempfile.mktemp(suffix=".json")
         self.mem = EpisodicMemory(filepath=self.tmp)
@@ -54,7 +54,6 @@ class TestEpisodicMemory(unittest.TestCase):
 
 
 class TestSemanticMemory(unittest.TestCase):
-
     def setUp(self):
         self.tmp = tempfile.mktemp(suffix=".json")
         self.mem = SemanticMemory(filepath=self.tmp)
@@ -83,7 +82,6 @@ class TestSemanticMemory(unittest.TestCase):
 
 
 class TestMemoryManager(unittest.TestCase):
-
     def setUp(self):
         self.tmp_ep = tempfile.mktemp(suffix=".json")
         self.tmp_sem = tempfile.mktemp(suffix=".json")

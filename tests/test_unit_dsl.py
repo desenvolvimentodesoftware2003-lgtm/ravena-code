@@ -1,15 +1,15 @@
 import os
 import sys
+
 import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.dsl.dsl_interpreter_v3_2_6 import (
-    DSLInterpreter,
-    DSLParser,
     CommandType,
-    CommandAST,
+    DSLInterpreter,
     DSLParseError,
+    DSLParser,
 )
 
 
@@ -222,6 +222,7 @@ class TestDSLInterpreter:
 
     def test_bind_memory_real(self):
         from src.memory.memory_core_v3_2_6 import MemoryManager
+
         dsl = DSLInterpreter()
         memory = MemoryManager()
         dsl.bind_system("memory", memory)
@@ -232,6 +233,7 @@ class TestDSLInterpreter:
 
     def test_bind_vision_real(self):
         from src.vision.vision_pipeline_v3_2_6 import VisionPipeline
+
         dsl = DSLInterpreter()
         vision = VisionPipeline()
         dsl.bind_system("vision", vision)
@@ -240,8 +242,10 @@ class TestDSLInterpreter:
         assert "Features" in result
 
     def test_bind_analytics_real(self):
-        from src.analytics.analytics_core_v3_2_6 import AnalyticsCore
         import tempfile
+
+        from src.analytics.analytics_core_v3_2_6 import AnalyticsCore
+
         dsl = DSLInterpreter()
         tmp = tempfile.mktemp(suffix=".json")
         analytics = AnalyticsCore(history_path=tmp)
@@ -255,7 +259,9 @@ class TestDSLInterpreter:
 
     def test_bind_sensor_real(self):
         import tempfile
-        from src.sensors.sensors_core_v3_2_6 import SensorManager, FileSensor
+
+        from src.sensors.sensors_core_v3_2_6 import FileSensor, SensorManager
+
         dsl = DSLInterpreter()
         mgr = SensorManager()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -270,8 +276,10 @@ class TestDSLInterpreter:
 
     def test_erro_no_handler(self):
         dsl = DSLInterpreter()
+
         def failing(ast):
             raise ValueError("erro interno")
+
         dsl.register_handler(CommandType.SEARCH, failing)
         result = dsl.execute("SEARCH algo")
         assert "Erro ao executar" in result
@@ -285,6 +293,7 @@ class TestDSLInterpreter:
     def test_sensor_subcomando_invalido(self):
         dsl = DSLInterpreter()
         from src.sensors.sensors_core_v3_2_6 import SensorManager
+
         mgr = SensorManager()
         dsl.bind_system("sensor_manager", mgr)
         result = dsl.execute("SENSOR INVALID")
@@ -296,8 +305,10 @@ class TestDSLInterpreter:
         assert "Uso" in result
 
     def test_memory_get_sem_resultados(self):
-        from src.memory.memory_core_v3_2_6 import MemoryManager, EpisodicMemory, SEMANTIC_FILE, EPISODIC_FILE
         import tempfile
+
+        from src.memory.memory_core_v3_2_6 import EpisodicMemory, MemoryManager
+
         dsl = DSLInterpreter()
         tmp_ep = tempfile.mktemp(suffix="_ep.json")
         tmp_sem = tempfile.mktemp(suffix="_sem.json")

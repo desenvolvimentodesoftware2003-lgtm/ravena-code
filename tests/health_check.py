@@ -10,13 +10,13 @@ do sistema Ravena AIM.
 Resultado: Relatório de sanidade do sistema.
 """
 
-import sys
-import os
-import time
 import importlib
 import importlib.util
-import traceback
 import json
+import os
+import sys
+import time
+import traceback
 from datetime import datetime
 from pathlib import Path
 
@@ -25,14 +25,29 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 # Carregar .env
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # noqa: E402
+
 load_dotenv(PROJECT_ROOT / ".env")
 
 # ─────────────────────────────────────────────
 # HELPER: Importar módulos com ponto no nome
 # ─────────────────────────────────────────────
-TYPING_NAMES = {'Any', 'Dict', 'List', 'Optional', 'Tuple', 'Union', 'Set',
-                'Callable', 'Type', 'Enum', 'datetime', 'deque', 'Path'}
+TYPING_NAMES = {
+    "Any",
+    "Dict",
+    "List",
+    "Optional",
+    "Tuple",
+    "Union",
+    "Set",
+    "Callable",
+    "Type",
+    "Enum",
+    "datetime",
+    "deque",
+    "Path",
+}
+
 
 def import_from_file(module_name, file_path):
     """Importa um módulo Python a partir do caminho do arquivo."""
@@ -63,11 +78,14 @@ def get_real_classes(mod):
     uma classe definida em `x.py` tem `__module__ == x.__name__`, seja `x`
     o nome do pacote ou o alias usado no `spec_from_file_location`.
     """
-    return [c for c in dir(mod)
-            if not c.startswith('_')
-            and c not in TYPING_NAMES
-            and isinstance(getattr(mod, c), type)
-            and getattr(mod, c).__module__ == mod.__name__]
+    return [
+        c
+        for c in dir(mod)
+        if not c.startswith("_")
+        and c not in TYPING_NAMES
+        and isinstance(getattr(mod, c), type)
+        and getattr(mod, c).__module__ == mod.__name__
+    ]
 
 
 # ─────────────────────────────────────────────
@@ -103,34 +121,27 @@ def test_module(name, test_func, scope="code"):
         icon = "✅" if status == "PASS" else "⚠️" if status == "WARN" else "❌"
         print(f"  {icon} {name}: {status} ({elapsed}s)")
         print(f"     └─ {details}")
-        results.append({
-            "module": name,
-            "scope": scope,
-            "status": status,
-            "details": details,
-            "time_ms": int(elapsed * 1000)
-        })
+        results.append(
+            {"module": name, "scope": scope, "status": status, "details": details, "time_ms": int(elapsed * 1000)}
+        )
     except Exception as e:
         elapsed = round(time.time() - t0, 3)
         error_msg = f"{type(e).__name__}: {str(e)}"
-        tb_lines = traceback.format_exc().strip().split('\n')
+        tb_lines = traceback.format_exc().strip().split("\n")
         tb_hint = tb_lines[-2].strip() if len(tb_lines) > 1 else ""
         print(f"  ❌ {name}: FAIL ({elapsed}s)")
         print(f"     └─ {error_msg}")
         if tb_hint:
             print(f"     └─ {tb_hint}")
-        results.append({
-            "module": name,
-            "scope": scope,
-            "status": "FAIL",
-            "details": error_msg,
-            "time_ms": int(elapsed * 1000)
-        })
+        results.append(
+            {"module": name, "scope": scope, "status": "FAIL", "details": error_msg, "time_ms": int(elapsed * 1000)}
+        )
 
 
 # ═══════════════════════════════════════════════
 # TESTES DE INICIALIZAÇÃO INDIVIDUAL
 # ═══════════════════════════════════════════════
+
 
 def test_secrets_manager():
     """Testa o SecretsManager (módulo central de credenciais)."""
@@ -163,14 +174,14 @@ def test_zero_trust():
 def test_omega_orchestrator_module():
     """Testa a inicialização do OmegaOrchestrator v3.2.6."""
     mod = import_from_file("omega_orch_mod", PROJECT_ROOT / "src/core/omega_orchestrator_v3_2_6.py")
-    target = getattr(mod, 'OmegaOrchestrator', None)
+    target = getattr(mod, "OmegaOrchestrator", None)
     if target is None:
         classes = get_real_classes(mod)
         if not classes:
-            all_names = [n for n in dir(mod) if not n.startswith('_')]
+            all_names = [n for n in dir(mod) if not n.startswith("_")]
             return "WARN", f"Módulo carregou com exports: {all_names[:5]}"
         target = getattr(mod, classes[-1])
-    obj = target()
+    target()
     return "PASS", f"{target.__name__} inicializado"
 
 
@@ -178,14 +189,14 @@ def test_omega_v326():
     """Testa a inicialização do Omega v3.2.6."""
     mod = import_from_file("omega_v326_mod", PROJECT_ROOT / "src/core/omega_v3_2_6.py")
     # Instanciar a classe principal Omega (não dataclasses auxiliares)
-    target = getattr(mod, 'Omega', None)
+    target = getattr(mod, "Omega", None)
     if target is None:
         classes = get_real_classes(mod)
         if not classes:
             return "WARN", "Módulo carregou mas sem classes reais"
         target = getattr(mod, classes[-1])  # Última classe geralmente é a principal
     obj = target()
-    diag = obj.obter_diagnostico() if hasattr(obj, 'obter_diagnostico') else {}
+    diag = obj.obter_diagnostico() if hasattr(obj, "obter_diagnostico") else {}
     return "PASS", f"Omega v{diag.get('versao', '?')} status={diag.get('status', 'OK')}"
 
 
@@ -195,7 +206,7 @@ def test_omega_legacy():
     classes = get_real_classes(mod)
     if classes:
         MainClass = getattr(mod, classes[0])
-        obj = MainClass()
+        MainClass()
         return "PASS", f"{classes[0]} inicializado"
     return "WARN", f"Módulo carregado com fallbacks. Classes: {get_real_classes(mod)}"
 
@@ -208,7 +219,7 @@ def test_auditor():
         return "WARN", "Nenhuma classe encontrada"
     Auditor = getattr(mod, classes[0])
     auditor = Auditor()
-    methods = [m for m in dir(auditor) if not m.startswith('_') and callable(getattr(auditor, m))]
+    methods = [m for m in dir(auditor) if not m.startswith("_") and callable(getattr(auditor, m))]
     return "PASS", f"{classes[0]} inicializado | Métodos: {methods[:6]}"
 
 
@@ -220,8 +231,8 @@ def test_hacker_agent():
         return "WARN", "Módulo com erro de sintaxe ou sem classes"
     EH = getattr(mod, classes[0])
     hacker = EH()
-    nome = getattr(hacker, 'nome', getattr(hacker, 'name', 'unknown'))
-    versao = getattr(hacker, 'versao', getattr(hacker, 'version', 'unknown'))
+    nome = getattr(hacker, "nome", getattr(hacker, "name", "unknown"))
+    versao = getattr(hacker, "versao", getattr(hacker, "version", "unknown"))
     return "PASS", f"Agente: {nome} v{versao}"
 
 
@@ -233,7 +244,7 @@ def test_hacker_v328():
         return "WARN", "Módulo carregado sem classes"
     EH = getattr(mod, classes[0])
     hacker = EH()
-    nome = getattr(hacker, 'nome', getattr(hacker, 'name', 'unknown'))
+    nome = getattr(hacker, "nome", getattr(hacker, "name", "unknown"))
     return "PASS", f"Hacker v3.2.8 Final: {nome}"
 
 
@@ -244,7 +255,7 @@ def test_security_core():
     if not classes:
         return "WARN", "Módulo carregou mas imports internos falharam"
     SC = getattr(mod, classes[0])
-    sc = SC()
+    SC()
     return "PASS", f"{classes[0]} inicializado"
 
 
@@ -254,7 +265,7 @@ def test_rag_advanced():
     classes = get_real_classes(mod)
     # Buscar a classe principal do RAG
     target = None
-    for name in ['ModuloRAGAvançado', 'IndexadorRAG', 'RAGAdvanced']:
+    for name in ["ModuloRAGAvançado", "IndexadorRAG", "RAGAdvanced"]:
         if hasattr(mod, name):
             target = getattr(mod, name)
             break
@@ -263,7 +274,7 @@ def test_rag_advanced():
         target = getattr(mod, classes[-1])
     if target is None:
         return "WARN", f"Classes encontradas: {classes}"
-    rag = target()
+    target()
     return "PASS", f"{target.__name__} inicializado | Classes no módulo: {len(classes)}"
 
 
@@ -272,8 +283,9 @@ def test_rag_v326():
     mod = import_from_file("rag_v326_mod", PROJECT_ROOT / "src/rag/rag_advanced_v3_2_6.py")
     # Buscar a classe principal (pular Enums e dataclasses simples)
     from enum import EnumType
+
     target = None
-    for name in ['ModuloRAGAvançado', 'IndexadorRAGChroma', 'ChunkerDocumentos']:
+    for name in ["ModuloRAGAvançado", "IndexadorRAGChroma", "ChunkerDocumentos"]:
         if hasattr(mod, name):
             target = getattr(mod, name)
             break
@@ -287,7 +299,7 @@ def test_rag_v326():
                 break
     if target is None:
         return "WARN", "Módulo carregou mas sem classes instanciáveis"
-    obj = target()
+    target()
     return "PASS", f"{target.__name__} inicializado"
 
 
@@ -295,8 +307,12 @@ def test_signal_bridge():
     """Testa o Signal Bridge (ponte de trading) — módulo funcional."""
     mod = import_from_file("sig_bridge_mod", PROJECT_ROOT / "src/trading/signal_bridge_v3_2_6.py")
     # Signal Bridge é funcional (sem classes), verificar funções
-    funcs = [f for f in dir(mod) if not f.startswith('_') and callable(getattr(mod, f)) and not isinstance(getattr(mod, f), type)]
-    key_funcs = ['process_signal', 'determine_suitability_mode', 'calculate_success_probability']
+    funcs = [
+        f
+        for f in dir(mod)
+        if not f.startswith("_") and callable(getattr(mod, f)) and not isinstance(getattr(mod, f), type)
+    ]
+    key_funcs = ["process_signal", "determine_suitability_mode", "calculate_success_probability"]
     found = [f for f in key_funcs if f in funcs]
     if len(found) == len(key_funcs):
         return "PASS", f"Módulo funcional OK | Funções-chave: {found}"
@@ -308,7 +324,7 @@ def test_bybit_connector():
     mod = import_from_file("bybit_mod", PROJECT_ROOT / "src/trading/bybit_connector_v3_2_6.py")
     classes = get_real_classes(mod)
     target = None
-    for name in ['BybitConnector', 'BybitConnectorV326']:
+    for name in ["BybitConnector", "BybitConnectorV326"]:
         if hasattr(mod, name):
             target = getattr(mod, name)
             break
@@ -316,7 +332,7 @@ def test_bybit_connector():
         target = getattr(mod, classes[0])
     if target is None:
         return "WARN", f"Classes: {classes}"
-    bc = target()
+    target()
     return "PASS", f"{target.__name__} inicializado"
 
 
@@ -325,10 +341,10 @@ def test_trade_brain():
     mod = import_from_file("trade_brain_mod", PROJECT_ROOT / "src/trading/trade_brain_v3_2_6.py")
     classes = get_real_classes(mod)
     if not classes:
-        funcs = [f for f in dir(mod) if not f.startswith('_') and callable(getattr(mod, f))]
+        funcs = [f for f in dir(mod) if not f.startswith("_") and callable(getattr(mod, f))]
         return "WARN", f"Módulo funcional. Funções: {funcs[:5]}"
     target = getattr(mod, classes[0])
-    tb = target()
+    target()
     return "PASS", f"{classes[0]} inicializado"
 
 
@@ -338,7 +354,7 @@ def test_social_connector():
     classes = get_real_classes(mod)
     # Buscar a classe principal (não AlertaMonitoramento)
     target = None
-    for name in ['SocialMediaConnector', 'InstagramConnector', 'ConectorSocial']:
+    for name in ["SocialMediaConnector", "InstagramConnector", "ConectorSocial"]:
         if hasattr(mod, name):
             target = getattr(mod, name)
             break
@@ -347,23 +363,23 @@ def test_social_connector():
         for cls_name in classes:
             cls = getattr(mod, cls_name)
             try:
-                obj = cls()
+                cls()
                 target = cls
                 return "PASS", f"{cls_name} inicializado"
             except TypeError:
                 continue
         return "WARN", f"Classes encontradas mas requerem argumentos: {classes}"
-    obj = target()
+    target()
     return "PASS", f"{target.__name__} inicializado"
 
 
 def test_telegram_bot():
     """Testa o Telegram Bot Refinement."""
     mod = import_from_file("tg_bot_mod", PROJECT_ROOT / "src/utils/telegram_bot_refinement_v3_2_6.py")
-    TBR = getattr(mod, 'TelegramBotRefinement', None)
+    TBR = getattr(mod, "TelegramBotRefinement", None)
     if TBR:
         bot = TBR()
-        threshold = getattr(bot, 'confidence_threshold', 'N/A')
+        threshold = getattr(bot, "confidence_threshold", "N/A")
         return "PASS", f"TelegramBotRefinement inicializado | Threshold: {threshold}"
     classes = get_real_classes(mod)
     return "WARN", f"Classes encontradas: {classes}"
@@ -375,19 +391,19 @@ def test_engine_patch():
     classes = get_real_classes(mod)
     if classes:
         EP = getattr(mod, classes[0])
-        ep = EP()
+        EP()
         return "PASS", f"{classes[0]} inicializado"
-    funcs = [f for f in dir(mod) if not f.startswith('_') and callable(getattr(mod, f))]
+    funcs = [f for f in dir(mod) if not f.startswith("_") and callable(getattr(mod, f))]
     return "PASS", f"Módulo funcional carregado | Funções: {funcs[:5]}"
 
 
 def test_external_api_manager():
     """Testa o External API Manager."""
     mod = import_from_file("api_mgr_mod", PROJECT_ROOT / "src/utils/external_api_manager_v3_2_6.py")
-    EAM = getattr(mod, 'ExternalAPIManager', None)
+    EAM = getattr(mod, "ExternalAPIManager", None)
     if EAM:
         manager = EAM()
-        version = getattr(manager, 'version', 'N/A')
+        version = getattr(manager, "version", "N/A")
         return "PASS", f"ExternalAPIManager v{version} inicializado"
     classes = get_real_classes(mod)
     return "WARN", f"Classes: {classes}"
@@ -399,7 +415,7 @@ def test_ravena_model():
     classes = get_real_classes(mod)
     if classes:
         RM = getattr(mod, classes[0])
-        rm = RM()
+        RM()
         return "PASS", f"{classes[0]} inicializado"
     return "WARN", f"Módulo carregado. Exports: {[n for n in dir(mod) if not n.startswith('_')][:5]}"
 
@@ -407,6 +423,7 @@ def test_ravena_model():
 # ═══════════════════════════════════════════════
 # TESTES DE COMUNICAÇÃO ENTRE MÓDULOS
 # ═══════════════════════════════════════════════
+
 
 def test_zero_trust_to_omega():
     """Testa se o Zero Trust consegue gerar token para o OmegaOrchestrator."""
@@ -443,18 +460,18 @@ def test_rag_ingest_query():
         conteudo="Bitcoin está em tendência de alta com suporte em 65000 USDT. RSI mostra força compradora.",
         tipo=mod.TipoDocumento.SEGURANÇA,
         tags=["bitcoin", "teste"],
-        fonte="health_check"
+        fonte="health_check",
     )
     # Ingerir
-    if hasattr(rag, 'adicionar_documento'):
+    if hasattr(rag, "adicionar_documento"):
         rag.adicionar_documento(doc)
-    elif hasattr(rag, 'ingerir'):
+    elif hasattr(rag, "ingerir"):
         rag.ingerir(doc)
     # Consultar
-    if hasattr(rag, 'buscar'):
+    if hasattr(rag, "buscar"):
         resultado = rag.buscar("tendência do Bitcoin")
         return "PASS", f"RAG ingestão+consulta OK | Resultados: {len(resultado) if resultado else 0}"
-    return "PASS", f"RAG ingestão OK (consulta requer embeddings externos)"
+    return "PASS", "RAG ingestão OK (consulta requer embeddings externos)"
 
 
 # ═══════════════════════════════════════════════
@@ -521,9 +538,7 @@ if __name__ == "__main__":
     code_failed = sum(1 for r in code if r["status"] == "FAIL")
     code_passed = sum(1 for r in code if r["status"] == "PASS")
     health_score = round((code_passed / len(code)) * 100, 1) if code else 0.0
-    environment_score = (
-        round((sum(1 for r in env if r["status"] == "PASS") / len(env)) * 100, 1) if env else None
-    )
+    environment_score = round((sum(1 for r in env if r["status"] == "PASS") / len(env)) * 100, 1) if env else None
 
     print("\n\n" + "═" * 60)
     print("  RELATÓRIO FINAL")
@@ -536,23 +551,25 @@ if __name__ == "__main__":
     print(f"\n  {'─' * 50}")
     print(f"  Integridade do código : {health_score}%  ({code_passed}/{len(code)} checks de código)")
     if environment_score is not None:
-        print(f"  Prontidão do ambiente: {environment_score}%  ({len(env)} checks dependem de credencial/pesos/serviço)")
+        print(
+            f"  Prontidão do ambiente: {environment_score}%  ({len(env)} checks dependem de credencial/pesos/serviço)"
+        )
 
     # Detalhar falhas
     if code_failed > 0:
-        print(f"\n  MÓDULOS COM FALHA — CÓDIGO (bloqueiam o CI):")
+        print("\n  MÓDULOS COM FALHA — CÓDIGO (bloqueiam o CI):")
         for r in code:
             if r["status"] == "FAIL":
                 print(f"    ❌ {r['module']}: {r['details']}")
 
     env_failed = [r for r in env if r["status"] == "FAIL"]
     if env_failed:
-        print(f"\n  MÓDULOS COM FALHA — AMBIENTE (não bloqueiam; configure a máquina):")
+        print("\n  MÓDULOS COM FALHA — AMBIENTE (não bloqueiam; configure a máquina):")
         for r in env_failed:
             print(f"    ⚠️  {r['module']}: {r['details']}")
 
     if warned > 0:
-        print(f"\n  MÓDULOS COM AVISO (funcionam parcialmente):")
+        print("\n  MÓDULOS COM AVISO (funcionam parcialmente):")
         for r in results:
             if r["status"] == "WARN":
                 print(f"    ⚠️  {r['module']}: {r['details']}")

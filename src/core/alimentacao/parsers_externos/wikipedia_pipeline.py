@@ -1,17 +1,12 @@
-import os
 import json
-import time
 import logging
-from typing import List, Optional, Iterator
+import os
+import time
 from datetime import datetime
 
-from src.core.alimentacao.parsers_externos.wikipedia_dump_parser import (
-    WikipediaDumpParser, ArtigoWikipedia
-)
-from src.core.alimentacao.parsers_externos.wikipedia_parser import (
-    WikipediaParser, ItemWikipedia
-)
 from src.core.alimentacao.alimentador import Alimentador
+from src.core.alimentacao.parsers_externos.wikipedia_dump_parser import WikipediaDumpParser
+from src.core.alimentacao.parsers_externos.wikipedia_parser import WikipediaParser
 
 logger = logging.getLogger("ravena.alimentacao.wikipedia_pipeline")
 
@@ -19,6 +14,7 @@ SAIDA_PADRAO = "data/wikipedia"
 ARQUIVO_JSONL = "artigos.jsonl"
 ARQUIVO_MANIFEST = "manifest.json"
 TAMANHO_MAX_ARQUIVO = 500 * 1024 * 1024
+
 
 class WikipediaPipeline:
     def __init__(self, projeto_raiz: str, lingua: str = "pt"):
@@ -38,12 +34,11 @@ class WikipediaPipeline:
             "dump_principal": f"{self._lingua}wiki-latest-pages-articles.xml.bz2",
             "tamanho_estimado_bytes": tamanho,
             "tamanho_estimado_gb": round(tamanho / (1024**3), 2) if tamanho else None,
-            "diretorio_saida": self._saida
+            "diretorio_saida": self._saida,
         }
 
-    def baixar_dump(self, forcar: bool = False) -> Optional[str]:
-        caminho_dump = os.path.join(self._saida,
-            f"{self._lingua}wiki-latest-pages-articles.xml.bz2")
+    def baixar_dump(self, forcar: bool = False) -> str | None:
+        caminho_dump = os.path.join(self._saida, f"{self._lingua}wiki-latest-pages-articles.xml.bz2")
         if os.path.exists(caminho_dump) and not forcar:
             logger.info(f"Dump ja existe: {caminho_dump}")
             return caminho_dump
@@ -51,10 +46,13 @@ class WikipediaPipeline:
         caminho = self._dump_parser.baixar_dump(self._saida, self._lingua)
         return caminho
 
-    def processar_artigos_para_jsonl(self, caminho_dump: str,
-                                      max_artigos: Optional[int] = None,
-                                      categorias_filtro: Optional[List[str]] = None,
-                                      chunk_size: int = 1500) -> str:
+    def processar_artigos_para_jsonl(
+        self,
+        caminho_dump: str,
+        max_artigos: int | None = None,
+        categorias_filtro: list[str] | None = None,
+        chunk_size: int = 1500,
+    ) -> str:
         saida_jsonl = os.path.join(self._saida, ARQUIVO_JSONL)
         if os.path.exists(saida_jsonl):
             base, ext = os.path.splitext(ARQUIVO_JSONL)
@@ -80,9 +78,7 @@ class WikipediaPipeline:
             for artigo in self._dump_parser.iterar_artigos(caminho_dump):
                 if max_artigos and total_artigos >= max_artigos:
                     break
-                if categorias_filtro and not any(
-                    c in artigo.categorias for c in categorias_filtro
-                ):
+                if categorias_filtro and not any(c in artigo.categorias for c in categorias_filtro):
                     continue
                 chunks = self._dump_parser.chunk_artigo(artigo)
                 for pergunta, conteudo, metadados in chunks:
@@ -91,7 +87,7 @@ class WikipediaPipeline:
                         "conteudo": conteudo,
                         "fonte": "wikipedia_dump",
                         "metadata": metadados,
-                        "timestamp": datetime.now().isoformat()
+                        "timestamp": datetime.now().isoformat(),
                     }
                     linha = json.dumps(registro, ensure_ascii=False) + "\n"
                     f.write(linha)
@@ -121,7 +117,7 @@ class WikipediaPipeline:
             "chunks_por_segundo": round(total_chunks / duracao, 1) if duracao > 0 else 0,
             "timestamp": datetime.now().isoformat(),
             "max_artigos": max_artigos,
-            "categorias_filtro": categorias_filtro
+            "categorias_filtro": categorias_filtro,
         }
         caminho_manifest = os.path.join(self._saida, ARQUIVO_MANIFEST)
         with open(caminho_manifest, "w", encoding="utf-8") as f:
@@ -131,23 +127,21 @@ class WikipediaPipeline:
         logger.info(f"Manifest: {caminho_manifest}")
         return saida_jsonl.replace(".jsonl", "_001.jsonl")
 
-    def listar_jsonl_processados(self) -> List[str]:
+    def listar_jsonl_processados(self) -> list[str]:
         arquivos = []
         for f in sorted(os.listdir(self._saida)):
             if f.endswith(".jsonl"):
                 arquivos.append(os.path.join(self._saida, f))
         return arquivos
 
-    def carregar_manifest(self) -> Optional[dict]:
+    def carregar_manifest(self) -> dict | None:
         caminho = os.path.join(self._saida, ARQUIVO_MANIFEST)
         if os.path.exists(caminho):
-            with open(caminho, "r", encoding="utf-8") as f:
+            with open(caminho, encoding="utf-8") as f:
                 return json.load(f)
         return None
 
-    def ingerir_jsonl_no_alimentador(self, alimentador: Alimentador,
-                                       arquivo_jsonl: Optional[str] = None) -> int:
-        from src.core.alimentacao.alimentador import Alimentador
+    def ingerir_jsonl_no_alimentador(self, alimentador: Alimentador, arquivo_jsonl: str | None = None) -> int:
         arquivos = [arquivo_jsonl] if arquivo_jsonl else self.listar_jsonl_processados()
         if not arquivos:
             logger.warning("Nenhum arquivo JSONL encontrado")
@@ -160,7 +154,7 @@ class WikipediaPipeline:
         total = 0
         for caminho in arquivos:
             logger.info(f"Ingerindo {caminho} no Alimentador...")
-            with open(caminho, "r", encoding="utf-8") as f:
+            with open(caminho, encoding="utf-8") as f:
                 for linha in f:
                     linha = linha.strip()
                     if not linha:
@@ -174,7 +168,7 @@ class WikipediaPipeline:
                             pergunta=registro["pergunta"],
                             conteudo=registro["conteudo"],
                             fonte=registro.get("fonte", "wikipedia_dump"),
-                            metadata=registro.get("metadata", {})
+                            metadata=registro.get("metadata", {}),
                         )
                         total += 1
                     except Exception as e:
@@ -183,13 +177,11 @@ class WikipediaPipeline:
         logger.info(f"Ingestao total: {total} chunks")
         return total
 
-    def processar_e_ingerir(self, caminho_dump: str, alimentador: Alimentador,
-                              max_artigos: Optional[int] = None) -> int:
+    def processar_e_ingerir(self, caminho_dump: str, alimentador: Alimentador, max_artigos: int | None = None) -> int:
         self.processar_artigos_para_jsonl(caminho_dump, max_artigos=max_artigos)
         return self.ingerir_jsonl_no_alimentador(alimentador)
 
-    def buscar_e_processar_topicos_api(self, topicos: List[str],
-                                         alimentador: Optional[Alimentador] = None) -> str:
+    def buscar_e_processar_topicos_api(self, topicos: list[str], alimentador: Alimentador | None = None) -> str:
         saida_jsonl = os.path.join(self._saida, f"api_{int(time.time())}.jsonl")
         total = 0
         with open(saida_jsonl, "w", encoding="utf-8") as f:
@@ -203,15 +195,14 @@ class WikipediaPipeline:
                     "conteudo": conteudo,
                     "fonte": "wikipedia_api",
                     "metadata": metadados,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
                 f.write(json.dumps(registro, ensure_ascii=False) + "\n")
                 total += 1
                 if alimentador and hasattr(alimentador, "_ensinado_fn") and alimentador._ensinado_fn:
                     try:
                         alimentador._ensinado_fn(
-                            pergunta=pergunta, conteudo=conteudo,
-                            fonte="wikipedia_api", metadata=metadados
+                            pergunta=pergunta, conteudo=conteudo, fonte="wikipedia_api", metadata=metadados
                         )
                     except Exception as e:
                         logger.warning(f"Erro ao ingerir: {e}")

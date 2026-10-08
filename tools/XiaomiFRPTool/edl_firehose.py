@@ -8,21 +8,18 @@ Protocolos implementados:
 """
 
 import os
-import re
-import io
-import sys
-import time
-import json
 import struct
-import zipfile
-import hashlib
-import tarfile
 import tempfile
-import platform
+import time
 import xml.etree.ElementTree as ET
-from pathlib import Path
 from datetime import datetime
-from urllib.request import urlopen, Request
+from pathlib import Path
+from urllib.request import Request, urlopen
+
+try:
+    import usb.util
+except ImportError:
+    usb = None
 
 # --- Config ----------------------------------------------------------------
 
@@ -34,15 +31,15 @@ QDLOADER_PIDS = {0x9008, 0x9003, 0x900E, 0x9006, 0x9010, 0x9015, 0x901B}
 XIAOMI_EDL_PIDS = {0x9008, 0x9003, 0x9010}
 
 # Sahara protocol commands
-SAHARA_HELLO          = 0x1
-SAHARA_HELLO_RESP     = 0x2
-SAHARA_READ_DATA      = 0x3
+SAHARA_HELLO = 0x1
+SAHARA_HELLO_RESP = 0x2
+SAHARA_READ_DATA = 0x3
 SAHARA_READ_DATA_RESP = 0x4
-SAHARA_DONE           = 0x5
-SAHARA_DONE_RESP      = 0x6
+SAHARA_DONE = 0x5
+SAHARA_DONE_RESP = 0x6
 
 # Firehose USB endpoints
-FH_EP_IN  = 0x81
+FH_EP_IN = 0x81
 FH_EP_OUT = 0x01
 
 # Loader cache
@@ -51,34 +48,34 @@ LOADER_CACHE_DIR = Path(tempfile.gettempdir()) / "xiaomi_frp_loaders"
 # Repositorio de loaders Xiaomi (mapeamento SoC -> loader filename)
 # Extraidos de firmware oficial MIUI / telegram groups / xda
 XIAOMI_LOADERS = {
-    "msm8916":  "prog_emmc_firehose_8916.mbn",
-    "msm8937":  "prog_emmc_firehose_8937.mbn",
-    "msm8940":  "prog_emmc_firehose_8937.mbn",
-    "msm8953":  "prog_emmc_firehose_8953.mbn",
-    "msm8956":  "prog_emmc_firehose_8956.mbn",
-    "sdm450":   "prog_emmc_firehose_sdm450.mbn",
-    "sdm625":   "prog_emmc_firehose_8953.mbn",
-    "sdm630":   "prog_emmc_firehose_sdm630.mbn",
-    "sdm636":   "prog_emmc_firehose_sdm630.mbn",
-    "sdm660":   "prog_emmc_firehose_sdm660.mbn",
-    "sdm670":   "prog_emmc_firehose_sdm670.mbn",
-    "sdm710":   "prog_emmc_firehose_sdm710.mbn",
-    "sdm845":   "prog_emmc_firehose_sdm845.mbn",
-    "sdm855":   "prog_emmc_firehose_sdm855.elf",
-    "sm6150":   "prog_emmc_firehose_sm6150.elf",
-    "sm6250":   "prog_firehose_lite_sm6250.elf",
-    "sm6350":   "prog_firehose_lite_sm6350.elf",
-    "sm7125":   "prog_firehose_lite_sm7125.elf",
-    "sm7150":   "prog_firehose_lite_sm7150.elf",
-    "sm7225":   "prog_firehose_lite_sm7225.elf",
-    "sm7250":   "prog_firehose_lite_sm7250.elf",
-    "sm7325":   "prog_firehose_lite_sm7325.elf",
-    "sm7350":   "prog_firehose_lite_sm7350.elf",
-    "sm8150":   "prog_firehose_lite_sm8150.elf",
-    "sm8250":   "prog_firehose_lite_sm8250.elf",
-    "sm8350":   "prog_firehose_lite_sm8350.elf",
-    "sm8450":   "prog_firehose_lite_sm8450.elf",
-    "sm8550":   "prog_firehose_lite_sm8550.elf",
+    "msm8916": "prog_emmc_firehose_8916.mbn",
+    "msm8937": "prog_emmc_firehose_8937.mbn",
+    "msm8940": "prog_emmc_firehose_8937.mbn",
+    "msm8953": "prog_emmc_firehose_8953.mbn",
+    "msm8956": "prog_emmc_firehose_8956.mbn",
+    "sdm450": "prog_emmc_firehose_sdm450.mbn",
+    "sdm625": "prog_emmc_firehose_8953.mbn",
+    "sdm630": "prog_emmc_firehose_sdm630.mbn",
+    "sdm636": "prog_emmc_firehose_sdm630.mbn",
+    "sdm660": "prog_emmc_firehose_sdm660.mbn",
+    "sdm670": "prog_emmc_firehose_sdm670.mbn",
+    "sdm710": "prog_emmc_firehose_sdm710.mbn",
+    "sdm845": "prog_emmc_firehose_sdm845.mbn",
+    "sdm855": "prog_emmc_firehose_sdm855.elf",
+    "sm6150": "prog_emmc_firehose_sm6150.elf",
+    "sm6250": "prog_firehose_lite_sm6250.elf",
+    "sm6350": "prog_firehose_lite_sm6350.elf",
+    "sm7125": "prog_firehose_lite_sm7125.elf",
+    "sm7150": "prog_firehose_lite_sm7150.elf",
+    "sm7225": "prog_firehose_lite_sm7225.elf",
+    "sm7250": "prog_firehose_lite_sm7250.elf",
+    "sm7325": "prog_firehose_lite_sm7325.elf",
+    "sm7350": "prog_firehose_lite_sm7350.elf",
+    "sm8150": "prog_firehose_lite_sm8150.elf",
+    "sm8250": "prog_firehose_lite_sm8250.elf",
+    "sm8350": "prog_firehose_lite_sm8350.elf",
+    "sm8450": "prog_firehose_lite_sm8450.elf",
+    "sm8550": "prog_firehose_lite_sm8550.elf",
 }
 
 # URLs de fallback para download de loaders
@@ -89,6 +86,7 @@ LOADER_FALLBACK_URLS = [
 
 # --- Logging ----------------------------------------------------------------
 
+
 def log(msg, level="INFO"):
     ts = datetime.now().strftime("%H:%M:%S.%f")[:12]
     line = f"{ts} [EDL] [{level}] {msg}"
@@ -96,12 +94,14 @@ def log(msg, level="INFO"):
     try:
         with open(LOG_FILE, "a", encoding="utf-8") as f:
             f.write(line + "\n")
-    except:
+    except Exception:
         pass
+
 
 # --- USB backend -----------------------------------------------------------
 
 USB_BACKEND = None
+
 
 def _get_usb_backend():
     global USB_BACKEND
@@ -109,20 +109,23 @@ def _get_usb_backend():
         return USB_BACKEND
     try:
         import libusb_package
+
         USB_BACKEND = libusb_package.get_libusb1_backend()
-        log(f"Backend libusb carregado via libusb-package", "DEBUG")
+        log("Backend libusb carregado via libusb-package", "DEBUG")
         return USB_BACKEND
-    except:
+    except Exception:
         pass
     try:
         import usb.backend.libusb1 as lb1
+
         USB_BACKEND = lb1.get_backend()
-        log(f"Backend libusb1 carregado", "DEBUG")
+        log("Backend libusb1 carregado", "DEBUG")
         return USB_BACKEND
-    except:
+    except Exception:
         pass
     log("Nenhum backend USB encontrado (instale libusb-package)", "ERROR")
     return None
+
 
 def _find_edl_devices():
     """Encontra dispositivos Qualcomm em modo EDL 9008."""
@@ -131,6 +134,7 @@ def _find_edl_devices():
         return []
     try:
         import usb.core as usbc
+
         devices = []
         for pid in QDLOADER_PIDS:
             devs = usbc.find(idVendor=QCOM_VID, idProduct=pid, find_all=True, backend=be)
@@ -142,23 +146,32 @@ def _find_edl_devices():
         log(f"Erro ao buscar dispositivos EDL: {e}", "ERROR")
         return []
 
+
 def _find_edl_wmi():
     """Fallback: detecta EDL via WMI (PowerShell)."""
     try:
         import subprocess
-        cmd = 'powershell "Get-PnpDevice | Where-Object { $_.FriendlyName -match \'9008|QDLoader|EDL|Qualcomm.*HS.*USB\' } | Select-Object FriendlyName, InstanceId, Status | ConvertTo-Json"'
+
+        cmd = (
+            'powershell "Get-PnpDevice | Where-Object { $_.FriendlyName -match '
+            "'9008|QDLoader|EDL|Qualcomm.*HS.*USB' } | Select-Object FriendlyName, InstanceId, Status | "
+            'ConvertTo-Json"'
+        )
         r = subprocess.run(cmd, capture_output=True, text=True, shell=True, timeout=5)
         if r.stdout.strip():
-            log(f"EDL detectado via WMI", "DEBUG")
+            log("EDL detectado via WMI", "DEBUG")
             return True
-    except:
+    except Exception:
         pass
     return False
 
+
 # --- Sahara Protocol -------------------------------------------------------
+
 
 class SaharaError(Exception):
     pass
+
 
 class SaharaProtocol:
     """Implementa o protocolo Sahara para comunicacao com bootrom Qualcomm."""
@@ -173,13 +186,17 @@ class SaharaProtocol:
         """Configura endpoints bulk para o Sahara."""
         self.ep_in = usb.util.find_descriptor(
             intf,
-            custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_IN and
-                                    usb.util.endpoint_type(e.bmAttributes) == usb.util.ENDPOINT_TYPE_BULK
+            custom_match=lambda e: (
+                usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_IN
+                and usb.util.endpoint_type(e.bmAttributes) == usb.util.ENDPOINT_TYPE_BULK
+            ),
         )
         self.ep_out = usb.util.find_descriptor(
             intf,
-            custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_OUT and
-                                    usb.util.endpoint_type(e.bmAttributes) == usb.util.ENDPOINT_TYPE_BULK
+            custom_match=lambda e: (
+                usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_OUT
+                and usb.util.endpoint_type(e.bmAttributes) == usb.util.ENDPOINT_TYPE_BULK
+            ),
         )
         if not self.ep_in or not self.ep_out:
             raise SaharaError("Nao foi possivel encontrar endpoints bulk Sahara")
@@ -193,12 +210,12 @@ class SaharaProtocol:
         try:
             if self.dev.is_kernel_driver_active(intf.bInterfaceNumber):
                 self.dev.detach_kernel_driver(intf.bInterfaceNumber)
-        except:
+        except Exception:
             pass
 
         try:
             self.dev.set_configuration()
-        except:
+        except Exception:
             pass
 
         usb.util.claim_interface(self.dev, intf)
@@ -213,13 +230,19 @@ class SaharaProtocol:
         cmd_id = struct.unpack_from("<I", raw, 0)[0]
         length = struct.unpack_from("<I", raw, 4)[0]
 
-        data = raw[8:8+length] if length > 0 else b""
+        data = raw[8 : 8 + length] if length > 0 else b""
 
-        if cmd_id not in (SAHARA_HELLO, SAHARA_HELLO_RESP, SAHARA_READ_DATA,
-                          SAHARA_READ_DATA_RESP, SAHARA_DONE, SAHARA_DONE_RESP):
+        if cmd_id not in (
+            SAHARA_HELLO,
+            SAHARA_HELLO_RESP,
+            SAHARA_READ_DATA,
+            SAHARA_READ_DATA_RESP,
+            SAHARA_DONE,
+            SAHARA_DONE_RESP,
+        ):
             log(f"Pacote Sahara desconhecido: cmd=0x{cmd_id:02X}", "WARN")
 
-        return cmd_id, length, data, raw[:8+length]
+        return cmd_id, length, data, raw[: 8 + length]
 
     def _send_packet(self, cmd_id, data=b""):
         """Envia um pacote Sahara."""
@@ -237,10 +260,10 @@ class SaharaProtocol:
             raise SaharaError(f"Esperava HELLO(0x1), recebeu 0x{cmd:02X}")
 
         if len(data) >= 16:
-            version      = struct.unpack_from("<I", data, 0)[0]
-            version_min  = struct.unpack_from("<I", data, 4)[0]
-            max_cmd_len  = struct.unpack_from("<I", data, 8)[0]
-            mode         = struct.unpack_from("<I", data, 12)[0]
+            version = struct.unpack_from("<I", data, 0)[0]
+            version_min = struct.unpack_from("<I", data, 4)[0]
+            max_cmd_len = struct.unpack_from("<I", data, 8)[0]
+            mode = struct.unpack_from("<I", data, 12)[0]
             self.max_cmd_len = max_cmd_len if max_cmd_len > 0 else 4096
         else:
             raise SaharaError("HELLO packet muito curto")
@@ -248,11 +271,17 @@ class SaharaProtocol:
         log(f"Sahara HELLO: version={version}, mode={mode}, max_cmd_len={self.max_cmd_len}")
 
         # Envia HELLO_RESP (modo 1 = command mode)
-        resp = struct.pack("<IIIIIIIII",
-            1,     # version
-            1,     # version_min
+        resp = struct.pack(
+            "<IIIIIIIII",
+            1,  # version
+            1,  # version_min
             mode,  # mode
-            0, 0, 0, 0, 0, 0  # padding
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,  # padding
         )
         self._send_packet(SAHARA_HELLO_RESP, resp)
 
@@ -270,22 +299,21 @@ class SaharaProtocol:
         Processa requisicoes READ_DATA do Sahara e envia o loader.
         Sahara pede chunks via READ_DATA -> nos enviamos os dados.
         """
-        loader_offset = 0
-        loader_size = len(loader_data)
+        len(loader_data)
 
         while True:
             cmd, length, data, raw = self._recv_packet()
 
             if cmd == SAHARA_DONE:
-                log(f"Sahara DONE recebido (loader enviado com sucesso)")
+                log("Sahara DONE recebido (loader enviado com sucesso)")
                 return True
 
             elif cmd == SAHARA_READ_DATA:
-                img_id  = struct.unpack_from("<I", data, 0)[0]
-                offset  = struct.unpack_from("<Q", data, 4)[0]
-                length  = struct.unpack_from("<Q", data, 12)[0]
+                struct.unpack_from("<I", data, 0)[0]
+                offset = struct.unpack_from("<Q", data, 4)[0]
+                length = struct.unpack_from("<Q", data, 12)[0]
 
-                chunk = loader_data[offset:offset+length]
+                chunk = loader_data[offset : offset + length]
                 self._send_packet(SAHARA_READ_DATA_RESP, chunk)
             else:
                 log(f"Sahara: cmd inesperado 0x{cmd:02X} durante envio do loader", "WARN")
@@ -302,9 +330,9 @@ class SaharaProtocol:
         try:
             cmd, length, data, raw = self._recv_packet(timeout=10000)
             if cmd == SAHARA_DONE_RESP:
-                log(f"Sahara DONE_RESP recebido")
+                log("Sahara DONE_RESP recebido")
                 return True
-        except:
+        except Exception:
             pass
 
         return True  # Em alguns firmwares o DONE_RESP nao chega
@@ -315,13 +343,16 @@ class SaharaProtocol:
             cfg = self.dev.get_active_configuration()
             intf = cfg[(0, 0)]
             usb.util.release_interface(self.dev, intf)
-        except:
+        except Exception:
             pass
+
 
 # --- Firehose Protocol -----------------------------------------------------
 
+
 class FirehoseError(Exception):
     pass
+
 
 class FirehoseProtocol:
     """Implementa o protocolo Firehose (streaming XML) para Qualcomm EDL."""
@@ -335,13 +366,17 @@ class FirehoseProtocol:
         """Configura endpoints para Firehose (streaming channel)."""
         self.ep_in = usb.util.find_descriptor(
             intf,
-            custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_IN and
-                                    usb.util.endpoint_type(e.bmAttributes) == usb.util.ENDPOINT_TYPE_BULK
+            custom_match=lambda e: (
+                usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_IN
+                and usb.util.endpoint_type(e.bmAttributes) == usb.util.ENDPOINT_TYPE_BULK
+            ),
         )
         self.ep_out = usb.util.find_descriptor(
             intf,
-            custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_OUT and
-                                    usb.util.endpoint_type(e.bmAttributes) == usb.util.ENDPOINT_TYPE_BULK
+            custom_match=lambda e: (
+                usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_OUT
+                and usb.util.endpoint_type(e.bmAttributes) == usb.util.ENDPOINT_TYPE_BULK
+            ),
         )
         if not self.ep_in or not self.ep_out:
             raise FirehoseError("Nao foi possivel encontrar endpoints Firehose")
@@ -354,7 +389,7 @@ class FirehoseProtocol:
         try:
             if self.dev.is_kernel_driver_active(intf.bInterfaceNumber):
                 self.dev.detach_kernel_driver(intf.bInterfaceNumber)
-        except:
+        except Exception:
             pass
 
         usb.util.claim_interface(self.dev, intf)
@@ -378,9 +413,9 @@ class FirehoseProtocol:
                 try:
                     ET.fromstring(resposta.decode("utf-8", errors="replace"))
                     break
-                except:
+                except Exception:
                     continue
-        except:
+        except Exception:
             pass
 
         return resposta.decode("utf-8", errors="replace")
@@ -414,8 +449,12 @@ class FirehoseProtocol:
 
     def configure(self, skip_storage_init="0", zlib="False"):
         """Envia comando <configure> para o Firehose."""
-        xml = f'<configure MemoryName="emmc" SkipStorageInit="{skip_storage_init}" ZippedHashes="{zlib}" Verbose="0" MaxPayloadSizeToTargetInBytes="1048576" MaxPayloadSizeToTargetInBytesSupported="false" AlwaysValidate="false"/>'
-        log(f"Firehose: enviando configure...")
+        xml = (
+            f'<configure MemoryName="emmc" SkipStorageInit="{skip_storage_init}" ZippedHashes="{zlib}" '
+            f'Verbose="0" MaxPayloadSizeToTargetInBytes="1048576" MaxPayloadSizeToTargetInBytesSupported="false" '
+            f'AlwaysValidate="false"/>'
+        )
+        log("Firehose: enviando configure...")
         resp = self.send_xml(xml)
         parsed = self.parse_response(resp)
         log(f"Firehose configure response: {parsed['status']}")
@@ -442,7 +481,7 @@ class FirehoseProtocol:
     def power_off(self):
         """Envia comando <power> para desligar o dispositivo."""
         xml = '<power value="off"/>'
-        log(f"Firehose: enviando power off...")
+        log("Firehose: enviando power off...")
         resp = self.send_xml(xml)
         parsed = self.parse_response(resp)
         log(f"Firehose power response: {parsed['status']}")
@@ -454,10 +493,12 @@ class FirehoseProtocol:
             cfg = self.dev.get_active_configuration()
             intf = cfg[(0, 1)]  # Firehose geralmente na interface 1
             usb.util.release_interface(self.dev, intf)
-        except:
+        except Exception:
             pass
 
+
 # --- Loader Management -----------------------------------------------------
+
 
 def get_loader_for_soc(soc_name):
     """
@@ -511,6 +552,7 @@ def get_loader_for_soc(soc_name):
     log(f"Nao foi possivel obter loader: {loader_name}", "ERROR")
     return None
 
+
 def find_any_loader():
     """
     Procura por qualquer loader firehose disponivel.
@@ -542,6 +584,7 @@ def find_any_loader():
     log("Nenhum loader firehose encontrado no sistema", "WARN")
     return None
 
+
 def guess_soc_from_device(info):
     """
     Tenta identificar o SoC com base nas informacoes do dispositivo.
@@ -558,17 +601,34 @@ def guess_soc_from_device(info):
 
     # Mapa de nomes de produto Xiaomi para SoC
     product_soc = {
-        "sdm660": "sdm660",  "sdm845": "sdm845", "sdm855": "sdm855",
-        "sm6150": "sm6150",  "sm6250": "sm6250", "sm6350": "sm6350",
-        "sm7125": "sm7125",  "sm7150": "sm7150", "sm7225": "sm7225",
-        "sm7250": "sm7250",  "sm7325": "sm7325", "sm7350": "sm7350",
-        "sm8150": "sm8150",  "sm8250": "sm8250", "sm8350": "sm8350",
-        "sm8450": "sm8450",  "sm8550": "sm8550",
-        "msm8916": "msm8916", "msm8937": "msm8937", "msm8940": "msm8937",
-        "msm8953": "msm8953", "msm8956": "msm8956",
-        "sdm450": "sdm450", "sdm625": "sdm625",
-        "sdm630": "sdm630", "sdm636": "sdm630",
-        "sdm670": "sdm670", "sdm710": "sdm710",
+        "sdm660": "sdm660",
+        "sdm845": "sdm845",
+        "sdm855": "sdm855",
+        "sm6150": "sm6150",
+        "sm6250": "sm6250",
+        "sm6350": "sm6350",
+        "sm7125": "sm7125",
+        "sm7150": "sm7150",
+        "sm7225": "sm7225",
+        "sm7250": "sm7250",
+        "sm7325": "sm7325",
+        "sm7350": "sm7350",
+        "sm8150": "sm8150",
+        "sm8250": "sm8250",
+        "sm8350": "sm8350",
+        "sm8450": "sm8450",
+        "sm8550": "sm8550",
+        "msm8916": "msm8916",
+        "msm8937": "msm8937",
+        "msm8940": "msm8937",
+        "msm8953": "msm8953",
+        "msm8956": "msm8956",
+        "sdm450": "sdm450",
+        "sdm625": "sdm625",
+        "sdm630": "sdm630",
+        "sdm636": "sdm630",
+        "sdm670": "sdm670",
+        "sdm710": "sdm710",
     }
 
     for hint in soc_hints:
@@ -582,7 +642,9 @@ def guess_soc_from_device(info):
 
     return None
 
+
 # --- EDL Device Manager ----------------------------------------------------
+
 
 class EDLDevice:
     """Gerenciador completo de dispositivo em modo EDL."""
@@ -630,7 +692,7 @@ class EDLDevice:
             desc = usb.util.get_string(self.usb_dev, 256)
             if desc:
                 info["descriptor"] = desc
-        except:
+        except Exception:
             pass
         return info
 
@@ -693,7 +755,7 @@ class EDLDevice:
         try:
             # O streaming channel normalmente esta na interface 1
             self.firehose.connect(intf_num=1)
-        except:
+        except Exception:
             try:
                 # Fallback para interface 0
                 self.firehose.connect(intf_num=0)
@@ -722,7 +784,7 @@ class EDLDevice:
         # 2. Le info da particao FRP (opcional, tentativa)
         try:
             self.firehose.read_pinfo("frp")
-        except:
+        except Exception:
             pass
 
         # 3. Apaga FRP
@@ -744,12 +806,12 @@ class EDLDevice:
         try:
             if self.firehose:
                 self.firehose.close()
-        except:
+        except Exception:
             pass
         try:
             if self.sahara:
                 self.sahara.close()
-        except:
+        except Exception:
             pass
 
     def reboot(self):
@@ -757,20 +819,22 @@ class EDLDevice:
         try:
             if self.firehose:
                 self.firehose.power_off()
-        except:
+        except Exception:
             pass
         log("Comando de reboot enviado")
 
+
 # --- Funcao principal ------------------------------------------------------
+
 
 def remove_frp_edl(loader_path=None, soc_hint=None):
     """
     Funcao principal para remocao de FRP via EDL.
-    
+
     Args:
         loader_path: Caminho para o firehose loader (opcional, auto-detecta se None)
         soc_hint: Nome do SoC (ex: "sm7125") para baixar loader correto
-    
+
     Returns:
         bool: True se FRP foi removido com sucesso
     """
@@ -790,7 +854,7 @@ def remove_frp_edl(loader_path=None, soc_hint=None):
         return False
 
     usb_info = edl.get_usb_info()
-    log(f"Dispositivo EDL detectado:")
+    log("Dispositivo EDL detectado:")
     log(f"  VID: 0x{usb_info.get('vid', 0):04X}")
     log(f"  PID: 0x{usb_info.get('pid', 0):04X}")
     log(f"  Fabricante: {usb_info.get('manufacturer', 'N/A')}")
@@ -866,7 +930,7 @@ def remove_frp_edl(loader_path=None, soc_hint=None):
     # 7. Finaliza
     try:
         edl.reboot()
-    except:
+    except Exception:
         pass
 
     edl.close()
@@ -876,6 +940,7 @@ def remove_frp_edl(loader_path=None, soc_hint=None):
         log("Reinicie o celular. O FRP deve ter sido removido.")
     return success
 
+
 def check_edl_mode():
     """Verifica se o dispositivo esta em modo EDL 9008 (retorna bool)."""
     edl = EDLDevice.detect()
@@ -883,6 +948,7 @@ def check_edl_mode():
         edl.close()
         return True
     return _find_edl_wmi()
+
 
 def list_available_loaders():
     """Lista todos os loaders disponiveis no cache e sistema."""

@@ -1,9 +1,8 @@
-
-import subprocess
-import os
 import datetime
-from modulos.api.bot_ravena import send_notification
+import os
+import subprocess
 
+from modulos.api.bot_ravena import send_notification
 
 # Configurações
 GITHUB_REPO_URL = "https://github.com/desenvolvimentodesoftware2003-lgtm/ravena-aim.git"
@@ -16,12 +15,14 @@ RCLONE_CONFIG_PATH = "/home/ubuntu/.gdrive-rclone.ini"
 FOLDERS_TO_SYNC = [
     "logs",
     "memoria",
-    "modulos" # Assumindo que 'modulos' contém artefatos que precisam ser sincronizados
+    "modulos",  # Assumindo que 'modulos' contém artefatos que precisam ser sincronizados
 ]
+
 
 def log_message(message):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{timestamp}] {message}")
+
 
 def run_command(command, cwd=None):
     try:
@@ -40,10 +41,10 @@ def run_command(command, cwd=None):
         log_message(f"Ocorreu um erro inesperado: {e}")
         return False
 
+
 def sync_github_to_drive():
     log_message("Iniciando sincronização GitHub para Google Drive...")
     send_notification("Iniciando sincronização GitHub para Google Drive...")
-
 
     # 1. Atualizar repositório GitHub
     if not os.path.exists(LOCAL_REPO_PATH):
@@ -63,7 +64,7 @@ def sync_github_to_drive():
     for folder in FOLDERS_TO_SYNC:
         local_folder_path = os.path.join(LOCAL_REPO_PATH, folder)
         drive_target_path = f"{DRIVE_REMOTE_NAME}:{DRIVE_FOLDER_PATH}/{folder}"
-        
+
         if not os.path.exists(local_folder_path):
             log_message(f"A pasta local '{local_folder_path}' não existe. Pulando sincronização para esta pasta.")
             continue
@@ -72,12 +73,13 @@ def sync_github_to_drive():
         # Usamos 'rclone copy' para evitar exclusão acidental de arquivos no Drive
         # 'rclone sync' é mais agressivo e espelha o conteúdo, o que pode ser perigoso
         if not run_command(f"rclone copy --config {RCLONE_CONFIG_PATH} {local_folder_path} {drive_target_path}"):
-            log_message(f"Falha ao sincronizar a pasta \'{folder}\' para o Google Drive.")
-            send_notification(f"Falha ao sincronizar a pasta \'{folder}\' para o Google Drive.")
+            log_message(f"Falha ao sincronizar a pasta '{folder}' para o Google Drive.")
+            send_notification(f"Falha ao sincronizar a pasta '{folder}' para o Google Drive.")
             # Continuar com as outras pastas mesmo se uma falhar
 
     log_message("Sincronização concluída.")
     send_notification("Sincronização GitHub para Google Drive concluída com sucesso!")
+
 
 if __name__ == "__main__":
     sync_github_to_drive()

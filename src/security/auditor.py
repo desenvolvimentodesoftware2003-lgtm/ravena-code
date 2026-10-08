@@ -27,22 +27,18 @@ INTEGRAÇÃO:
   - Compatível com JuizUniversal (passa veredicto para validação)
 """
 
+import ast
+import json
+import logging
 import os
 import re
-import ast
-import sys
-import json
-import time
-import signal
-import socket
-import logging
-import textwrap
-import traceback
 import subprocess
-from enum import Enum
+import sys
+import textwrap
+import time
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Optional, Callable
-from dataclasses import dataclass, field, asdict
+from enum import StrEnum
 
 # ── Logging (padrão Ravena) ───────────────────────────────────────────────
 logging.basicConfig(
@@ -57,17 +53,18 @@ logger = logging.getLogger("ravena.auditor")
 #  ENUMS E CONFIGURAÇÕES
 # ══════════════════════════════════════════════════════════════════════════
 
-class Veredicto(str, Enum):
-    APROVADA              = "APROVADA"
+
+class Veredicto(StrEnum):
+    APROVADA = "APROVADA"
     APROVADA_COM_RESTRICOES = "APROVADA_COM_RESTRICOES"
-    REPROVADA             = "REPROVADA"
-    PENDENTE              = "PENDENTE"
+    REPROVADA = "REPROVADA"
+    PENDENTE = "PENDENTE"
 
 
-class NivelRisco(str, Enum):
-    BAIXO  = "BAIXO"
-    MEDIO  = "MEDIO"
-    ALTO   = "ALTO"
+class NivelRisco(StrEnum):
+    BAIXO = "BAIXO"
+    MEDIO = "MEDIO"
+    ALTO = "ALTO"
     CRITICO = "CRITICO"
 
 
@@ -85,16 +82,30 @@ class AuditorConfig:
 
     # Imports considerados de alto risco
     IMPORTS_ALTO_RISCO: list = [
-        "subprocess", "os.system", "eval", "exec",
-        "pickle", "marshal", "__import__",
-        "ctypes", "cffi", "mmap",
+        "subprocess",
+        "os.system",
+        "eval",
+        "exec",
+        "pickle",
+        "marshal",
+        "__import__",
+        "ctypes",
+        "cffi",
+        "mmap",
     ]
 
     # Imports que requerem análise — risco médio
     IMPORTS_RISCO_MEDIO: list = [
-        "socket", "urllib", "requests", "httpx",
-        "ftplib", "smtplib", "telnetlib",
-        "shutil", "tempfile", "glob",
+        "socket",
+        "urllib",
+        "requests",
+        "httpx",
+        "ftplib",
+        "smtplib",
+        "telnetlib",
+        "shutil",
+        "tempfile",
+        "glob",
     ]
 
     # Padrões de código que indicam tentativa de escape do sandbox
@@ -105,7 +116,7 @@ class AuditorConfig:
         r"locals\(\)",
         r"vars\(\)",
         r"getattr\s*\(.+,\s*['\"]__",
-        r"open\s*\(['\"][/\\]",          # acesso à raiz do sistema
+        r"open\s*\(['\"][/\\]",  # acesso à raiz do sistema
         r"os\.environ",
         r"sys\.path\.insert",
         r"importlib\.import_module",
@@ -113,18 +124,18 @@ class AuditorConfig:
 
     # Domínios permitidos para chamadas de rede (whitelist)
     DOMINIOS_PERMITIDOS: list = [
-        "api.awesomeapi.com.br",         # AwesomeAPI — cotações
-        "serpapi.com",                   # SerpAPI — busca
-        "api.telegram.org",              # Telegram — bot oficial
-        "wttr.in",                       # Clima
-        "newsapi.org",                   # Notícias
+        "api.awesomeapi.com.br",  # AwesomeAPI — cotações
+        "serpapi.com",  # SerpAPI — busca
+        "api.telegram.org",  # Telegram — bot oficial
+        "wttr.in",  # Clima
+        "newsapi.org",  # Notícias
     ]
 
     # Ferramentas dos 324 links que já foram identificadas como críticas
     FERRAMENTAS_CRITICAS: dict = {
-        "trade_claw":   {"link": 29, "motivo": "Telegram bot não auditado — doc V2.0 §6.2"},
-        "kortix_ai":    {"link": 1,  "motivo": "Execução autônoma — requer sandbox rigoroso"},
-        "serpapi":      {"link": 0,  "motivo": "Busca web — pode vazar contexto da Ravena"},
+        "trade_claw": {"link": 29, "motivo": "Telegram bot não auditado — doc V2.0 §6.2"},
+        "kortix_ai": {"link": 1, "motivo": "Execução autônoma — requer sandbox rigoroso"},
+        "serpapi": {"link": 0, "motivo": "Busca web — pode vazar contexto da Ravena"},
     }
 
 
@@ -132,43 +143,44 @@ class AuditorConfig:
 #  RESULTADO DE AUDITORIA
 # ══════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class ResultadoAuditoria:
     """Relatório completo gerado pelo auditor para uma ferramenta."""
 
     nome_ferramenta: str
-    veredicto:       Veredicto          = Veredicto.PENDENTE
-    nivel_risco:     NivelRisco         = NivelRisco.BAIXO
-    aprovado:        bool               = False
+    veredicto: Veredicto = Veredicto.PENDENTE
+    nivel_risco: NivelRisco = NivelRisco.BAIXO
+    aprovado: bool = False
 
     # Detalhes por etapa
-    analise_estatica:  dict = field(default_factory=dict)
+    analise_estatica: dict = field(default_factory=dict)
     resultado_sandbox: dict = field(default_factory=dict)
-    chamadas_rede:     dict = field(default_factory=dict)
-    escopo_arquivos:   dict = field(default_factory=dict)
+    chamadas_rede: dict = field(default_factory=dict)
+    escopo_arquivos: dict = field(default_factory=dict)
 
     # Alertas e restrições
-    alertas:    list = field(default_factory=list)
+    alertas: list = field(default_factory=list)
     restricoes: list = field(default_factory=list)
 
     # Rastreabilidade
-    timestamp:    str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
     tempo_total_s: float = 0.0
 
     def to_dict(self) -> dict:
         d = asdict(self)
-        d["veredicto"]   = self.veredicto.value
+        d["veredicto"] = self.veredicto.value
         d["nivel_risco"] = self.nivel_risco.value
         return d
 
     def resumo(self) -> str:
         linhas = [
-            f"\n{'='*60}",
+            f"\n{'=' * 60}",
             f"  AUDITORIA: {self.nome_ferramenta}",
             f"  Veredicto:  {self.veredicto.value}",
             f"  Risco:      {self.nivel_risco.value}",
             f"  Tempo:      {self.tempo_total_s:.2f}s",
-            f"{'='*60}",
+            f"{'=' * 60}",
         ]
         if self.alertas:
             linhas.append("  ⚠ ALERTAS:")
@@ -184,13 +196,14 @@ class ResultadoAuditoria:
             linhas.append("  ⚠  Aprovada COM restrições — leia os itens acima.")
         else:
             linhas.append("  ❌ REPROVADA — NÃO integrar ao ToolManager.")
-        linhas.append(f"{'='*60}\n")
+        linhas.append(f"{'=' * 60}\n")
         return "\n".join(linhas)
 
 
 # ══════════════════════════════════════════════════════════════════════════
 #  ETAPA 1 — ANÁLISE ESTÁTICA
 # ══════════════════════════════════════════════════════════════════════════
+
 
 class AnalisadorEstatico:
     """
@@ -203,12 +216,12 @@ class AnalisadorEstatico:
 
     def analisar(self, codigo: str, nome: str = "ferramenta") -> dict:
         resultado = {
-            "passou":           True,
+            "passou": True,
             "imports_detectados": [],
-            "padroes_escape":   [],
-            "erros_sintaxe":    [],
-            "alertas":          [],
-            "nivel_risco":      NivelRisco.BAIXO,
+            "padroes_escape": [],
+            "erros_sintaxe": [],
+            "alertas": [],
+            "nivel_risco": NivelRisco.BAIXO,
         }
 
         # 1. Verifica sintaxe
@@ -246,17 +259,12 @@ class AnalisadorEstatico:
         for padrao in self.config.PADROES_ESCAPE:
             if re.search(padrao, codigo):
                 resultado["padroes_escape"].append(padrao)
-                resultado["alertas"].append(
-                    f"Padrão de escape detectado: '{padrao}'"
-                )
+                resultado["alertas"].append(f"Padrão de escape detectado: '{padrao}'")
                 if resultado["nivel_risco"] != NivelRisco.CRITICO:
                     resultado["nivel_risco"] = NivelRisco.ALTO
                 resultado["passou"] = False
 
-        logger.info(
-            f"[Estático] {nome} — risco={resultado['nivel_risco'].value} | "
-            f"passou={resultado['passou']}"
-        )
+        logger.info(f"[Estático] {nome} — risco={resultado['nivel_risco'].value} | passou={resultado['passou']}")
         return resultado
 
     def _avaliar_import(self, modulo: str, resultado: dict) -> None:
@@ -265,18 +273,14 @@ class AnalisadorEstatico:
 
         if any(r in modulo for r in self.config.IMPORTS_ALTO_RISCO):
             resultado["imports_detectados"].append({"modulo": modulo, "risco": "ALTO"})
-            resultado["alertas"].append(
-                f"Import de alto risco: '{modulo}'"
-            )
+            resultado["alertas"].append(f"Import de alto risco: '{modulo}'")
             if resultado["nivel_risco"] not in (NivelRisco.CRITICO,):
                 resultado["nivel_risco"] = NivelRisco.ALTO
             resultado["passou"] = False
 
         elif modulo_base in self.config.IMPORTS_RISCO_MEDIO:
             resultado["imports_detectados"].append({"modulo": modulo, "risco": "MEDIO"})
-            resultado["alertas"].append(
-                f"Import de rede/filesystem: '{modulo}' — verificar necessidade"
-            )
+            resultado["alertas"].append(f"Import de rede/filesystem: '{modulo}' — verificar necessidade")
             if resultado["nivel_risco"] == NivelRisco.BAIXO:
                 resultado["nivel_risco"] = NivelRisco.MEDIO
 
@@ -284,6 +288,7 @@ class AnalisadorEstatico:
 # ══════════════════════════════════════════════════════════════════════════
 #  ETAPA 2 — SANDBOX ISOLADO
 # ══════════════════════════════════════════════════════════════════════════
+
 
 class SandboxExecutor:
     """
@@ -300,13 +305,13 @@ class SandboxExecutor:
         Isola completamente do processo principal da Ravena.
         """
         resultado = {
-            "executou":   False,
-            "stdout":     "",
-            "stderr":     "",
-            "excecao":    None,
-            "timeout":    False,
-            "tempo_s":    0.0,
-            "passou":     False,
+            "executou": False,
+            "stdout": "",
+            "stderr": "",
+            "excecao": None,
+            "timeout": False,
+            "tempo_s": 0.0,
+            "passou": False,
         }
 
         # Escreve código em arquivo temporário
@@ -339,30 +344,27 @@ class SandboxExecutor:
                     text=True,
                     timeout=self.config.SANDBOX_TIMEOUT,
                 )
-                resultado["tempo_s"]  = round(time.time() - inicio, 3)
-                resultado["stdout"]   = proc.stdout[:2000]
-                resultado["stderr"]   = proc.stderr[:2000]
+                resultado["tempo_s"] = round(time.time() - inicio, 3)
+                resultado["stdout"] = proc.stdout[:2000]
+                resultado["stderr"] = proc.stderr[:2000]
                 resultado["executou"] = True
-                resultado["passou"]   = proc.returncode == 0
+                resultado["passou"] = proc.returncode == 0
 
                 if proc.returncode != 0:
                     resultado["excecao"] = f"Código de saída {proc.returncode}"
-                    logger.warning(
-                        f"[Sandbox] {nome} — código de saída {proc.returncode}"
-                    )
+                    logger.warning(f"[Sandbox] {nome} — código de saída {proc.returncode}")
 
             except subprocess.TimeoutExpired:
                 resultado["timeout"] = True
-                resultado["passou"]  = False
+                resultado["passou"] = False
                 resultado["excecao"] = (
-                    f"Timeout após {self.config.SANDBOX_TIMEOUT}s — "
-                    "possível loop infinito ou operação bloqueante"
+                    f"Timeout após {self.config.SANDBOX_TIMEOUT}s — possível loop infinito ou operação bloqueante"
                 )
                 logger.warning(f"[Sandbox] {nome} — TIMEOUT")
 
             except Exception as e:
                 resultado["excecao"] = str(e)
-                resultado["passou"]  = False
+                resultado["passou"] = False
 
         finally:
             if os.path.exists(caminho_temp):
@@ -378,6 +380,7 @@ class SandboxExecutor:
 # ══════════════════════════════════════════════════════════════════════════
 #  ETAPA 3 — VERIFICAÇÃO DE CHAMADAS DE REDE
 # ══════════════════════════════════════════════════════════════════════════
+
 
 class AnalisadorRede:
     """
@@ -401,18 +404,16 @@ class AnalisadorRede:
         ]
 
         # Padrão para extrair URLs do código
-        self._url_pattern = re.compile(
-            r"https?://([a-zA-Z0-9\-\.]+)"
-        )
+        self._url_pattern = re.compile(r"https?://([a-zA-Z0-9\-\.]+)")
 
     def analisar(self, codigo: str, nome: str = "ferramenta") -> dict:
         resultado = {
-            "passou":              True,
+            "passou": True,
             "chamadas_detectadas": [],
-            "dominios_externos":   [],
+            "dominios_externos": [],
             "dominios_nao_whitelist": [],
-            "alertas":             [],
-            "nivel_risco":         NivelRisco.BAIXO,
+            "alertas": [],
+            "nivel_risco": NivelRisco.BAIXO,
         }
 
         # 1. Detecta padrões de chamada HTTP
@@ -426,14 +427,9 @@ class AnalisadorRede:
 
         # 3. Verifica whitelist
         for dominio in dominios:
-            if not any(
-                dominio.endswith(permitido)
-                for permitido in self.config.DOMINIOS_PERMITIDOS
-            ):
+            if not any(dominio.endswith(permitido) for permitido in self.config.DOMINIOS_PERMITIDOS):
                 resultado["dominios_nao_whitelist"].append(dominio)
-                resultado["alertas"].append(
-                    f"Domínio não autorizado: '{dominio}' — não está na whitelist"
-                )
+                resultado["alertas"].append(f"Domínio não autorizado: '{dominio}' — não está na whitelist")
 
         # 4. Define nível de risco
         if resultado["dominios_nao_whitelist"]:
@@ -443,8 +439,7 @@ class AnalisadorRede:
             # Chamadas de rede sem URL explícita — suspeito
             resultado["nivel_risco"] = NivelRisco.MEDIO
             resultado["alertas"].append(
-                "Chamadas de rede detectadas sem URL explícita — "
-                "domínio dinâmico não verificável"
+                "Chamadas de rede detectadas sem URL explícita — domínio dinâmico não verificável"
             )
 
         logger.info(
@@ -458,6 +453,7 @@ class AnalisadorRede:
 # ══════════════════════════════════════════════════════════════════════════
 #  ETAPA 4 — VERIFICAÇÃO DE ESCOPO DE ARQUIVOS
 # ══════════════════════════════════════════════════════════════════════════
+
 
 class AnalisadorEscopo:
     """
@@ -493,11 +489,11 @@ class AnalisadorEscopo:
 
     def analisar(self, codigo: str, nome: str = "ferramenta") -> dict:
         resultado = {
-            "passou":             True,
+            "passou": True,
             "caminhos_detectados": [],
-            "caminhos_sensiveis":  [],
-            "alertas":             [],
-            "nivel_risco":         NivelRisco.BAIXO,
+            "caminhos_sensiveis": [],
+            "alertas": [],
+            "nivel_risco": NivelRisco.BAIXO,
         }
 
         # 1. Extrai caminhos de arquivo do código
@@ -513,18 +509,14 @@ class AnalisadorEscopo:
             for sensivel in self._caminhos_sensiveis:
                 if re.search(sensivel, caminho, re.IGNORECASE):
                     resultado["caminhos_sensiveis"].append(caminho)
-                    resultado["alertas"].append(
-                        f"Acesso a caminho sensível: '{caminho}'"
-                    )
+                    resultado["alertas"].append(f"Acesso a caminho sensível: '{caminho}'")
                     resultado["passou"] = False
                     resultado["nivel_risco"] = NivelRisco.CRITICO
                     break
 
         # 3. Detecta tentativas de acesso absoluto à raiz
         if re.search(r"open\s*\(['\"][/\\]", codigo):
-            resultado["alertas"].append(
-                "Tentativa de acesso com caminho absoluto (raiz do sistema)"
-            )
+            resultado["alertas"].append("Tentativa de acesso com caminho absoluto (raiz do sistema)")
             resultado["passou"] = False
             resultado["nivel_risco"] = NivelRisco.CRITICO
 
@@ -539,6 +531,7 @@ class AnalisadorEscopo:
 # ══════════════════════════════════════════════════════════════════════════
 #  AUDITOR PRINCIPAL — Orquestrador das 4 Etapas
 # ══════════════════════════════════════════════════════════════════════════
+
 
 class Auditor:
     """
@@ -561,9 +554,9 @@ class Auditor:
     def __init__(self, config: AuditorConfig = None):
         self.config = config or AuditorConfig()
         self.analisador_estatico = AnalisadorEstatico(self.config)
-        self.sandbox             = SandboxExecutor(self.config)
-        self.analisador_rede     = AnalisadorRede(self.config)
-        self.analisador_escopo   = AnalisadorEscopo(self.config)
+        self.sandbox = SandboxExecutor(self.config)
+        self.analisador_rede = AnalisadorRede(self.config)
+        self.analisador_escopo = AnalisadorEscopo(self.config)
         os.makedirs(self.config.LOG_DIR, exist_ok=True)
 
     # ── AUDITORIA COMPLETA DE CÓDIGO ──────────────────────────────────────
@@ -644,10 +637,7 @@ class Auditor:
         # Verifica se é uma ferramenta crítica identificada no doc V2.0
         if nome.lower() in self.config.FERRAMENTAS_CRITICAS:
             info_critica = self.config.FERRAMENTAS_CRITICAS[nome.lower()]
-            alerta_critico = (
-                f"FERRAMENTA CRÍTICA (link {info_critica['link']}): "
-                f"{info_critica['motivo']}"
-            )
+            alerta_critico = f"FERRAMENTA CRÍTICA (link {info_critica['link']}): {info_critica['motivo']}"
             if alerta_critico not in resultado.alertas:
                 resultado.alertas.insert(0, alerta_critico)
 
@@ -657,7 +647,7 @@ class Auditor:
             if resultado.veredicto == Veredicto.APROVADA:
                 resultado.veredicto = Veredicto.APROVADA_COM_RESTRICOES
                 resultado.restricoes.append(
-                    f"Monitoramento contínuo obrigatório — ferramenta crítica identificada no doc V2.0"
+                    "Monitoramento contínuo obrigatório — ferramenta crítica identificada no doc V2.0"
                 )
 
         return resultado
@@ -670,14 +660,14 @@ class Auditor:
         Não substitui auditoria completa.
         """
         estatica = self.analisador_estatico.analisar(codigo, nome)
-        rede     = self.analisador_rede.analisar(codigo, nome)
+        rede = self.analisador_rede.analisar(codigo, nome)
 
         aprovado = estatica["passou"] and rede["passou"]
         return {
-            "nome":     nome,
+            "nome": nome,
             "aprovado": aprovado,
-            "alertas":  estatica["alertas"] + rede["alertas"],
-            "tipo":     "validacao_rapida",
+            "alertas": estatica["alertas"] + rede["alertas"],
+            "tipo": "validacao_rapida",
         }
 
     # ── CÁLCULO DO VEREDICTO ──────────────────────────────────────────────
@@ -711,17 +701,13 @@ class Auditor:
 
         if pior_nivel in (NivelRisco.CRITICO, NivelRisco.ALTO) or len(etapas_reprovadas) >= 2:
             resultado.veredicto = Veredicto.REPROVADA
-            resultado.aprovado  = False
-            resultado.restricoes.append(
-                "Integração bloqueada — revisar e corrigir antes de qualquer uso."
-            )
+            resultado.aprovado = False
+            resultado.restricoes.append("Integração bloqueada — revisar e corrigir antes de qualquer uso.")
 
         elif len(etapas_reprovadas) == 1 or resultado.alertas:
             resultado.veredicto = Veredicto.APROVADA_COM_RESTRICOES
-            resultado.aprovado  = True
-            resultado.restricoes.append(
-                "Usar apenas em contexto controlado — monitorar chamadas de saída."
-            )
+            resultado.aprovado = True
+            resultado.restricoes.append("Usar apenas em contexto controlado — monitorar chamadas de saída.")
             if resultado.resultado_sandbox.get("timeout"):
                 resultado.restricoes.append(
                     "Timeout no sandbox — aplicar timeout explícito ao integrar no ToolManager."
@@ -729,7 +715,7 @@ class Auditor:
 
         else:
             resultado.veredicto = Veredicto.APROVADA
-            resultado.aprovado  = True
+            resultado.aprovado = True
 
         return resultado
 
@@ -737,10 +723,7 @@ class Auditor:
     def _salvar_log(self, resultado: ResultadoAuditoria) -> None:
         """Persiste o relatório em logs/auditoria/ para rastreabilidade."""
         try:
-            nome_arquivo = (
-                f"{self.config.LOG_DIR}/"
-                f"audit_{resultado.nome_ferramenta}_{resultado.timestamp[:10]}.json"
-            )
+            nome_arquivo = f"{self.config.LOG_DIR}/audit_{resultado.nome_ferramenta}_{resultado.timestamp[:10]}.json"
             with open(nome_arquivo, "w", encoding="utf-8") as f:
                 json.dump(resultado.to_dict(), f, ensure_ascii=False, indent=2)
             logger.info(f"Log salvo: {nome_arquivo}")

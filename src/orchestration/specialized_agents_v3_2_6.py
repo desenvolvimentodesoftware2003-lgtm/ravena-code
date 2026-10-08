@@ -6,50 +6,58 @@ Responsável por delegar tarefas complexas a sub-agentes com capacidades multimo
 """
 
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 # Configuração de Logging
 logger = logging.getLogger("ravena.specialized_agents")
 
+
 class SpecializedAgent:
     """Classe base para agentes especializados."""
+
     def __init__(self, nome: str, especialidade: str):
         self.nome = nome
         self.especialidade = especialidade
-        
-    def executar_tarefa(self, contexto: Any) -> Dict[str, Any]:
+
+    def executar_tarefa(self, contexto: Any) -> dict[str, Any]:
         raise NotImplementedError
+
 
 class DesignAgent(SpecializedAgent):
     """Agente especializado em Design e Visão Estética."""
-    def executar_tarefa(self, contexto: Any) -> Dict[str, Any]:
+
+    def executar_tarefa(self, contexto: Any) -> dict[str, Any]:
         logger.info(f"Agente {self.nome} analisando estética/layout...")
         return {"resultado": "Análise de design concluída", "sugestao": "Melhorar contraste no gráfico."}
 
+
 class FinanceAgent(SpecializedAgent):
     """Agente especializado em Análise Financeira e Trading."""
-    def executar_tarefa(self, contexto: Any) -> Dict[str, Any]:
+
+    def executar_tarefa(self, contexto: Any) -> dict[str, Any]:
         logger.info(f"Agente {self.nome} analisando tendências de mercado...")
         return {"resultado": "Análise financeira concluída", "sinal": "COMPRA_FORTE"}
 
+
 class AgentOrchestrator:
     """Gerencia e delega tarefas para os agentes especializados."""
-    
+
     def __init__(self):
         self.version = "3.2.6"
         self.agentes = {
             "design": DesignAgent("Ravena_Design", "estética_visual"),
-            "finance": FinanceAgent("Ravena_Finance", "mercado_financeiro")
+            "finance": FinanceAgent("Ravena_Finance", "mercado_financeiro"),
         }
         logger.info(f"AgentOrchestrator v{self.version} inicializado.")
 
-    def delegar(self, categoria: str, contexto: Any) -> Dict[str, Any]:
+    def delegar(self, categoria: str, contexto: Any) -> dict[str, Any]:
         """Delega a tarefa para o agente correto baseado na categoria."""
         agente = self.agentes.get(categoria)
         if agente:
             logger.info(f"Delegando tarefa para o agente de {categoria}...")
             return agente.executar_tarefa(contexto)
         return {"erro": "Agente especializado não encontrado."}
+
 
 if __name__ == "__main__":
     orchestrator = AgentOrchestrator()

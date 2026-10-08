@@ -7,7 +7,7 @@ Disponibiliza:
 - StepScaling: estrategia de entrada em grades (escalonamento por passos)
 """
 
-from .step_scaling import StepScaling, EscalaPasso
+from .step_scaling import EscalaPasso, StepScaling
 
 __all__ = [
     "StepScaling",

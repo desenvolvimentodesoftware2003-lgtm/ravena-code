@@ -283,7 +283,7 @@ CHECK_INTERVAL=5            # Intervalo de verificação (segundos)
 Edite `/opt/ravena/app/app.py`:
 
 ```python
-app.run(host='0.0.0.0', port=8080, debug=True)
+app.run(host="0.0.0.0", port=8080, debug=True)
 ```
 
 ## Licença

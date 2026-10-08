@@ -1,16 +1,16 @@
 import json
-import time
-from datetime import datetime
 import logging
+from datetime import datetime
 
 logger = logging.getLogger("DashboardController")
+
 
 class DashboardController:
     """
     Interface lógica para monitoramento em tempo real das atividades dos agentes,
     consumo de recursos e performance do sistema.
     """
-    
+
     def __init__(self, stats_path: str = "data/dashboard_stats.json"):
         self.stats_path = stats_path
         self.current_metrics = {
@@ -18,7 +18,7 @@ class DashboardController:
             "active_agents": 0,
             "tokens_consumed": 0,
             "latency_ms": 0,
-            "last_update": ""
+            "last_update": "",
         }
 
     def update_metrics(self, agent_id: str, tokens: int, latency: float):
@@ -32,7 +32,7 @@ class DashboardController:
 
     def _save_stats(self):
         try:
-            with open(self.stats_path, 'w', encoding="utf-8") as f:
+            with open(self.stats_path, "w", encoding="utf-8") as f:
                 json.dump(self.current_metrics, f, indent=4)
         except Exception as e:
             logger.error(f"Erro ao salvar estatísticas do dashboard: {str(e)}")
@@ -43,14 +43,10 @@ class DashboardController:
 
     def log_agent_activity(self, agent_id: str, action: str, status: str):
         """Registra atividades específicas para visualização no dashboard."""
-        log_entry = {
-            "timestamp": str(datetime.now()),
-            "agent": agent_id,
-            "action": action,
-            "status": status
-        }
+        log_entry = {"timestamp": str(datetime.now()), "agent": agent_id, "action": action, "status": status}
         # Em produção, isso seria enviado para um WebSocket ou Redis
         print(f"[DASHBOARD LOG] {log_entry}")
+
 
 if __name__ == "__main__":
     db = DashboardController()

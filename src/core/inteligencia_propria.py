@@ -1,15 +1,13 @@
-import os
 import json
 import logging
-import math
-from datetime import datetime
-from typing import Dict, List, Any, Optional, Tuple
-from dataclasses import dataclass, field
+import os
+from dataclasses import dataclass
+from typing import Any
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 
 logger = logging.getLogger("ravena.inteligencia")
 
@@ -19,6 +17,7 @@ DIM_ENCODER = 768
 VOCAB_SIZE = 10000
 LR = 0.0001
 BATCH_SIZE = 32
+
 
 class EncoderRavena(nn.Module):
     def __init__(self, vocab_size: int = VOCAB_SIZE, dim_embed: int = DIM_ENCODER):
@@ -37,7 +36,7 @@ class EncoderRavena(nn.Module):
         x = F.normalize(x, p=2, dim=-1)
         return x
 
-    def codificar_texto(self, texto: str, vocab: Dict[str, int]) -> np.ndarray:
+    def codificar_texto(self, texto: str, vocab: dict[str, int]) -> np.ndarray:
         tokens = self._tokenizar_id(texto, vocab)
         if not tokens:
             return np.zeros(self.dim_embed, dtype=np.float32)
@@ -47,7 +46,7 @@ class EncoderRavena(nn.Module):
             emb = self.forward(tensor, offsets)
             return emb.squeeze(0).numpy()
 
-    def _tokenizar_id(self, texto: str, vocab: Dict[str, int]) -> List[int]:
+    def _tokenizar_id(self, texto: str, vocab: dict[str, int]) -> list[int]:
         texto = texto.lower().strip()
         palavras = texto.split()[:256]
         ids = []
@@ -69,23 +68,25 @@ class ExperienciaTreino:
     authority_score: float = 0.0
 
     @classmethod
-    def de_jsonl(cls, caminho: str) -> List["ExperienciaTreino"]:
+    def de_jsonl(cls, caminho: str) -> list["ExperienciaTreino"]:
         experiencias = []
         if not os.path.exists(caminho):
             return experiencias
-        with open(caminho, "r", encoding="utf-8") as f:
+        with open(caminho, encoding="utf-8") as f:
             for linha in f:
                 try:
                     d = json.loads(linha)
                     if d.get("pergunta") and d.get("resposta"):
-                        experiencias.append(cls(
-                            pergunta=d["pergunta"],
-                            raciocinio=d.get("raciocinio", ""),
-                            resposta=d["resposta"],
-                            confianca=d.get("confianca", 0.0),
-                            fonte=d.get("fonte", ""),
-                            authority_score=d.get("authority_score", 0.0)
-                        ))
+                        experiencias.append(
+                            cls(
+                                pergunta=d["pergunta"],
+                                raciocinio=d.get("raciocinio", ""),
+                                resposta=d["resposta"],
+                                confianca=d.get("confianca", 0.0),
+                                fonte=d.get("fonte", ""),
+                                authority_score=d.get("authority_score", 0.0),
+                            )
+                        )
                 except json.JSONDecodeError:
                     continue
         return experiencias
@@ -95,14 +96,14 @@ class InteligenciaPropria:
     def __init__(self, dim_embed: int = DIM_ENCODER, device: str = "cpu"):
         self.device = device
         self.dim_embed = dim_embed
-        self.vocab: Dict[str, int] = {"<pad>": 0, "<unk>": 1}
-        self.vocab_rev: List[str] = ["<pad>", "<unk>"]
+        self.vocab: dict[str, int] = {"<pad>": 0, "<unk>": 1}
+        self.vocab_rev: list[str] = ["<pad>", "<unk>"]
         self._proximo_id = 2
 
         self.encoder = EncoderRavena(VOCAB_SIZE, dim_embed)
         self.otimizador = torch.optim.AdamW(self.encoder.parameters(), lr=LR)
         self.treinado = False
-        self._experiencias: List[ExperienciaTreino] = []
+        self._experiencias: list[ExperienciaTreino] = []
 
         logger.info(f"InteligenciaPropria inicializada (dim={dim_embed}, device={device})")
 
@@ -133,7 +134,7 @@ class InteligenciaPropria:
         cos_sim = np.dot(emb_a, emb_b) / (np.linalg.norm(emb_a) * np.linalg.norm(emb_b) + 1e-8)
         return float(cos_sim)
 
-    def treinar(self, epochs: int = 10, lr: float = LR) -> Dict[str, Any]:
+    def treinar(self, epochs: int = 10, lr: float = LR) -> dict[str, Any]:
         if len(self._experiencias) < 2:
             logger.warning("Dados insuficientes para treino (min 2)")
             return {"status": "dados_insuficientes", "total": len(self._experiencias)}
@@ -145,7 +146,7 @@ class InteligenciaPropria:
             loss_total = 0.0
             n_batches = 0
             for i in range(0, len(self._experiencias), BATCH_SIZE):
-                batch = self._experiencias[i:i + BATCH_SIZE]
+                batch = self._experiencias[i : i + BATCH_SIZE]
                 perguntas_ids = []
                 offsets = []
                 offset_atual = 0
@@ -174,14 +175,15 @@ class InteligenciaPropria:
             loss_media = loss_total / max(n_batches, 1)
             losses.append(loss_media)
             if (epoch + 1) % 5 == 0 or epoch == 0:
-                logger.info(f"  Epoch {epoch+1}/{epochs} — loss: {loss_media:.6f}")
+                logger.info(f"  Epoch {epoch + 1}/{epochs} — loss: {loss_media:.6f}")
 
         self.treinado = True
         logger.info(f"Treino concluido. Loss final: {losses[-1]:.6f}")
         return {"status": "ok", "epochs": epochs, "loss_final": losses[-1], "total": len(self._experiencias)}
 
-    def buscar_com_encoder(self, pergunta: str, itens: List[Dict[str, Any]],
-                           top_k: int = 5, similaridade_min: float = 0.3) -> List[Dict[str, Any]]:
+    def buscar_com_encoder(
+        self, pergunta: str, itens: list[dict[str, Any]], top_k: int = 5, similaridade_min: float = 0.3
+    ) -> list[dict[str, Any]]:
         if not self.treinado or len(self.vocab) < 10:
             return []
 
@@ -192,38 +194,82 @@ class InteligenciaPropria:
                 continue
             texto_item = f"{item.get('pergunta', '')} {item.get('conteudo', '')}"
             emb_item = self.codificar(texto_item)
-            sim = float(np.dot(emb_pergunta, emb_item) / (np.linalg.norm(emb_pergunta) * np.linalg.norm(emb_item) + 1e-8))
+            sim = float(
+                np.dot(emb_pergunta, emb_item) / (np.linalg.norm(emb_pergunta) * np.linalg.norm(emb_item) + 1e-8)
+            )
             if sim >= similaridade_min:
-                resultados.append({
-                    **item,
-                    "similaridade_encoder": round(sim, 4),
-                    "fonte_encoder": "inteligencia_propria"
-                })
+                resultados.append(
+                    {**item, "similaridade_encoder": round(sim, 4), "fonte_encoder": "inteligencia_propria"}
+                )
         resultados.sort(key=lambda x: x["similaridade_encoder"], reverse=True)
         return resultados[:top_k]
 
-    def obter_estado(self) -> Dict[str, Any]:
+    def obter_estado(self) -> dict[str, Any]:
         return {
             "treinado": self.treinado,
             "vocab_size": len(self.vocab),
             "dim_embed": self.dim_embed,
             "experiencias_carregadas": len(self._experiencias),
-            "parametros_encoder": sum(p.numel() for p in self.encoder.parameters() if p.requires_grad)
+            "parametros_encoder": sum(p.numel() for p in self.encoder.parameters() if p.requires_grad),
         }
 
 
 if __name__ == "__main__":
-    import json, tempfile, uuid
+    import json
+    import tempfile
+    import uuid
 
     ip = InteligenciaPropria()
 
     dados_teste = [
-        {"pergunta": "qual e a capital do brasil", "raciocinio": "Brasilia", "resposta": "Brasilia", "confianca": 0.95, "fonte": "usuario", "authority_score": 0.9},
-        {"pergunta": "o que e python", "raciocinio": "linguagem interpretada", "resposta": "Python e linguagem", "confianca": 0.7, "fonte": "aprendizado", "authority_score": 0.7},
-        {"pergunta": "capital da franca", "raciocinio": "Paris", "resposta": "Paris", "confianca": 0.9, "fonte": "usuario", "authority_score": 0.9},
-        {"pergunta": "o que e fotossintese", "raciocinio": "energia luminosa", "resposta": "processo bioquimico", "confianca": 0.6, "fonte": "aprendizado", "authority_score": 0.65},
-        {"pergunta": "qual a formula da agua", "raciocinio": "H2O", "resposta": "H2O", "confianca": 0.88, "fonte": "usuario", "authority_score": 0.88},
-        {"pergunta": "quem descobriu o brasil", "raciocinio": "1500", "resposta": "Cabral", "confianca": 0.5, "fonte": "documento", "authority_score": 0.5},
+        {
+            "pergunta": "qual e a capital do brasil",
+            "raciocinio": "Brasilia",
+            "resposta": "Brasilia",
+            "confianca": 0.95,
+            "fonte": "usuario",
+            "authority_score": 0.9,
+        },
+        {
+            "pergunta": "o que e python",
+            "raciocinio": "linguagem interpretada",
+            "resposta": "Python e linguagem",
+            "confianca": 0.7,
+            "fonte": "aprendizado",
+            "authority_score": 0.7,
+        },
+        {
+            "pergunta": "capital da franca",
+            "raciocinio": "Paris",
+            "resposta": "Paris",
+            "confianca": 0.9,
+            "fonte": "usuario",
+            "authority_score": 0.9,
+        },
+        {
+            "pergunta": "o que e fotossintese",
+            "raciocinio": "energia luminosa",
+            "resposta": "processo bioquimico",
+            "confianca": 0.6,
+            "fonte": "aprendizado",
+            "authority_score": 0.65,
+        },
+        {
+            "pergunta": "qual a formula da agua",
+            "raciocinio": "H2O",
+            "resposta": "H2O",
+            "confianca": 0.88,
+            "fonte": "usuario",
+            "authority_score": 0.88,
+        },
+        {
+            "pergunta": "quem descobriu o brasil",
+            "raciocinio": "1500",
+            "resposta": "Cabral",
+            "confianca": 0.5,
+            "fonte": "documento",
+            "authority_score": 0.5,
+        },
     ]
 
     caminho_temp = os.path.join(tempfile.gettempdir(), f"treino_{uuid.uuid4().hex[:8]}.jsonl")
@@ -260,7 +306,7 @@ if __name__ == "__main__":
         {"pergunta": "o que e fotossintese", "conteudo": "processo bioquimico", "estado_crenca": "ativo"},
     ]
     resultados = ip.buscar_com_encoder("qual a capital do brasil", itens_teste)
-    print(f"  Busca por 'qual a capital do brasil':")
+    print("  Busca por 'qual a capital do brasil':")
     for r in resultados:
         print(f"    {r['pergunta'][:30]} -> {r['conteudo'][:30]} | sim: {r['similaridade_encoder']:.4f}")
 

@@ -9,12 +9,12 @@ Responsabilidades:
   - Integracao com RAG para contexto enriquecido
 """
 
-import os
 import json
-import time
 import logging
-from dataclasses import dataclass, field, asdict
-from typing import List, Dict, Optional, Any
+import os
+import time
+from dataclasses import asdict, dataclass, field
+from typing import Any
 
 logger = logging.getLogger("ravena.memory")
 
@@ -36,7 +36,7 @@ class Episodio:
     timestamp: float = field(default_factory=time.time)
     modulo: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -49,7 +49,7 @@ class FatoSemantico:
     timestamp: float = field(default_factory=time.time)
     categoria: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -58,13 +58,13 @@ class EpisodicMemory:
 
     def __init__(self, filepath: str = EPISODIC_FILE):
         self.filepath = filepath
-        self._episodios: List[Episodio] = []
+        self._episodios: list[Episodio] = []
         self._carregar()
 
     def _carregar(self):
         if os.path.exists(self.filepath):
             try:
-                with open(self.filepath, "r", encoding="utf-8") as f:
+                with open(self.filepath, encoding="utf-8") as f:
                     dados = json.load(f)
                 self._episodios = [Episodio(**e) for e in dados]
             except Exception as e:
@@ -84,13 +84,13 @@ class EpisodicMemory:
         self._salvar()
         return ep
 
-    def recuperar(self, limite: int = 10, usuario: str = "") -> List[Episodio]:
+    def recuperar(self, limite: int = 10, usuario: str = "") -> list[Episodio]:
         epis = self._episodios
         if usuario:
             epis = [e for e in epis if e.usuario == usuario]
         return epis[-limite:]
 
-    def buscar(self, termo: str, limite: int = 5) -> List[Episodio]:
+    def buscar(self, termo: str, limite: int = 5) -> list[Episodio]:
         t = termo.lower()
         resultados = [e for e in self._episodios if t in e.pergunta.lower() or t in e.resposta.lower()]
         return resultados[-limite:]
@@ -114,13 +114,13 @@ class SemanticMemory:
 
     def __init__(self, filepath: str = SEMANTIC_FILE):
         self.filepath = filepath
-        self._fatos: Dict[str, FatoSemantico] = {}
+        self._fatos: dict[str, FatoSemantico] = {}
         self._carregar()
 
     def _carregar(self):
         if os.path.exists(self.filepath):
             try:
-                with open(self.filepath, "r", encoding="utf-8") as f:
+                with open(self.filepath, encoding="utf-8") as f:
                     dados = json.load(f)
                 for item in dados:
                     fato = FatoSemantico(**item)
@@ -144,16 +144,16 @@ class SemanticMemory:
                 del self._fatos[k]
         self._salvar()
 
-    def obter(self, chave: str) -> Optional[FatoSemantico]:
+    def obter(self, chave: str) -> FatoSemantico | None:
         return self._fatos.get(chave)
 
-    def buscar(self, termo: str, limite: int = 10) -> List[FatoSemantico]:
+    def buscar(self, termo: str, limite: int = 10) -> list[FatoSemantico]:
         t = termo.lower()
         resultados = [f for f in self._fatos.values() if t in f.chave.lower() or t in f.valor.lower()]
         resultados.sort(key=lambda x: x.confianca, reverse=True)
         return resultados[:limite]
 
-    def listar_categoria(self, categoria: str) -> List[FatoSemantico]:
+    def listar_categoria(self, categoria: str) -> list[FatoSemantico]:
         return [f for f in self._fatos.values() if f.categoria == categoria]
 
     def limpar(self):
@@ -176,7 +176,7 @@ class MemoryManager:
     def registrar_interacao(self, usuario: str, pergunta: str, resposta: str, modulo: str = ""):
         self.episodica.adicionar(usuario, pergunta, resposta, modulo)
 
-    def lembrar(self, chave: str) -> Optional[str]:
+    def lembrar(self, chave: str) -> str | None:
         fato = self.semantica.obter(chave)
         return fato.valor if fato else None
 
@@ -192,7 +192,7 @@ class MemoryManager:
             linhas.append(f"[{e.usuario}] {e.pergunta} -> {e.resposta[:100]}")
         return "\n".join(linhas)
 
-    def diagnostic(self) -> Dict[str, Any]:
+    def diagnostic(self) -> dict[str, Any]:
         return {
             "episodios": self.episodica.total,
             "fatos": self.semantica.total,

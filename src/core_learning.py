@@ -11,18 +11,17 @@ Responsabilidades:
 import functools
 import json
 import logging
-import time
-import os
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Callable
+from typing import Any
 
 logger = logging.getLogger("ravena.core_learning")
 
 LOG_DIR = Path(__file__).parent.parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
-_HISTORICO_ERROS: Dict[str, int] = {}
+_HISTORICO_ERROS: dict[str, int] = {}
 _LIMITE_RECORRENCIA = 3
 
 
@@ -59,10 +58,11 @@ def aprender_com_erro(func: Callable) -> Callable:
             _registrar_erro(modulo, func.__name__, e)
             logger.error(f"Erro em {modulo}.{func.__name__}: {e}")
             raise
+
     return wrapper
 
 
-def obter_estatisticas_erros() -> Dict[str, Any]:
+def obter_estatisticas_erros() -> dict[str, Any]:
     return {
         "total_tipos": len(_HISTORICO_ERROS),
         "total_ocorrencias": sum(_HISTORICO_ERROS.values()),
@@ -71,6 +71,7 @@ def obter_estatisticas_erros() -> Dict[str, Any]:
 
 
 if __name__ == "__main__":
+
     @aprender_com_erro
     def testar():
         raise ValueError("Erro simulado")

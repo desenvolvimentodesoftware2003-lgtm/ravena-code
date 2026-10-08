@@ -7,17 +7,16 @@ para alimentar o dataset de fine-tuning do futuro Ravena LLM.
 Exclui automaticamente logs de erro/bug (stack traces, exceptions, crashes).
 """
 
-import os
-import sys
 import json
 import logging
+import os
+import sys
 from datetime import datetime
-from typing import Dict, List, Optional, Set
 
 _PROJETO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _PROJETO)
 
-from src.core.professor import Professor
+from src.core.professor import Professor  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger("extrair_dataset")
@@ -26,7 +25,7 @@ logger = logging.getLogger("extrair_dataset")
 # Regra: nenhum padrao isolado dispara. So exclui se MULTIPLOS indicadores
 # de erro aparecerem juntos, ou se for um padrao muito especifico de crash.
 
-import re
+import re  # noqa: E402
 
 _PADROES_CRASH = [
     "segmentation fault",
@@ -37,12 +36,15 @@ _PADROES_CRASH = [
     "bus error",
 ]
 
+
 def _is_error_log(log: dict) -> bool:
     """Retorna True se o log for realmente um log de erro/bug (baixo falso positivo)."""
     texto = (
-        (log.get("pergunta", "") or "") + " " +
-        (log.get("resposta", "") or "") + " " +
-        (log.get("raciocinio", "") or "")
+        (log.get("pergunta", "") or "")
+        + " "
+        + (log.get("resposta", "") or "")
+        + " "
+        + (log.get("raciocinio", "") or "")
     ).lower()
 
     # 1. Crash inequivoco (padrao muito especifico — seguro disparar sozinho)
@@ -74,6 +76,7 @@ def _is_error_log(log: dict) -> bool:
         indicadores += 1
 
     return indicadores >= 3
+
 
 # ─── MAPEAMENTO PERGUNTA → DISCIPLINA ───────────────────────────────────────
 
@@ -263,7 +266,7 @@ _RESPOSTAS_CORRETAS = {
 }
 
 
-def classificar_pergunta(pergunta: str) -> Optional[str]:
+def classificar_pergunta(pergunta: str) -> str | None:
     p_lower = pergunta.lower().strip()
     for keyword, disciplina in _KEYWORD_TO_DISCIPLINA.items():
         if keyword in p_lower:
@@ -275,9 +278,9 @@ def extrair_assunto(pergunta: str) -> str:
     p_lower = pergunta.lower().strip()
     for prefixo in ["o que e ", "o que faz a classe ", "o que faz "]:
         if p_lower.startswith(prefixo):
-            return p_lower[len(prefixo):].strip()
+            return p_lower[len(prefixo) :].strip()
     if p_lower.startswith("resumo de "):
-        return p_lower[len("resumo de "):].strip()
+        return p_lower[len("resumo de ") :].strip()
     return p_lower
 
 
@@ -296,8 +299,8 @@ def gerar_correcao(pergunta: str, assunto: str, log: dict) -> dict:
         "_meta": {
             "resposta_correta": resposta_correta,
             "referencia": "cognitive_treino.jsonl",
-            "timestamp_correcao": datetime.now().isoformat()
-        }
+            "timestamp_correcao": datetime.now().isoformat(),
+        },
     }
 
 
@@ -314,14 +317,14 @@ def log_para_resposta_original(log: dict) -> dict:
         "precisao_tecnica": 0.3,
         "completude": 0.2,
         "clareza": 0.3,
-        "fundamentacao": 0.1
+        "fundamentacao": 0.1,
     }
 
 
 def carregar_logs_processados(caminho: str) -> set:
     if not os.path.exists(caminho):
         return set()
-    with open(caminho, "r", encoding="utf-8") as f:
+    with open(caminho, encoding="utf-8") as f:
         return set(json.load(f))
 
 
@@ -342,7 +345,7 @@ def main():
     processados = carregar_logs_processados(caminho_tracking)
     processados_nesta_exec = set()
 
-    with open(caminho_logs, "r", encoding="utf-8") as f:
+    with open(caminho_logs, encoding="utf-8") as f:
         logs = [json.loads(line) for line in f if line.strip()]
 
     logger.info(f"Total de logs: {len(logs)}")
@@ -379,8 +382,7 @@ def main():
             processados_nesta_exec.add(log_id)
             novos += 1
             logger.info(
-                f"[{novos}] {pergunta[:40]:42s} -> {disciplina:20s} "
-                f"expert#{resultado['total_exemplos_expert']}"
+                f"[{novos}] {pergunta[:40]:42s} -> {disciplina:20s} expert#{resultado['total_exemplos_expert']}"
             )
         except Exception as e:
             logger.error(f"Erro ao processar log {i}: {e}")
@@ -395,7 +397,7 @@ def main():
     logger.info(f"Total exemplos expert: {llm['total_exemplos_expert']}")
     logger.info(f"Status dataset: {llm['status']}")
     logger.info(f"Progresso: {llm['progresso_percentual']}%")
-    if llm['total_exemplos_expert'] >= 50:
+    if llm["total_exemplos_expert"] >= 50:
         logger.info("DATASET PRONTO para fine-tuning!")
     else:
         logger.info(f"Faltam {50 - llm['total_exemplos_expert']} exemplos.")

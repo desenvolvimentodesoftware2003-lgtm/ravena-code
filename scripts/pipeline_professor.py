@@ -5,10 +5,10 @@ Percorre um curriculo ensinando e testando a Ravena LLM.
 Pipeline: ensinar -> gerar_teste -> LLM -> validar -> (erro? corrigir / >=3? anomalia)
 """
 
-import os
-import sys
 import json
 import logging
+import os
+import sys
 from datetime import datetime
 
 _PROJETO_RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -56,6 +56,7 @@ CURRICULO = {
 }
 
 MAX_ERROS_POR_TOPICO = 3
+
 
 class PipelineProfessor:
     def __init__(self):
@@ -133,9 +134,11 @@ class PipelineProfessor:
 
             # Registrar para treino
             self.professor.registrar_resultado_treino(
-                pergunta=pergunta, resposta_esperada=esperado,
-                resposta_modelo=resposta_aluno, acertou=acertou,
-                topico=f"{assunto}/{topico}"
+                pergunta=pergunta,
+                resposta_esperada=esperado,
+                resposta_modelo=resposta_aluno,
+                acertou=acertou,
+                topico=f"{assunto}/{topico}",
             )
 
             log = {
@@ -156,22 +159,30 @@ class PipelineProfessor:
             else:
                 erros_no_topico += 1
                 erros_consecutivos += 1
-                logger.warning(f"   -> ERRO #{erros_consecutivos} (esperado: '{esperado}', recebido: '{resposta_aluno[:50]}')")
+                logger.warning(
+                    f"   -> ERRO #{erros_consecutivos} (esperado: '{esperado}', recebido: '{resposta_aluno[:50]}')"
+                )
 
                 # 5. Corrigir (registra erro pro dataset)
-                self.professor.corrigir(assunto, {
-                    "pergunta": pergunta,
-                    "resposta": resposta_aluno,
-                }, {
-                    "resposta_correta": esperado,
-                    "precisao_tecnica": 0.0,
-                })
+                self.professor.corrigir(
+                    assunto,
+                    {
+                        "pergunta": pergunta,
+                        "resposta": resposta_aluno,
+                    },
+                    {
+                        "resposta_correta": esperado,
+                        "precisao_tecnica": 0.0,
+                    },
+                )
 
                 # 6. Anomalia se >= 3 erros consecutivos
                 if erros_consecutivos >= MAX_ERROS_POR_TOPICO:
                     anomalia = self.professor.notificar_anomalia(
-                        assunto, topico, erros_consecutivos,
-                        {"ultimo_teste": pergunta, "ultima_resposta": resposta_aluno}
+                        assunto,
+                        topico,
+                        erros_consecutivos,
+                        {"ultimo_teste": pergunta, "ultima_resposta": resposta_aluno},
                     )
                     self.anomalias.append(anomalia)
                     logger.error(f"   ANOMALIA: {chave} - {erros_consecutivos} erros consecutivos")

@@ -17,6 +17,6 @@ Disponibiliza:
 - CommandAST: tipos de nos da arvore sintatica
 """
 
-from .dsl_interpreter_v3_2_6 import DSLInterpreter, DSLParser, CommandType, CommandAST
+from .dsl_interpreter_v3_2_6 import CommandAST, CommandType, DSLInterpreter, DSLParser
 
 __all__ = ["DSLInterpreter", "DSLParser", "CommandType", "CommandAST"]

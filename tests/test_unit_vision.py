@@ -1,20 +1,18 @@
 import os
 import sys
-import json
-import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.vision.vision_pipeline_v3_2_6 import (
-    TipoEntradaVisual,
-    NivelAmeaca,
-    TipoAnomalia,
+    AnalisadorDePadroes,
+    ExtratorDeFeaturesVisuais,
     FeatureVisual,
+    ModuloPercepcaoVisual,
+    NivelAmeaca,
     PadreDetectado,
     SnapshotVisual,
-    ExtratorDeFeaturesVisuais,
-    AnalisadorDePadroes,
-    ModuloPercepcaoVisual,
+    TipoAnomalia,
+    TipoEntradaVisual,
     VisionPipeline,
     inicializar_visao,
     obter_visao,
@@ -198,8 +196,10 @@ class TestModuloPercepcaoVisual:
     def test_callback_ameaca(self):
         modulo = ModuloPercepcaoVisual()
         chamadas = []
+
         def callback(padrao):
             chamadas.append(padrao)
+
         modulo.registrar_callback_ameaca(callback)
         log = "403 DENIED from 10.0.0.1\n403 DENIED from 10.0.0.1"
         modulo.processar_entrada_visual(log, TipoEntradaVisual.LOG_TEXTO)

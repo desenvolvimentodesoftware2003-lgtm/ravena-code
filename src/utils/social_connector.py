@@ -23,29 +23,29 @@ Referências:
   - https://developers.facebook.com/docs/instagram-api/guides/content-publishing
 """
 
-import os
-import json
-import time
 import hashlib
+import json
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
-import urllib.request
-import urllib.parse
+import os
+import time
 import urllib.error
+import urllib.parse
+import urllib.request
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 # ── Logging ──────────────────────────────────────────────────
 logger = logging.getLogger("ravena.social_connector")
 
 # ── Constantes ───────────────────────────────────────────────
 INSTAGRAM_GRAPH_API_BASE = "https://graph.instagram.com/v19.0"
-FACEBOOK_GRAPH_API_BASE  = "https://graph.facebook.com/v19.0"
+FACEBOOK_GRAPH_API_BASE = "https://graph.facebook.com/v19.0"
 
 # Limites de rate da Graph API (por hora)
 RATE_LIMIT_PUBLICACOES_HORA = 25
-RATE_LIMIT_CONSULTAS_HORA   = 200
+RATE_LIMIT_CONSULTAS_HORA = 200
 
 # Tamanho máximo da legenda (caracteres)
 MAX_LEGENDA_CHARS = 2200
@@ -55,38 +55,43 @@ MAX_LEGENDA_CHARS = 2200
 # ENUMS
 # ============================================================
 
+
 class StatusConexao(Enum):
     """Estado da conexão com a API do Instagram"""
-    DESCONECTADO   = "desconectado"
-    CONECTADO      = "conectado"
-    ERRO_TOKEN     = "erro_token"
-    RATE_LIMITED   = "rate_limited"
-    OFFLINE_TOTAL  = "offline_total"
+
+    DESCONECTADO = "desconectado"
+    CONECTADO = "conectado"
+    ERRO_TOKEN = "erro_token"
+    RATE_LIMITED = "rate_limited"
+    OFFLINE_TOTAL = "offline_total"
 
 
 class TipoMidia(Enum):
     """Tipos de mídia suportados pela Instagram Graph API"""
-    IMAGEM         = "IMAGE"
-    VIDEO          = "VIDEO"
-    CARROSSEL      = "CAROUSEL_ALBUM"
-    REELS          = "REELS"
-    STORIES        = "STORIES"
+
+    IMAGEM = "IMAGE"
+    VIDEO = "VIDEO"
+    CARROSSEL = "CAROUSEL_ALBUM"
+    REELS = "REELS"
+    STORIES = "STORIES"
 
 
 class StatusPublicacao(Enum):
     """Estado de uma publicação"""
-    RASCUNHO       = "rascunho"
-    AGENDADA       = "agendada"
-    PUBLICANDO     = "publicando"
-    PUBLICADA      = "publicada"
-    FALHA          = "falha"
-    CANCELADA      = "cancelada"
+
+    RASCUNHO = "rascunho"
+    AGENDADA = "agendada"
+    PUBLICANDO = "publicando"
+    PUBLICADA = "publicada"
+    FALHA = "falha"
+    CANCELADA = "cancelada"
 
 
 class NivelAlerta(Enum):
     """Nível de alerta para monitoramento"""
-    INFO    = "info"
-    AVISO   = "aviso"
+
+    INFO = "info"
+    AVISO = "aviso"
     CRITICO = "critico"
 
 
@@ -94,12 +99,14 @@ class NivelAlerta(Enum):
 # DATACLASSES
 # ============================================================
 
+
 @dataclass
 class CredenciaisInstagram:
     """
     Credenciais de acesso à Instagram Graph API.
     Nunca persistir em texto claro — use variáveis de ambiente.
     """
+
     access_token: str
     instagram_account_id: str
     app_id: str = ""
@@ -117,10 +124,7 @@ class CredenciaisInstagram:
         app_id = os.environ.get("INSTAGRAM_APP_ID", "")
         app_secret = os.environ.get("INSTAGRAM_APP_SECRET", "")
         if not token or not account_id:
-            raise ValueError(
-                "Variáveis de ambiente INSTAGRAM_ACCESS_TOKEN e "
-                "INSTAGRAM_ACCOUNT_ID são obrigatórias."
-            )
+            raise ValueError("Variáveis de ambiente INSTAGRAM_ACCESS_TOKEN e INSTAGRAM_ACCOUNT_ID são obrigatórias.")
         return cls(
             access_token=token,
             instagram_account_id=account_id,
@@ -132,30 +136,28 @@ class CredenciaisInstagram:
 @dataclass
 class PublicacaoInstagram:
     """Representa uma publicação a ser enviada ao Instagram"""
+
     legenda: str
     url_midia: str
     tipo_midia: TipoMidia = TipoMidia.IMAGEM
-    hashtags: List[str] = field(default_factory=list)
-    agendamento: Optional[datetime] = None
-    id_publicacao: Optional[str] = None
+    hashtags: list[str] = field(default_factory=list)
+    agendamento: datetime | None = None
+    id_publicacao: str | None = None
     status: StatusPublicacao = StatusPublicacao.RASCUNHO
     criado_em: datetime = field(default_factory=datetime.utcnow)
-    publicado_em: Optional[datetime] = None
-    erro: Optional[str] = None
+    publicado_em: datetime | None = None
+    erro: str | None = None
 
     def legenda_completa(self) -> str:
         """Retorna a legenda com hashtags concatenadas."""
         tags = " ".join(f"#{h.lstrip('#')}" for h in self.hashtags)
         texto = f"{self.legenda}\n\n{tags}".strip()
         if len(texto) > MAX_LEGENDA_CHARS:
-            logger.warning(
-                f"Legenda excede {MAX_LEGENDA_CHARS} caracteres "
-                f"({len(texto)}). Será truncada."
-            )
+            logger.warning(f"Legenda excede {MAX_LEGENDA_CHARS} caracteres ({len(texto)}). Será truncada.")
             texto = texto[:MAX_LEGENDA_CHARS]
         return texto
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id_publicacao": self.id_publicacao,
             "legenda": self.legenda[:80] + "..." if len(self.legenda) > 80 else self.legenda,
@@ -170,6 +172,7 @@ class PublicacaoInstagram:
 @dataclass
 class MetricasPublicacao:
     """Métricas de engajamento de uma publicação"""
+
     id_publicacao: str
     curtidas: int = 0
     comentarios: int = 0
@@ -185,16 +188,11 @@ class MetricasPublicacao:
         """Calcula taxa de engajamento em relação ao número de seguidores."""
         if seguidores <= 0:
             return 0.0
-        self.engajamento_total = (
-            self.curtidas + self.comentarios +
-            self.compartilhamentos + self.salvamentos
-        )
-        self.taxa_engajamento = round(
-            (self.engajamento_total / seguidores) * 100, 2
-        )
+        self.engajamento_total = self.curtidas + self.comentarios + self.compartilhamentos + self.salvamentos
+        self.taxa_engajamento = round((self.engajamento_total / seguidores) * 100, 2)
         return self.taxa_engajamento
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id_publicacao": self.id_publicacao,
             "curtidas": self.curtidas,
@@ -212,12 +210,13 @@ class MetricasPublicacao:
 @dataclass
 class AlertaMonitoramento:
     """Alerta gerado pelo sistema de monitoramento"""
+
     nivel: NivelAlerta
     mensagem: str
-    dado_relacionado: Optional[Dict[str, Any]] = None
+    dado_relacionado: dict[str, Any] | None = None
     gerado_em: datetime = field(default_factory=datetime.utcnow)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "nivel": self.nivel.value,
             "mensagem": self.mensagem,
@@ -229,12 +228,13 @@ class AlertaMonitoramento:
 @dataclass
 class ResultadoOperacao:
     """Resultado padronizado de qualquer operação do conector"""
+
     sucesso: bool
     mensagem: str
-    dados: Optional[Dict[str, Any]] = None
-    erro_codigo: Optional[str] = None
+    dados: dict[str, Any] | None = None
+    erro_codigo: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "sucesso": self.sucesso,
             "mensagem": self.mensagem,
@@ -247,6 +247,7 @@ class ResultadoOperacao:
 # CLIENTE HTTP LEVE (sem dependências externas)
 # ============================================================
 
+
 class ClienteGraphAPI:
     """
     Cliente HTTP minimalista para a Instagram/Facebook Graph API.
@@ -257,7 +258,7 @@ class ClienteGraphAPI:
     def __init__(self, credenciais: CredenciaisInstagram, timeout: int = 30):
         self.credenciais = credenciais
         self.timeout = timeout
-        self._historico_chamadas: List[float] = []
+        self._historico_chamadas: list[float] = []
 
     # ── Rate limiting interno ─────────────────────────────────
 
@@ -265,9 +266,7 @@ class ClienteGraphAPI:
         agora = time.time()
         self._historico_chamadas.append(agora)
         # Mantém apenas chamadas da última hora
-        self._historico_chamadas = [
-            t for t in self._historico_chamadas if agora - t < 3600
-        ]
+        self._historico_chamadas = [t for t in self._historico_chamadas if agora - t < 3600]
 
     def _verificar_rate_limit(self, limite: int) -> bool:
         agora = time.time()
@@ -280,9 +279,9 @@ class ClienteGraphAPI:
         self,
         metodo: str,
         url: str,
-        params: Optional[Dict] = None,
-        dados: Optional[Dict] = None,
-    ) -> Tuple[bool, Dict[str, Any]]:
+        params: dict | None = None,
+        dados: dict | None = None,
+    ) -> tuple[bool, dict[str, Any]]:
         """Executa uma requisição HTTP e retorna (sucesso, resposta_json)."""
         try:
             if params:
@@ -293,9 +292,7 @@ class ClienteGraphAPI:
             if dados:
                 corpo = json.dumps(dados).encode("utf-8")
 
-            req = urllib.request.Request(
-                url, data=corpo, headers=headers, method=metodo
-            )
+            req = urllib.request.Request(url, data=corpo, headers=headers, method=metodo)
             with urllib.request.urlopen(req, timeout=self.timeout) as resp:
                 conteudo = resp.read().decode("utf-8")
                 self._registrar_chamada()
@@ -307,9 +304,7 @@ class ClienteGraphAPI:
                 erro_json = json.loads(corpo_erro)
             except Exception:
                 erro_json = {"mensagem_raw": corpo_erro}
-            logger.error(
-                f"[GraphAPI] HTTPError {e.code}: {erro_json}"
-            )
+            logger.error(f"[GraphAPI] HTTPError {e.code}: {erro_json}")
             return False, {"error": erro_json, "http_status": e.code}
 
         except urllib.error.URLError as e:
@@ -320,19 +315,19 @@ class ClienteGraphAPI:
             logger.error(f"[GraphAPI] Erro inesperado: {e}")
             return False, {"error": {"message": str(e)}}
 
-    def get(self, endpoint: str, params: Optional[Dict] = None) -> Tuple[bool, Dict]:
+    def get(self, endpoint: str, params: dict | None = None) -> tuple[bool, dict]:
         url = f"{INSTAGRAM_GRAPH_API_BASE}/{endpoint}"
         params = params or {}
         params["access_token"] = self.credenciais.access_token
         return self._requisicao("GET", url, params=params)
 
-    def post(self, endpoint: str, dados: Optional[Dict] = None) -> Tuple[bool, Dict]:
+    def post(self, endpoint: str, dados: dict | None = None) -> tuple[bool, dict]:
         url = f"{INSTAGRAM_GRAPH_API_BASE}/{endpoint}"
         dados = dados or {}
         dados["access_token"] = self.credenciais.access_token
         return self._requisicao("POST", url, dados=dados)
 
-    def post_facebook(self, endpoint: str, dados: Optional[Dict] = None) -> Tuple[bool, Dict]:
+    def post_facebook(self, endpoint: str, dados: dict | None = None) -> tuple[bool, dict]:
         """Usa a base da Facebook Graph API (necessário para algumas operações)."""
         url = f"{FACEBOOK_GRAPH_API_BASE}/{endpoint}"
         dados = dados or {}
@@ -344,6 +339,7 @@ class ClienteGraphAPI:
 # PUBLICADOR DE CONTEÚDO
 # ============================================================
 
+
 class PublicadorInstagram:
     """
     Responsável por criar e publicar conteúdo no Instagram via Graph API.
@@ -354,27 +350,25 @@ class PublicadorInstagram:
 
     def __init__(self, cliente: ClienteGraphAPI):
         self.cliente = cliente
-        self._fila_publicacoes: List[PublicacaoInstagram] = []
+        self._fila_publicacoes: list[PublicacaoInstagram] = []
 
     # ── Etapa 1: Criar container ──────────────────────────────
 
-    def _criar_container_imagem(self, publicacao: PublicacaoInstagram) -> Optional[str]:
+    def _criar_container_imagem(self, publicacao: PublicacaoInstagram) -> str | None:
         """Cria um container de mídia para imagem e retorna o creation_id."""
         account_id = self.cliente.credenciais.instagram_account_id
         dados = {
             "image_url": publicacao.url_midia,
             "caption": publicacao.legenda_completa(),
         }
-        sucesso, resposta = self.cliente.post(
-            f"{account_id}/media", dados=dados
-        )
+        sucesso, resposta = self.cliente.post(f"{account_id}/media", dados=dados)
         if sucesso and "id" in resposta:
             logger.info(f"[Publicador] Container criado: {resposta['id']}")
             return resposta["id"]
         logger.error(f"[Publicador] Falha ao criar container: {resposta}")
         return None
 
-    def _criar_container_reels(self, publicacao: PublicacaoInstagram) -> Optional[str]:
+    def _criar_container_reels(self, publicacao: PublicacaoInstagram) -> str | None:
         """Cria um container de Reels e retorna o creation_id."""
         account_id = self.cliente.credenciais.instagram_account_id
         dados = {
@@ -382,9 +376,7 @@ class PublicadorInstagram:
             "video_url": publicacao.url_midia,
             "caption": publicacao.legenda_completa(),
         }
-        sucesso, resposta = self.cliente.post(
-            f"{account_id}/media", dados=dados
-        )
+        sucesso, resposta = self.cliente.post(f"{account_id}/media", dados=dados)
         if sucesso and "id" in resposta:
             logger.info(f"[Publicador] Container Reels criado: {resposta['id']}")
             return resposta["id"]
@@ -393,13 +385,11 @@ class PublicadorInstagram:
 
     # ── Etapa 2: Publicar container ───────────────────────────
 
-    def _publicar_container(self, creation_id: str) -> Optional[str]:
+    def _publicar_container(self, creation_id: str) -> str | None:
         """Publica o container e retorna o media_id final."""
         account_id = self.cliente.credenciais.instagram_account_id
         dados = {"creation_id": creation_id}
-        sucesso, resposta = self.cliente.post(
-            f"{account_id}/media_publish", dados=dados
-        )
+        sucesso, resposta = self.cliente.post(f"{account_id}/media_publish", dados=dados)
         if sucesso and "id" in resposta:
             logger.info(f"[Publicador] Post publicado: {resposta['id']}")
             return resposta["id"]
@@ -423,9 +413,7 @@ class PublicadorInstagram:
             )
 
         publicacao.status = StatusPublicacao.PUBLICANDO
-        logger.info(
-            f"[Publicador] Iniciando publicação — tipo: {publicacao.tipo_midia.value}"
-        )
+        logger.info(f"[Publicador] Iniciando publicação — tipo: {publicacao.tipo_midia.value}")
 
         # Seleciona o criador de container conforme o tipo de mídia
         creation_id = None
@@ -489,31 +477,25 @@ class PublicadorInstagram:
             )
         publicacao.status = StatusPublicacao.AGENDADA
         self._fila_publicacoes.append(publicacao)
-        logger.info(
-            f"[Publicador] Publicação agendada para: "
-            f"{publicacao.agendamento.isoformat()}"
-        )
+        logger.info(f"[Publicador] Publicação agendada para: {publicacao.agendamento.isoformat()}")
         return ResultadoOperacao(
             sucesso=True,
             mensagem=f"Publicação agendada para {publicacao.agendamento.isoformat()}.",
             dados=publicacao.to_dict(),
         )
 
-    def processar_fila(self) -> List[ResultadoOperacao]:
+    def processar_fila(self) -> list[ResultadoOperacao]:
         """
         Processa publicações agendadas cujo horário já chegou.
         Deve ser chamado periodicamente (ex.: a cada minuto).
         """
         agora = datetime.utcnow()
-        resultados: List[ResultadoOperacao] = []
+        resultados: list[ResultadoOperacao] = []
         pendentes = []
 
         for pub in self._fila_publicacoes:
             if pub.agendamento and pub.agendamento <= agora:
-                logger.info(
-                    f"[Publicador] Processando publicação agendada: "
-                    f"{pub.agendamento.isoformat()}"
-                )
+                logger.info(f"[Publicador] Processando publicação agendada: {pub.agendamento.isoformat()}")
                 resultado = self.publicar(pub)
                 resultados.append(resultado)
             else:
@@ -527,6 +509,7 @@ class PublicadorInstagram:
 # MONITOR DE MÉTRICAS
 # ============================================================
 
+
 class MonitorInstagram:
     """
     Coleta métricas de engajamento e monitora menções/hashtags.
@@ -534,7 +517,7 @@ class MonitorInstagram:
 
     def __init__(self, cliente: ClienteGraphAPI):
         self.cliente = cliente
-        self._alertas: List[AlertaMonitoramento] = []
+        self._alertas: list[AlertaMonitoramento] = []
 
     # ── Métricas de publicação ────────────────────────────────
 
@@ -584,9 +567,7 @@ class MonitorInstagram:
                 elif nome == "saved":
                     metricas.salvamentos = valor
 
-        metricas.engajamento_total = (
-            metricas.curtidas + metricas.comentarios + metricas.salvamentos
-        )
+        metricas.engajamento_total = metricas.curtidas + metricas.comentarios + metricas.salvamentos
 
         # Gerar alerta se engajamento for muito baixo
         if metricas.alcance > 0 and metricas.engajamento_total == 0:
@@ -650,16 +631,14 @@ class MonitorInstagram:
         self,
         nivel: NivelAlerta,
         mensagem: str,
-        dado: Optional[Dict] = None,
+        dado: dict | None = None,
     ) -> None:
-        alerta = AlertaMonitoramento(
-            nivel=nivel, mensagem=mensagem, dado_relacionado=dado
-        )
+        alerta = AlertaMonitoramento(nivel=nivel, mensagem=mensagem, dado_relacionado=dado)
         self._alertas.append(alerta)
         log_fn = logger.warning if nivel == NivelAlerta.AVISO else logger.critical
         log_fn(f"[Monitor] ALERTA {nivel.value.upper()}: {mensagem}")
 
-    def obter_alertas(self, nivel: Optional[NivelAlerta] = None) -> List[Dict]:
+    def obter_alertas(self, nivel: NivelAlerta | None = None) -> list[dict]:
         """Retorna alertas gerados, opcionalmente filtrados por nível."""
         alertas = self._alertas
         if nivel:
@@ -675,6 +654,7 @@ class MonitorInstagram:
 # CONECTOR SOCIAL PRINCIPAL (Orquestrador)
 # ============================================================
 
+
 class ConectorSocialInstagram:
     """
     Orquestrador principal do módulo social.
@@ -688,15 +668,15 @@ class ConectorSocialInstagram:
 
     def __init__(
         self,
-        credenciais: Optional[CredenciaisInstagram] = None,
+        credenciais: CredenciaisInstagram | None = None,
         modo_offline: bool = False,
     ):
         self.modo_offline = modo_offline
         self._status = StatusConexao.DESCONECTADO
-        self._auditoria: List[Dict[str, Any]] = []
-        self.cliente: Optional[ClienteGraphAPI] = None
-        self.publicador: Optional[PublicadorInstagram] = None
-        self.monitor: Optional[MonitorInstagram] = None
+        self._auditoria: list[dict[str, Any]] = []
+        self.cliente: ClienteGraphAPI | None = None
+        self.publicador: PublicadorInstagram | None = None
+        self.monitor: MonitorInstagram | None = None
 
         if modo_offline:
             self._status = StatusConexao.OFFLINE_TOTAL
@@ -719,14 +699,11 @@ class ConectorSocialInstagram:
         self.publicador = PublicadorInstagram(self.cliente)
         self.monitor = MonitorInstagram(self.cliente)
         self._status = StatusConexao.CONECTADO
-        logger.info(
-            f"[ConectorSocial] Conectado — token hash: "
-            f"{credenciais.token_hash()}"
-        )
+        logger.info(f"[ConectorSocial] Conectado — token hash: {credenciais.token_hash()}")
 
     # ── Verificações ──────────────────────────────────────────
 
-    def _verificar_disponibilidade(self) -> Optional[ResultadoOperacao]:
+    def _verificar_disponibilidade(self) -> ResultadoOperacao | None:
         """Retorna erro se o conector não estiver disponível."""
         if self.modo_offline or self._status == StatusConexao.OFFLINE_TOTAL:
             return ResultadoOperacao(
@@ -758,10 +735,7 @@ class ConectorSocialInstagram:
             "timestamp": datetime.utcnow().isoformat(),
         }
         self._auditoria.append(entrada)
-        logger.info(
-            f"[Auditoria] {operacao} — "
-            f"{'OK' if resultado.sucesso else 'FALHA'}: {resultado.mensagem}"
-        )
+        logger.info(f"[Auditoria] {operacao} — {'OK' if resultado.sucesso else 'FALHA'}: {resultado.mensagem}")
 
     # ── Interface pública ─────────────────────────────────────
 
@@ -769,7 +743,7 @@ class ConectorSocialInstagram:
         self,
         legenda: str,
         url_midia: str,
-        hashtags: Optional[List[str]] = None,
+        hashtags: list[str] | None = None,
         tipo_midia: TipoMidia = TipoMidia.IMAGEM,
     ) -> ResultadoOperacao:
         """
@@ -803,7 +777,7 @@ class ConectorSocialInstagram:
         legenda: str,
         url_midia: str,
         agendamento: datetime,
-        hashtags: Optional[List[str]] = None,
+        hashtags: list[str] | None = None,
         tipo_midia: TipoMidia = TipoMidia.IMAGEM,
     ) -> ResultadoOperacao:
         """
@@ -827,7 +801,7 @@ class ConectorSocialInstagram:
         self._auditar("agendar_post", resultado)
         return resultado
 
-    def processar_agendamentos(self) -> List[ResultadoOperacao]:
+    def processar_agendamentos(self) -> list[ResultadoOperacao]:
         """Processa publicações agendadas cujo horário chegou."""
         erro = self._verificar_disponibilidade()
         if erro:
@@ -864,19 +838,17 @@ class ConectorSocialInstagram:
         self._auditar("obter_perfil", resultado)
         return resultado
 
-    def status(self) -> Dict[str, Any]:
+    def status(self) -> dict[str, Any]:
         """Retorna o status atual do conector."""
         return {
             "status_conexao": self._status.value,
             "modo_offline": self.modo_offline,
             "total_operacoes_auditadas": len(self._auditoria),
             "alertas_ativos": len(self.monitor.obter_alertas()) if self.monitor else 0,
-            "fila_agendamentos": (
-                len(self.publicador._fila_publicacoes) if self.publicador else 0
-            ),
+            "fila_agendamentos": (len(self.publicador._fila_publicacoes) if self.publicador else 0),
         }
 
-    def historico_auditoria(self, ultimos: int = 20) -> List[Dict[str, Any]]:
+    def historico_auditoria(self, ultimos: int = 20) -> list[dict[str, Any]]:
         """Retorna as últimas entradas do log de auditoria."""
         return self._auditoria[-ultimos:]
 
@@ -884,6 +856,7 @@ class ConectorSocialInstagram:
 # ============================================================
 # FACTORY — integração com o ecossistema Ravena
 # ============================================================
+
 
 def criar_conector_social(modo_offline: bool = False) -> ConectorSocialInstagram:
     """
@@ -899,10 +872,7 @@ def criar_conector_social(modo_offline: bool = False) -> ConectorSocialInstagram
     fallback_externo = os.environ.get("FALLBACK_TO_EXTERNAL", "True").lower() == "true"
 
     if llm_mode == "local" and use_local and not fallback_externo:
-        logger.info(
-            "[ConectorSocial] Modo OFFLINE_TOTAL detectado via env — "
-            "conector instanciado em modo offline."
-        )
+        logger.info("[ConectorSocial] Modo OFFLINE_TOTAL detectado via env — conector instanciado em modo offline.")
         return ConectorSocialInstagram(modo_offline=True)
 
     if modo_offline:
@@ -912,7 +882,7 @@ def criar_conector_social(modo_offline: bool = False) -> ConectorSocialInstagram
 
 
 # ── Instância padrão (lazy) ───────────────────────────────────
-_conector_padrao: Optional[ConectorSocialInstagram] = None
+_conector_padrao: ConectorSocialInstagram | None = None
 
 
 def obter_conector() -> ConectorSocialInstagram:

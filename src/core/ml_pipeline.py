@@ -1,29 +1,30 @@
-import os
 import json
 import logging
-from datetime import datetime
-from typing import Dict, List, Any, Optional
+import os
 from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
-import pandas as pd
 import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
+import pandas as pd
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 logger = logging.getLogger("ravena.ml_pipeline")
+
 
 @dataclass
 class RelatorioSaude:
     total_interacoes: int = 0
     confianca_media: float = 0.0
-    fontes: Dict[str, int] = field(default_factory=dict)
-    estados_crenca: Dict[str, int] = field(default_factory=dict)
-    autoridade_media_por_fonte: Dict[str, float] = field(default_factory=dict)
+    fontes: dict[str, int] = field(default_factory=dict)
+    estados_crenca: dict[str, int] = field(default_factory=dict)
+    autoridade_media_por_fonte: dict[str, float] = field(default_factory=dict)
     autoridade_trend: float = 0.0
-    clusters_perguntas: List[Dict[str, Any]] = field(default_factory=list)
-    sugestoes: List[str] = field(default_factory=list)
+    clusters_perguntas: list[dict[str, Any]] = field(default_factory=list)
+    sugestoes: list[str] = field(default_factory=list)
     timestamp: str = ""
+
 
 class MLPipeline:
     def __init__(self):
@@ -36,7 +37,7 @@ class MLPipeline:
             logger.warning(f"Arquivo nao encontrado: {caminho}")
             return pd.DataFrame()
         registros = []
-        with open(caminho, "r", encoding="utf-8") as f:
+        with open(caminho, encoding="utf-8") as f:
             for linha in f:
                 try:
                     registros.append(json.loads(linha))
@@ -89,12 +90,14 @@ class MLPipeline:
                             centro = kmeans.cluster_centers_[i]
                             top_idx = np.argsort(centro)[-5:]
                             palavras_chave = [nomes_features[idx] for idx in top_idx if idx < len(nomes_features)]
-                            relatorio.clusters_perguntas.append({
-                                "cluster": i,
-                                "tamanho": int(len(indices)),
-                                "exemplos": perguntas_cluster,
-                                "palavras_chave": palavras_chave
-                            })
+                            relatorio.clusters_perguntas.append(
+                                {
+                                    "cluster": i,
+                                    "tamanho": int(len(indices)),
+                                    "exemplos": perguntas_cluster,
+                                    "palavras_chave": palavras_chave,
+                                }
+                            )
                 except Exception as e:
                     logger.warning(f"Erro no cluster: {e}")
 
@@ -102,7 +105,9 @@ class MLPipeline:
             relatorio.sugestoes.append("Confianca media baixa. Considere revisar as fontes de conhecimento.")
 
         if relatorio.estados_crenca.get("contestado", 0) > 2:
-            relatorio.sugestoes.append(f"{relatorio.estados_crenca['contestado']} itens contestados. Priorizar resolucao.")
+            relatorio.sugestoes.append(
+                f"{relatorio.estados_crenca['contestado']} itens contestados. Priorizar resolucao."
+            )
 
         if relatorio.autoridade_trend < -0.1:
             relatorio.sugestoes.append("Queda na autoridade media. Verificar qualidade das fontes.")
@@ -112,12 +117,11 @@ class MLPipeline:
 
         return relatorio
 
-    def exportar_para_treino(self, caminho_jsonl: str, caminho_saida: Optional[str] = None) -> str:
+    def exportar_para_treino(self, caminho_jsonl: str, caminho_saida: str | None = None) -> str:
         df = self.carregar(caminho_jsonl)
         if df.empty:
             return ""
         caminho_saida = caminho_saida or caminho_jsonl.replace(".jsonl", "_ml_treino.csv")
-        cols_padrao = ["instruction", "reasoning", "response", "confidence", "source", "belief_state", "authority"]
         mapeamento = {
             "instruction": "pergunta",
             "reasoning": "raciocinio",
@@ -125,7 +129,7 @@ class MLPipeline:
             "confidence": "confianca",
             "source": "fonte",
             "belief_state": "estado_crenca",
-            "authority": "authority_score"
+            "authority": "authority_score",
         }
         df_out = pd.DataFrame()
         for col_saida, col_origem in mapeamento.items():
@@ -137,20 +141,56 @@ class MLPipeline:
 
 
 if __name__ == "__main__":
-    import tempfile, uuid
+    import tempfile
+    import uuid
 
     ml = MLPipeline()
     dados_teste = [
-        {"pergunta": "qual e a capital do brasil", "raciocinio": "Brasilia", "resposta": "Brasilia",
-         "confianca": 0.95, "fonte": "usuario", "estado_crenca": "ativo", "authority_score": 0.9},
-        {"pergunta": "o que e python", "raciocinio": "linguagem interpretada", "resposta": "Python e linguagem",
-         "confianca": 0.7, "fonte": "aprendizado", "estado_crenca": "ativo", "authority_score": 0.7},
-        {"pergunta": "qual e a capital da franca", "raciocinio": "Paris", "resposta": "Paris",
-         "confianca": 0.9, "fonte": "usuario", "estado_crenca": "ativo", "authority_score": 0.9},
-        {"pergunta": "quem descobriu o brasil", "raciocinio": "1500", "resposta": "Cabral",
-         "confianca": 0.4, "fonte": "documento", "estado_crenca": "contestado", "authority_score": 0.5},
-        {"pergunta": "o que e fotossintese", "raciocinio": "energia luminosa", "resposta": "processo bioquimico",
-         "confianca": 0.6, "fonte": "aprendizado", "estado_crenca": "resolvido", "authority_score": 0.65}
+        {
+            "pergunta": "qual e a capital do brasil",
+            "raciocinio": "Brasilia",
+            "resposta": "Brasilia",
+            "confianca": 0.95,
+            "fonte": "usuario",
+            "estado_crenca": "ativo",
+            "authority_score": 0.9,
+        },
+        {
+            "pergunta": "o que e python",
+            "raciocinio": "linguagem interpretada",
+            "resposta": "Python e linguagem",
+            "confianca": 0.7,
+            "fonte": "aprendizado",
+            "estado_crenca": "ativo",
+            "authority_score": 0.7,
+        },
+        {
+            "pergunta": "qual e a capital da franca",
+            "raciocinio": "Paris",
+            "resposta": "Paris",
+            "confianca": 0.9,
+            "fonte": "usuario",
+            "estado_crenca": "ativo",
+            "authority_score": 0.9,
+        },
+        {
+            "pergunta": "quem descobriu o brasil",
+            "raciocinio": "1500",
+            "resposta": "Cabral",
+            "confianca": 0.4,
+            "fonte": "documento",
+            "estado_crenca": "contestado",
+            "authority_score": 0.5,
+        },
+        {
+            "pergunta": "o que e fotossintese",
+            "raciocinio": "energia luminosa",
+            "resposta": "processo bioquimico",
+            "confianca": 0.6,
+            "fonte": "aprendizado",
+            "estado_crenca": "resolvido",
+            "authority_score": 0.65,
+        },
     ]
 
     caminho_temp = os.path.join(tempfile.gettempdir(), f"teste_ml_{uuid.uuid4().hex[:8]}.jsonl")

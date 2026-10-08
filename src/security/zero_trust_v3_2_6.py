@@ -1,8 +1,8 @@
-import hmac
 import hashlib
-import time
-import os
+import hmac
 import logging
+import os
+import time
 from functools import wraps
 
 logger = logging.getLogger("ZeroTrust")
@@ -12,6 +12,7 @@ def _load_secret_key() -> str:
     """Carrega a chave secreta do ambiente. NUNCA usar valor hardcoded em produção."""
     try:
         from src.core.secrets_manager import secrets
+
         key = secrets.get("RAVENA_ZERO_TRUST_SECRET")
         if key:
             return key
@@ -23,15 +24,14 @@ def _load_secret_key() -> str:
         return key
     # AVISO: Valor padrão apenas para desenvolvimento local
     logger.warning(
-        "⚠️ RAVENA_ZERO_TRUST_SECRET não definido! "
-        "Usando chave padrão de desenvolvimento. NÃO USE EM PRODUÇÃO!"
+        "⚠️ RAVENA_ZERO_TRUST_SECRET não definido! Usando chave padrão de desenvolvimento. NÃO USE EM PRODUÇÃO!"
     )
     return "ravena_core_secret_dev_only_2026"
 
 
 class ZeroTrustProtocol:
     """
-    Implementa a blindagem de segurança e controle de acessos dentro da 
+    Implementa a blindagem de segurança e controle de acessos dentro da
     arquitetura modular da Ravena V3.
     """
 
@@ -76,17 +76,20 @@ class ZeroTrustProtocol:
 
 def secure_module(module_id: str):
     """Decorator para proteger funções/métodos com o protocolo Zero Trust."""
+
     def decorator(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
             # Em um cenário real, o token viria do contexto da requisição
-            token = kwargs.get('auth_token')
+            token = kwargs.get("auth_token")
             zt = ZeroTrustProtocol()
             if zt.validate_access(module_id, token):
                 return func(self, *args, **kwargs)
             else:
                 raise PermissionError(f"Módulo {module_id} bloqueado pelo Protocolo Zero Trust.")
+
         return wrapper
+
     return decorator
 
 

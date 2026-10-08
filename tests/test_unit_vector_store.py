@@ -1,23 +1,23 @@
-import sys
-import os
-import tempfile
 import shutil
+import sys
+import tempfile
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 sys.path.insert(0, str(Path(__file__).parent.parent / "src" / "vector_store"))
 
 import importlib.util
+
 p = Path(__file__).parent.parent / "src" / "vector_store" / "vector_store_v3_2_6.py"
 spec = importlib.util.spec_from_file_location("vs_mod", p)
 vs_mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(vs_mod)
 VectorStoreManager = vs_mod.VectorStoreManager
 
-import unittest
+import unittest  # noqa: E402
 
 
 class TestVectorStoreManager(unittest.TestCase):
-
     def setUp(self):
         self.tmp_dir = tempfile.mkdtemp()
         self.vs = VectorStoreManager(path=self.tmp_dir)

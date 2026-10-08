@@ -1,21 +1,31 @@
+import logging
 import os
 import re
-import logging
-from typing import Optional, List
 
 logger = logging.getLogger("ravena.alimentacao.templates")
 
-_PADRAO_HEADING_TEXTO = re.compile(r'^(.*?)[.?:!]?\s*$')
+_PADRAO_HEADING_TEXTO = re.compile(r"^(.*?)[.?:!]?\s*$")
 
 _PREFIXOS_VERBO = [
-    "o que e", "qual e", "qual a", "o que sao", "quais sao", "como funciona",
-    "o que significa", "o que faz", "para que serve", "quem e",
-    "quando", "onde", "por que", "como"
+    "o que e",
+    "qual e",
+    "qual a",
+    "o que sao",
+    "quais sao",
+    "como funciona",
+    "o que significa",
+    "o que faz",
+    "para que serve",
+    "quem e",
+    "quando",
+    "onde",
+    "por que",
+    "como",
 ]
 
+
 class GeradorPergunta:
-    def gerar(self, titulo: str, tipo: str = "md_section",
-              nome_arquivo: Optional[str] = None) -> str:
+    def gerar(self, titulo: str, tipo: str = "md_section", nome_arquivo: str | None = None) -> str:
         titulo = titulo.strip().lower()
 
         if not titulo or titulo in ("documento",):
@@ -36,11 +46,10 @@ class GeradorPergunta:
         if any(titulo.lower().startswith(p) for p in _PREFIXOS_VERBO):
             return titulo.rstrip(".?!") + "?"
 
-        titulo_limpo = re.sub(r'^#+\s*', '', titulo).strip()
+        titulo_limpo = re.sub(r"^#+\s*", "", titulo).strip()
         return f"o que e {titulo_limpo}?"
 
-    def gerar_resumo(self, titulo: str, autores: str = "",
-                     ano: str = "") -> str:
+    def gerar_resumo(self, titulo: str, autores: str = "", ano: str = "") -> str:
         partes = [f"resumo de {titulo.strip().lower()}"]
         if autores:
             partes.append(f"por {autores}")
@@ -48,8 +57,5 @@ class GeradorPergunta:
             partes.append(f"({ano})")
         return " ".join(partes)
 
-    def gerar_topicos(self, palavras_chave: List[str]) -> str:
+    def gerar_topicos(self, palavras_chave: list[str]) -> str:
         return f"topicos sobre {', '.join(palavras_chave[:5])}"
-
-
-

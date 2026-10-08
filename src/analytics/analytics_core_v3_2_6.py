@@ -1,16 +1,16 @@
 import json
-import time
 import logging
 import os
-from datetime import datetime
-from typing import Dict, List, Any, Optional
 from collections import deque
 from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger("ravena.analytics_core")
 
 HEALTHY_THRESHOLD = 0.7
 WARNING_THRESHOLD = 0.4
+
 
 @dataclass
 class SystemMetrics:
@@ -43,7 +43,7 @@ class AnalyticsCore:
         try:
             with open(self.history_path, encoding="utf-8") as f:
                 data = json.load(f)
-                for item in data[-self.history.maxlen:]:
+                for item in data[-self.history.maxlen :]:
                     self.history.append(item)
         except (FileNotFoundError, json.JSONDecodeError):
             pass
@@ -55,7 +55,7 @@ class AnalyticsCore:
         except Exception as e:
             logger.error(f"Erro ao salvar historico de metricas: {e}")
 
-    def register_snapshot(self, metrics: SystemMetrics) -> Dict[str, Any]:
+    def register_snapshot(self, metrics: SystemMetrics) -> dict[str, Any]:
         snapshot = {
             "timestamp": metrics.timestamp,
             "cpu_percent": metrics.cpu_percent,
@@ -101,10 +101,10 @@ class AnalyticsCore:
         )
         return round(score, 4)
 
-    def get_latest(self) -> Optional[Dict[str, Any]]:
+    def get_latest(self) -> dict[str, Any] | None:
         return self.history[-1] if self.history else None
 
-    def get_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_history(self, limit: int = 50) -> list[dict[str, Any]]:
         return list(self.history)[-limit:]
 
     def get_average_health_score(self, window: int = 10) -> float:
@@ -114,12 +114,18 @@ class AnalyticsCore:
         scores = [s.get("system_health_score", 0) for s in recent]
         return round(sum(scores) / len(scores), 4)
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         latest = self.get_latest()
         if not latest:
             return {"status": "NO_DATA", "message": "Nenhuma metrica registrada"}
         avg_health = self.get_average_health_score()
-        status = "HEALTHY" if avg_health >= HEALTHY_THRESHOLD else "WARNING" if avg_health >= WARNING_THRESHOLD else "CRITICAL"
+        status = (
+            "HEALTHY"
+            if avg_health >= HEALTHY_THRESHOLD
+            else "WARNING"
+            if avg_health >= WARNING_THRESHOLD
+            else "CRITICAL"
+        )
         return {
             "status": status,
             "health_score": latest.get("system_health_score", 0),
@@ -137,7 +143,7 @@ class AnalyticsCore:
             "timestamp": latest.get("timestamp"),
         }
 
-    def health_check(self) -> Dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         latest = self.get_latest()
         if not latest:
             return {"status": "NO_DATA", "subsystems": {}}
@@ -151,7 +157,11 @@ class AnalyticsCore:
         }
         all_ok = all(subsystems.values())
         return {
-            "status": "HEALTHY" if (score >= HEALTHY_THRESHOLD and all_ok) else "DEGRADED" if score >= WARNING_THRESHOLD else "CRITICAL",
+            "status": "HEALTHY"
+            if (score >= HEALTHY_THRESHOLD and all_ok)
+            else "DEGRADED"
+            if score >= WARNING_THRESHOLD
+            else "CRITICAL",
             "system_health_score": score,
             "subsystems": subsystems,
             "all_subsystems_ok": all_ok,

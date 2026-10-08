@@ -11,7 +11,6 @@ Responsabilidades:
 
 import logging
 import re
-from typing import Dict, List, Any, Tuple, Optional
 
 logger = logging.getLogger("ravena.validador_veracidade")
 
@@ -20,7 +19,7 @@ class ValidadorVeracidade:
     def __init__(self, threshold: float = 0.85):
         self.threshold = threshold
 
-    def validar_informacao(self, topico: str, conteudo: str, tipo: str = "web_search") -> Tuple[bool, float, str]:
+    def validar_informacao(self, topico: str, conteudo: str, tipo: str = "web_search") -> tuple[bool, float, str]:
         if not conteudo:
             return False, 0.0, "Conteudo vazio"
 
@@ -84,5 +83,8 @@ class ValidadorVeracidade:
 
 if __name__ == "__main__":
     v = ValidadorVeracidade()
-    is_ok, score, motivo = v.validar_informacao("Bitcoin ETF", "According to Bloomberg, the Bitcoin ETF approved by SEC reached $1 billion in volume. Source: CoinDesk.")
+    is_ok, score, motivo = v.validar_informacao(
+        "Bitcoin ETF",
+        "According to Bloomberg, the Bitcoin ETF approved by SEC reached $1 billion in volume. Source: CoinDesk.",
+    )
     print(f"Valido: {is_ok}, Score: {score}, Motivo: {motivo}")

@@ -7,13 +7,13 @@ usa metodologias de faculdades renomadas + inspiracoes didaticas,
 e acumula dataset para futuro Ravena LLM.
 """
 
-import os
 import json
 import logging
+import os
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Dict, List, Any, Optional, Tuple
 from enum import Enum
-from dataclasses import dataclass, field, asdict
+from typing import Any
 
 logger = logging.getLogger("ravena.professor")
 
@@ -21,6 +21,7 @@ _PROJETO_RAIZ = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 _ARQUIVO_PERSISTENCIA = os.path.join(_PROJETO_RAIZ, "data", "professor_ravena.json")
 
 # ─── NIVEIS (nao-lineares) ───────────────────────────────────────────────────
+
 
 class Nivel(Enum):
     FUNDAMENTAL = "fundamental"
@@ -32,10 +33,18 @@ class Nivel(Enum):
     PHD = "phd"
     POS_DOC = "pos_doc"
 
+
 _ORDEM_NIVEIS = [
-    Nivel.FUNDAMENTAL, Nivel.MEDIO, Nivel.SUPERIOR, Nivel.POS,
-    Nivel.MESTRADO, Nivel.DOUTORADO, Nivel.PHD, Nivel.POS_DOC
+    Nivel.FUNDAMENTAL,
+    Nivel.MEDIO,
+    Nivel.SUPERIOR,
+    Nivel.POS,
+    Nivel.MESTRADO,
+    Nivel.DOUTORADO,
+    Nivel.PHD,
+    Nivel.POS_DOC,
 ]
+
 
 def nivel_para_indice(nivel: Nivel) -> int:
     try:
@@ -43,39 +52,40 @@ def nivel_para_indice(nivel: Nivel) -> int:
     except ValueError:
         return 0
 
+
 # ─── METODOLOGIAS (faculdades) ───────────────────────────────────────────────
 
 METODOLOGIAS = {
     "mit": {
         "nome": "MIT - Mens et Manus",
         "foco": "aprendizado_baseado_em_projetos",
-        "principio": "Aprender fazendo — projeto pratico como centro da avaliacao."
+        "principio": "Aprender fazendo — projeto pratico como centro da avaliacao.",
     },
     "harvard": {
         "nome": "Harvard - Case Method",
         "foco": "estudo_de_casos",
-        "principio": "Decisoes em cenarios reais — nao ha resposta unica, ha argumentacao."
+        "principio": "Decisoes em cenarios reais — nao ha resposta unica, ha argumentacao.",
     },
     "socratica": {
         "nome": "Socratica - Mayeutica",
         "foco": "questionamento_continuo",
-        "principio": "O aluno chega a verdade por perguntas, nao por respostas prontas."
+        "principio": "O aluno chega a verdade por perguntas, nao por respostas prontas.",
     },
     "oxford": {
         "nome": "Oxford - Tutorial System",
         "foco": "tutoria_individual",
-        "principio": "Discussao one-on-one com desafio constante ao pensamento critico."
+        "principio": "Discussao one-on-one com desafio constante ao pensamento critico.",
     },
     "carnegie": {
         "nome": "Carnegie Mellon - Mastery Learning",
         "foco": "dominio_tecnico_obrigatorio",
-        "principio": "So avanca quem demonstra dominio absoluto do prerequisito."
+        "principio": "So avanca quem demonstra dominio absoluto do prerequisito.",
     },
     "personalizada": {
         "nome": "Personalizada - Adaptativa",
         "foco": "adaptacao_continua",
-        "principio": "Metodologia moldada ao perfil do aluno no momento da avaliacao."
-    }
+        "principio": "Metodologia moldada ao perfil do aluno no momento da avaliacao.",
+    },
 }
 
 # ─── INSPIRACOES (didatica) ──────────────────────────────────────────────────
@@ -84,23 +94,23 @@ INSPIRACOES = {
     "japonesa_ttp": {
         "nome": "Japonesa - Teaching Through Problem-Solving",
         "fases": ["hatsumon", "kikan_shido", "neriage", "matome"],
-        "descricao": "O problema precede a definicao. O erro e andaime."
+        "descricao": "O problema precede a definicao. O erro e andaime.",
     },
     "singapura_cpa": {
         "nome": "Singapura - CPA (Concreto-Pictorico-Abstrato)",
         "fases": ["concreto", "pictorico", "abstrato"],
-        "descricao": "Reducao de carga cognitiva: do tangivel ao simbolico."
+        "descricao": "Reducao de carga cognitiva: do tangivel ao simbolico.",
     },
     "tad_mesogenese": {
         "nome": "TAD - Gestao da Mesogenese",
         "fases": ["milieu", "investigacao", "institucionalizacao"],
-        "descricao": "O conhecimento emerge da interacao com o meio."
+        "descricao": "O conhecimento emerge da interacao com o meio.",
     },
     "lesson_study": {
         "nome": "Lesson Study - Ciclo Colaborativo",
         "fases": ["planejar", "executar", "observar", "refletir"],
-        "descricao": "Melhoria continua atraves de pesquisa colaborativa."
-    }
+        "descricao": "Melhoria continua atraves de pesquisa colaborativa.",
+    },
 }
 
 _INSPIRACAO_PADRAO = "japonesa_ttp"
@@ -162,7 +172,7 @@ _TESTES_PADRAO = {
             ("Qual a maior ilha do mundo?", "Groenlandia"),
             ("Qual o maior lago do mundo?", "Caspio"),
             ("O Rio Amazonas desagua no oceano Atlantico?", "Sim"),
-        ]
+        ],
     },
     "matematica": {
         "aritmetica": [
@@ -389,7 +399,7 @@ _TESTES_PADRAO = {
     },
 }
 
-_INSPIRACAO_FALLBACK_ASSUNTO: Dict[str, str] = {
+_INSPIRACAO_FALLBACK_ASSUNTO: dict[str, str] = {
     "ciberseguranca": "japonesa_ttp",
     "engenharia_reversa": "japonesa_ttp",
     "arquitetura_software": "singapura_cpa",
@@ -404,7 +414,8 @@ _INSPIRACAO_FALLBACK_ASSUNTO: Dict[str, str] = {
 
 # ─── PARECERES POR INSPIRACAO ────────────────────────────────────────────────
 
-def _gerar_frases_inspiracao(inspiracao: str, assunto: str, acertos: float, total: float) -> List[str]:
+
+def _gerar_frases_inspiracao(inspiracao: str, assunto: str, acertos: float, total: float) -> list[str]:
     frases = []
     pct = acertos / total if total > 0 else 0
 
@@ -464,7 +475,9 @@ def _gerar_frases_inspiracao(inspiracao: str, assunto: str, acertos: float, tota
 
     return frases
 
+
 # ─── DATACLASSES ─────────────────────────────────────────────────────────────
+
 
 @dataclass
 class Competencia:
@@ -473,33 +486,37 @@ class Competencia:
     tentativas: int = 0
     ultima_avaliacao: str = ""
 
+
 @dataclass
 class Materia:
     assunto: str
     nivel: str = "fundamental"
     metodologia: str = "personalizada"
     inspiracao: str = ""
-    competencias: Dict[str, Competencia] = field(default_factory=dict)
-    historico_avaliacoes: List[Dict[str, Any]] = field(default_factory=list)
-    exemplos_expert: List[Dict[str, Any]] = field(default_factory=list)
+    competencias: dict[str, Competencia] = field(default_factory=dict)
+    historico_avaliacoes: list[dict[str, Any]] = field(default_factory=list)
+    exemplos_expert: list[dict[str, Any]] = field(default_factory=list)
+
 
 @dataclass
 class Aluno:
     nome: str = "Ravena"
-    materias: Dict[str, Materia] = field(default_factory=dict)
+    materias: dict[str, Materia] = field(default_factory=dict)
     nivel_geral: str = "fundamental"
+
 
 # ─── PROFESSOR ───────────────────────────────────────────────────────────────
 
+
 class Professor:
-    def __init__(self, caminho_persistencia: Optional[str] = None):
+    def __init__(self, caminho_persistencia: str | None = None):
         self.aluno = Aluno()
-        self.metodologia_por_assunto: Dict[str, str] = {}
-        self.inspiracao_por_assunto: Dict[str, str] = {}
+        self.metodologia_por_assunto: dict[str, str] = {}
+        self.inspiracao_por_assunto: dict[str, str] = {}
         self.caminho_persistencia = caminho_persistencia or _ARQUIVO_PERSISTENCIA
-        self._erros_consecutivos: Dict[str, int] = {}
-        self._ultimo_topico_testado: Dict[str, str] = {}
-        self._anomalias: List[Dict[str, Any]] = []
+        self._erros_consecutivos: dict[str, int] = {}
+        self._ultimo_topico_testado: dict[str, str] = {}
+        self._anomalias: list[dict[str, Any]] = []
         self._carregar()
         logger.info("Professor ativo — ensinando Ravena")
 
@@ -528,15 +545,15 @@ class Professor:
     def _garantir_materia(self, assunto: str) -> Materia:
         if assunto not in self.aluno.materias:
             self.aluno.materias[assunto] = Materia(
-                assunto=assunto,
-                metodologia=self._get_metodologia(assunto),
-                inspiracao=self._get_inspiracao(assunto)
+                assunto=assunto, metodologia=self._get_metodologia(assunto), inspiracao=self._get_inspiracao(assunto)
             )
         return self.aluno.materias[assunto]
 
     # ── AVALIAR ──
 
-    def avaliar(self, assunto: str, resposta: Dict[str, Any], criterios: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
+    def avaliar(
+        self, assunto: str, resposta: dict[str, Any], criterios: dict[str, float] | None = None
+    ) -> dict[str, Any]:
         materia = self._garantir_materia(assunto)
         metodologia = self._get_metodologia(assunto)
         inspiracao = self._get_inspiracao(assunto)
@@ -571,7 +588,7 @@ class Professor:
             "nivel": nivel.value if isinstance(nivel, Nivel) else nivel,
             "metodologia": metodologia,
             "inspiracao": inspiracao,
-            "resultados_por_criterio": resultados_por_criterio
+            "resultados_por_criterio": resultados_por_criterio,
         }
 
         materia.historico_avaliacoes.append(avaliacao)
@@ -581,15 +598,10 @@ class Professor:
 
         return avaliacao
 
-    def _criterios_padrao(self, assunto: str) -> Dict[str, float]:
-        return {
-            "precisao_tecnica": 1.0,
-            "completude": 1.0,
-            "clareza": 1.0,
-            "fundamentacao": 1.0
-        }
+    def _criterios_padrao(self, assunto: str) -> dict[str, float]:
+        return {"precisao_tecnica": 1.0, "completude": 1.0, "clareza": 1.0, "fundamentacao": 1.0}
 
-    def _avaliar_criterio(self, criterio: str, resposta: Dict[str, Any], peso: float) -> float:
+    def _avaliar_criterio(self, criterio: str, resposta: dict[str, Any], peso: float) -> float:
         base = resposta.get(criterio, resposta.get("confianca", 0.5))
         if isinstance(base, bool):
             return peso if base else 0.0
@@ -597,7 +609,7 @@ class Professor:
             return min(base, 1.0) * peso
         return peso * 0.5
 
-    def _gerar_parecer_metodologia(self, metodologia: str, nota: float, acertos: int, total: int) -> List[str]:
+    def _gerar_parecer_metodologia(self, metodologia: str, nota: float, acertos: int, total: int) -> list[str]:
         linhas = []
 
         if metodologia == "mit":
@@ -668,7 +680,7 @@ class Professor:
             return _ORDEM_NIVEIS[indice + 1]
         return nivel_atual
 
-    def _atualizar_competencias(self, assunto: str, resultados: Dict[str, float]):
+    def _atualizar_competencias(self, assunto: str, resultados: dict[str, float]):
         materia = self.aluno.materias.get(assunto)
         if not materia:
             return
@@ -684,12 +696,14 @@ class Professor:
 
     # ── CORRIGIR ──
 
-    def corrigir(self, assunto: str, resposta_original: Dict[str, Any], correcao_expert: Dict[str, Any]) -> Dict[str, Any]:
+    def corrigir(
+        self, assunto: str, resposta_original: dict[str, Any], correcao_expert: dict[str, Any]
+    ) -> dict[str, Any]:
         materia = self._garantir_materia(assunto)
         exemplo = {
             "timestamp": datetime.now().isoformat(),
             "resposta_original": resposta_original,
-            "correcao_expert": correcao_expert
+            "correcao_expert": correcao_expert,
         }
         materia.exemplos_expert.append(exemplo)
 
@@ -710,12 +724,12 @@ class Professor:
         return {
             "status": "correcao_registrada",
             "total_exemplos_expert": len(materia.exemplos_expert),
-            "assunto": assunto
+            "assunto": assunto,
         }
 
     # ── ENSINAR ──
 
-    def ensinar(self, assunto: str, topico: str, contexto: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def ensinar(self, assunto: str, topico: str, contexto: dict[str, Any] | None = None) -> dict[str, Any]:
         materia = self._garantir_materia(assunto)
         metodologia = self._get_metodologia(assunto)
         inspiracao = self._get_inspiracao(assunto)
@@ -724,10 +738,7 @@ class Professor:
         metadados_inspiracao = INSPIRACOES.get(inspiracao, INSPIRACOES[_INSPIRACAO_PADRAO])
 
         competencias = materia.competencias
-        pontos_fracos = sorted(
-            [c for c in competencias.values() if c.pontuacao < 0.6],
-            key=lambda x: x.pontuacao
-        )
+        pontos_fracos = sorted([c for c in competencias.values() if c.pontuacao < 0.6], key=lambda x: x.pontuacao)
 
         plano_aula = {
             "assunto": assunto,
@@ -736,29 +747,28 @@ class Professor:
             "metodologia": {
                 "nome": metadados_metodologia["nome"],
                 "principio": metadados_metodologia["principio"],
-                "foco": metadados_metodologia["foco"]
+                "foco": metadados_metodologia["foco"],
             },
             "inspiracao": {
                 "nome": metadados_inspiracao["nome"],
                 "descricao": metadados_inspiracao["descricao"],
-                "fases": []
+                "fases": [],
             },
             "competencias_alvo": [c.nome for c in competencias.values() if c.pontuacao < 0.7],
             "ponto_partida": "fundamentos" if not competencias else "reforco_seletivo",
         }
 
         for fase in metadados_inspiracao["fases"]:
-            plano_aula["inspiracao"]["fases"].append({
-                "fase": fase,
-                "descricao": self._descrever_fase(fase, topico, assunto, pontos_fracos)
-            })
+            plano_aula["inspiracao"]["fases"].append(
+                {"fase": fase, "descricao": self._descrever_fase(fase, topico, assunto, pontos_fracos)}
+            )
 
         if pontos_fracos:
             plano_aula["recomendacao"] = f"Reforcar: {', '.join(p.nome for p in pontos_fracos[:3])}"
 
         return plano_aula
 
-    def _descrever_fase(self, fase: str, topico: str, assunto: str, pontos_fracos: List[Competencia]) -> str:
+    def _descrever_fase(self, fase: str, topico: str, assunto: str, pontos_fracos: list[Competencia]) -> str:
         descricoes = {
             "hatsumon": f"Problema inicial: resolva este problema de {topico}.",
             "kikan_shido": f"Intervencao: observei seu raciocinio em {topico}. O que voce percebe?",
@@ -773,18 +783,14 @@ class Professor:
             "planejar": f"Planejamento: qual seu plano para abordar {topico}?",
             "executar": f"Execucao: implemente o plano para {topico}.",
             "observar": f"Observacao: analise o resultado da execucao de {topico}.",
-            "refletir": f"Reflexao: O que funcionou? O que melhorar em {topico}?"
+            "refletir": f"Reflexao: O que funcionou? O que melhorar em {topico}?",
         }
         return descricoes.get(fase, f"Fase {fase}: explore {topico}.")
 
     # ── BOLETINS ──
 
-    def boletim_core(self) -> Dict[str, Any]:
-        boletim = {
-            "aluno": self.aluno.nome,
-            "nivel_geral": self.aluno.nivel_geral,
-            "materias": {}
-        }
+    def boletim_core(self) -> dict[str, Any]:
+        boletim = {"aluno": self.aluno.nome, "nivel_geral": self.aluno.nivel_geral, "materias": {}}
 
         for assunto, materia in self.aluno.materias.items():
             historico = materia.historico_avaliacoes
@@ -795,7 +801,7 @@ class Professor:
                     "total_avaliacoes": 0,
                     "ultima_avaliacao": None,
                     "metodologia": materia.metodologia,
-                    "inspiracao": materia.inspiracao
+                    "inspiracao": materia.inspiracao,
                 }
                 continue
 
@@ -808,12 +814,12 @@ class Professor:
                 "ultima_nota": historico[-1]["nota"],
                 "metodologia": materia.metodologia,
                 "inspiracao": materia.inspiracao,
-                "lacunas_recentes": historico[-1].get("lacunas", [])
+                "lacunas_recentes": historico[-1].get("lacunas", []),
             }
 
         return boletim
 
-    def boletim_llm(self) -> Dict[str, Any]:
+    def boletim_llm(self) -> dict[str, Any]:
         total_exemplos = sum(len(m.exemplos_expert) for m in self.aluno.materias.values())
         pronto = total_exemplos >= 50
         return {
@@ -821,15 +827,12 @@ class Professor:
             "total_exemplos_expert": total_exemplos,
             "minimo_necessario": 50,
             "progresso_percentual": round(min(total_exemplos / 50 * 100, 100), 2),
-            "materias": {
-                assunto: len(m.exemplos_expert)
-                for assunto, m in self.aluno.materias.items()
-            }
+            "materias": {assunto: len(m.exemplos_expert) for assunto, m in self.aluno.materias.items()},
         }
 
     # ── DIAGNOSTICO ──
 
-    def diagnosticar(self) -> Dict[str, Any]:
+    def diagnosticar(self) -> dict[str, Any]:
         total_materias = len(self.aluno.materias)
         total_avaliacoes = sum(len(m.historico_avaliacoes) for m in self.aluno.materias.values())
         total_exemplos = sum(len(m.exemplos_expert) for m in self.aluno.materias.values())
@@ -847,7 +850,7 @@ class Professor:
             "inspiracoes_ativas": list(set(self.inspiracao_por_assunto.values())),
             "assuntos_por_metodologia": dict(self.metodologia_por_assunto),
             "assuntos_por_inspiracao": dict(self.inspiracao_por_assunto),
-            "persistencia": self.caminho_persistencia
+            "persistencia": self.caminho_persistencia,
         }
 
     def _atualizar_nivel_geral(self):
@@ -863,13 +866,10 @@ class Professor:
 
     # ── PERSISTENCIA ──
 
-
-
-
     # ── GERAR TESTE ──
 
-    def gerar_teste(self, assunto: str, topico: str = "", variacao: int = 0) -> Dict[str, Any]:
-        materia = self._garantir_materia(assunto)
+    def gerar_teste(self, assunto: str, topico: str = "", variacao: int = 0) -> dict[str, Any]:
+        self._garantir_materia(assunto)
         testes_assunto = _TESTES_PADRAO.get(assunto, {})
         testes_topico = testes_assunto.get(topico, [])
         testes_geral = testes_assunto.get("geral", [])
@@ -890,7 +890,7 @@ class Professor:
             "pergunta": pergunta,
             "resposta_esperada": resposta_esperada,
             "variacao": indice,
-            "total_testes": len(testes)
+            "total_testes": len(testes),
         }
 
     # ── VALIDAR RESPOSTA ──
@@ -898,11 +898,18 @@ class Professor:
     @staticmethod
     def _normalizar(texto: str) -> str:
         substituicoes = {
-            "á": "a", "à": "a", "ã": "a", "â": "a",
-            "é": "e", "ê": "e",
+            "á": "a",
+            "à": "a",
+            "ã": "a",
+            "â": "a",
+            "é": "e",
+            "ê": "e",
             "í": "i",
-            "ó": "o", "ô": "o", "õ": "o",
-            "ú": "u", "ü": "u",
+            "ó": "o",
+            "ô": "o",
+            "õ": "o",
+            "ú": "u",
+            "ü": "u",
             "ç": "c",
             "ñ": "n",
         }
@@ -922,12 +929,13 @@ class Professor:
             novo = [i] + [0] * len(b)
             for j, cb in enumerate(b, 1):
                 custo = 0 if ca == cb else 1
-                novo[j] = min(dp[j] + 1, novo[j-1] + 1, dp[j-1] + custo)
+                novo[j] = min(dp[j] + 1, novo[j - 1] + 1, dp[j - 1] + custo)
             dp = novo
         return dp[-1] <= max_dist
 
-    def validar_resposta(self, pergunta: str, resposta_esperada: str, resposta_aluno: str) -> Dict[str, Any]:
+    def validar_resposta(self, pergunta: str, resposta_esperada: str, resposta_aluno: str) -> dict[str, Any]:
         import re as _re
+
         ra = self._normalizar(resposta_aluno)
         re = self._normalizar(resposta_esperada)
 
@@ -958,18 +966,25 @@ class Professor:
 
         # 6. Numerico: extrai numeros dos dois lados e compara se proximos
         if not acertou:
+
             def _extrair_numeros(texto):
                 nums = []
                 for m in _re.finditer(r"(\d+)\s*(mil|milhao|milhoes|bilhao|bilhoes)", texto):
                     base = float(m.group(1))
-                    mult = {"mil": 1_000, "milhao": 1_000_000, "milhoes": 1_000_000,
-                            "bilhao": 1_000_000_000, "bilhoes": 1_000_000_000}.get(m.group(2), 1)
+                    mult = {
+                        "mil": 1_000,
+                        "milhao": 1_000_000,
+                        "milhoes": 1_000_000,
+                        "bilhao": 1_000_000_000,
+                        "bilhoes": 1_000_000_000,
+                    }.get(m.group(2), 1)
                     nums.append(base * mult)
                 texto_normalizado = _re.sub(r"(?<=\d)[.,](?=\d{3}[.,\s]|$)", "", texto)
                 texto_normalizado = texto_normalizado.replace(",", ".")
                 for m in _re.finditer(r"\d+(?:\.\d+)?", texto_normalizado):
                     nums.append(float(m.group()))
                 return nums
+
             nums_ra = _extrair_numeros(ra)
             nums_re = _extrair_numeros(re)
             for nr in list(nums_ra):
@@ -1006,18 +1021,22 @@ class Professor:
                     if acertou:
                         break
 
-        logger.info(f"Validacao: esperado='{resposta_esperada}', recebido='{resposta_aluno[:60]}' -> {'CORRETO' if acertou else 'ERRO'}")
+        logger.info(
+            f"Validacao: esperado='{resposta_esperada}', recebido='{resposta_aluno[:60]}' -> "
+            f"{'CORRETO' if acertou else 'ERRO'}"
+        )
         return {
             "acertou": acertou,
             "resposta_esperada": resposta_esperada,
             "resposta_recebida": resposta_aluno[:100],
-            "pergunta": pergunta
+            "pergunta": pergunta,
         }
 
     # ── NOTIFICAR ANOMALIA ──
 
-    def notificar_anomalia(self, assunto: str, topico: str, erros_consecutivos: int,
-                          detalhes: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def notificar_anomalia(
+        self, assunto: str, topico: str, erros_consecutivos: int, detalhes: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         anomalia = {
             "timestamp": datetime.now().isoformat(),
             "assunto": assunto,
@@ -1028,15 +1047,11 @@ class Professor:
         self._anomalias.append(anomalia)
         logger.warning(f"ANOMALIA: {assunto}/{topico} acumulou {erros_consecutivos} erros consecutivos")
         self._salvar()
-        return {
-            "status": "anomalia_registrada",
-            "anomalia": anomalia,
-            "total_anomalias": len(self._anomalias)
-        }
+        return {"status": "anomalia_registrada", "anomalia": anomalia, "total_anomalias": len(self._anomalias)}
 
     # ── PERSISTENCIA (estendida) ──
 
-    def _serializar(self) -> Dict[str, Any]:
+    def _serializar(self) -> dict[str, Any]:
         materias_dict = {}
         for assunto, materia in self.aluno.materias.items():
             comps = {k: asdict(v) for k, v in materia.competencias.items()}
@@ -1047,18 +1062,14 @@ class Professor:
                 "inspiracao": materia.inspiracao,
                 "competencias": comps,
                 "historico_avaliacoes": materia.historico_avaliacoes,
-                "exemplos_expert": materia.exemplos_expert
+                "exemplos_expert": materia.exemplos_expert,
             }
         return {
-            "aluno": {
-                "nome": self.aluno.nome,
-                "nivel_geral": self.aluno.nivel_geral,
-                "materias": materias_dict
-            },
+            "aluno": {"nome": self.aluno.nome, "nivel_geral": self.aluno.nivel_geral, "materias": materias_dict},
             "metodologia_por_assunto": dict(self.metodologia_por_assunto),
             "inspiracao_por_assunto": dict(self.inspiracao_por_assunto),
             "erros_consecutivos": dict(self._erros_consecutivos),
-            "anomalias": self._anomalias
+            "anomalias": self._anomalias,
         }
 
     def _carregar(self):
@@ -1066,7 +1077,7 @@ class Professor:
             logger.info("Nenhum estado anterior do Professor encontrado.")
             return
         try:
-            with open(self.caminho_persistencia, "r", encoding="utf-8") as f:
+            with open(self.caminho_persistencia, encoding="utf-8") as f:
                 dados = json.load(f)
             aluno_data = dados.get("aluno", {})
             self.aluno.nome = aluno_data.get("nome", "Ravena")
@@ -1082,16 +1093,19 @@ class Professor:
                     inspiracao=m_data.get("inspiracao", ""),
                     competencias=comps,
                     historico_avaliacoes=m_data.get("historico_avaliacoes", []),
-                    exemplos_expert=m_data.get("exemplos_expert", [])
+                    exemplos_expert=m_data.get("exemplos_expert", []),
                 )
                 self.aluno.materias[assunto] = materia
             self.metodologia_por_assunto = dados.get("metodologia_por_assunto", {})
             self.inspiracao_por_assunto = dados.get("inspiracao_por_assunto", {})
             self._erros_consecutivos = dados.get("erros_consecutivos", {})
             self._anomalias = dados.get("anomalias", [])
-            logger.info(f"Estado do Professor carregado: {len(self.aluno.materias)} materias, {len(self._anomalias)} anomalias")
+            logger.info(
+                f"Estado do Professor carregado: {len(self.aluno.materias)} materias, {len(self._anomalias)} anomalias"
+            )
         except Exception as e:
             logger.warning(f"Erro ao carregar estado do Professor: {e}")
+
     def _salvar(self):
         try:
             os.makedirs(os.path.dirname(self.caminho_persistencia), exist_ok=True)
@@ -1103,13 +1117,12 @@ class Professor:
     # ── REGISTRO DE TREINO ──
 
     _CAMINHO_TREINO_ERROS = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-        "data", "treino", "erros.jsonl"
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "treino", "erros.jsonl"
     )
 
-    def registrar_resultado_treino(self, pergunta: str, resposta_esperada: str,
-                                    resposta_modelo: str, acertou: bool,
-                                    topico: str = ""):
+    def registrar_resultado_treino(
+        self, pergunta: str, resposta_esperada: str, resposta_modelo: str, acertou: bool, topico: str = ""
+    ):
         dados = {
             "pergunta": pergunta,
             "resposta_esperada": resposta_esperada,
@@ -1126,7 +1139,7 @@ class Professor:
         except Exception as e:
             logger.warning(f"Erro ao registrar resultado de treino: {e}")
 
-    def listar_anomalias(self) -> List[Dict[str, Any]]:
+    def listar_anomalias(self) -> list[dict[str, Any]]:
         return list(self._anomalias)
 
 

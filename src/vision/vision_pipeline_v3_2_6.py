@@ -1,11 +1,12 @@
 import json
-import re
 import logging
+import re
+from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Any, Optional, Tuple, Callable
 from enum import Enum
-from collections import deque
+from typing import Any
 
 logger = logging.getLogger("ravena.vision_pipeline")
 
@@ -43,7 +44,7 @@ class FeatureVisual:
     valor: Any
     confianca: float
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
-    contexto: Dict[str, Any] = field(default_factory=dict)
+    contexto: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -51,7 +52,7 @@ class PadreDetectado:
     tipo_anomalia: TipoAnomalia
     nivel_ameaca: NivelAmeaca
     confianca: float
-    features_relacionadas: List[FeatureVisual]
+    features_relacionadas: list[FeatureVisual]
     descricao: str
     recomendacao_acao: str
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
@@ -60,8 +61,8 @@ class PadreDetectado:
 @dataclass
 class SnapshotVisual:
     entrada_tipo: TipoEntradaVisual
-    features_extraidas: List[FeatureVisual]
-    padroes_detectados: List[PadreDetectado]
+    features_extraidas: list[FeatureVisual]
+    padroes_detectados: list[PadreDetectado]
     nivel_ameaca_geral: NivelAmeaca
     confianca_geral: float
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
@@ -78,36 +79,66 @@ class ExtratorDeFeaturesVisuais:
             "acesso_negado": r"(?:DENIED|FORBIDDEN|UNAUTHORIZED|403|401)",
         }
 
-    def extrair_de_log_texto(self, log: str) -> List[FeatureVisual]:
+    def extrair_de_log_texto(self, log: str) -> list[FeatureVisual]:
         features = []
         ips = re.findall(self.padroes_regex["ip_address"], log)
         for ip in ips:
-            features.append(FeatureVisual(tipo="ip_detectado", valor=ip, confianca=0.95, contexto={"origem": "regex_ip"}))
+            features.append(
+                FeatureVisual(tipo="ip_detectado", valor=ip, confianca=0.95, contexto={"origem": "regex_ip"})
+            )
         portas = re.findall(self.padroes_regex["porta"], log)
         for porta in portas:
-            features.append(FeatureVisual(tipo="porta_detectada", valor=porta, confianca=0.90, contexto={"origem": "regex_porta"}))
+            features.append(
+                FeatureVisual(tipo="porta_detectada", valor=porta, confianca=0.90, contexto={"origem": "regex_porta"})
+            )
         if re.search(self.padroes_regex["erro"], log):
-            features.append(FeatureVisual(tipo="erro_detectado", valor=True, confianca=0.98, contexto={"origem": "regex_erro"}))
+            features.append(
+                FeatureVisual(tipo="erro_detectado", valor=True, confianca=0.98, contexto={"origem": "regex_erro"})
+            )
         if re.search(self.padroes_regex["autenticacao"], log):
-            features.append(FeatureVisual(tipo="atividade_autenticacao", valor=True, confianca=0.92, contexto={"origem": "regex_auth"}))
+            features.append(
+                FeatureVisual(
+                    tipo="atividade_autenticacao", valor=True, confianca=0.92, contexto={"origem": "regex_auth"}
+                )
+            )
         if re.search(self.padroes_regex["acesso_negado"], log):
-            features.append(FeatureVisual(tipo="acesso_negado", valor=True, confianca=0.97, contexto={"origem": "regex_acesso"}))
+            features.append(
+                FeatureVisual(tipo="acesso_negado", valor=True, confianca=0.97, contexto={"origem": "regex_acesso"})
+            )
         return features
 
-    def extrair_de_metricas(self, metricas: Dict[str, Any]) -> List[FeatureVisual]:
+    def extrair_de_metricas(self, metricas: dict[str, Any]) -> list[FeatureVisual]:
         features = []
         if "cpu_percent" in metricas:
             cpu = metricas["cpu_percent"]
-            features.append(FeatureVisual(tipo="cpu_alto" if cpu > 80 else "cpu_normal", valor=cpu, confianca=0.99, contexto={"limiar": 80}))
+            features.append(
+                FeatureVisual(
+                    tipo="cpu_alto" if cpu > 80 else "cpu_normal", valor=cpu, confianca=0.99, contexto={"limiar": 80}
+                )
+            )
         if "memory_percent" in metricas:
             mem = metricas["memory_percent"]
-            features.append(FeatureVisual(tipo="memoria_alta" if mem > 80 else "memoria_normal", valor=mem, confianca=0.99, contexto={"limiar": 80}))
+            features.append(
+                FeatureVisual(
+                    tipo="memoria_alta" if mem > 80 else "memoria_normal",
+                    valor=mem,
+                    confianca=0.99,
+                    contexto={"limiar": 80},
+                )
+            )
         if "disk_percent" in metricas:
             disco = metricas["disk_percent"]
-            features.append(FeatureVisual(tipo="disco_cheio" if disco > 85 else "disco_normal", valor=disco, confianca=0.99, contexto={"limiar": 85}))
+            features.append(
+                FeatureVisual(
+                    tipo="disco_cheio" if disco > 85 else "disco_normal",
+                    valor=disco,
+                    confianca=0.99,
+                    contexto={"limiar": 85},
+                )
+            )
         return features
 
-    def extrair(self, entrada: str, tipo: TipoEntradaVisual) -> List[FeatureVisual]:
+    def extrair(self, entrada: str, tipo: TipoEntradaVisual) -> list[FeatureVisual]:
         if tipo == TipoEntradaVisual.LOG_TEXTO:
             return self.extrair_de_log_texto(entrada)
         elif tipo == TipoEntradaVisual.METRICAS_TEMPO_REAL:
@@ -120,47 +151,55 @@ class ExtratorDeFeaturesVisuais:
 
 
 class AnalisadorDePadroes:
-    def __init__(self, rag_context: Optional[Dict[str, Any]] = None):
+    def __init__(self, rag_context: dict[str, Any] | None = None):
         self.rag_context = rag_context or {}
         self.historico_features = deque(maxlen=1000)
 
-    def analisar_features(self, features: List[FeatureVisual]) -> List[PadreDetectado]:
+    def analisar_features(self, features: list[FeatureVisual]) -> list[PadreDetectado]:
         padroes = []
         self.historico_features.extend(features)
         acessos_negados = [f for f in features if f.tipo == "acesso_negado"]
         if acessos_negados:
-            padroes.append(PadreDetectado(
-                tipo_anomalia=TipoAnomalia.ATAQUE_BRUTE_FORCE,
-                nivel_ameaca=NivelAmeaca.CRITICA,
-                confianca=min(0.92, 0.5 + len(acessos_negados) * 0.1),
-                features_relacionadas=acessos_negados,
-                descricao=f"{len(acessos_negados)} tentativas de acesso negado detectadas",
-                recomendacao_acao="Bloquear IP origem, ativar Lockdown, notificar admin",
-            ))
+            padroes.append(
+                PadreDetectado(
+                    tipo_anomalia=TipoAnomalia.ATAQUE_BRUTE_FORCE,
+                    nivel_ameaca=NivelAmeaca.CRITICA,
+                    confianca=min(0.92, 0.5 + len(acessos_negados) * 0.1),
+                    features_relacionadas=acessos_negados,
+                    descricao=f"{len(acessos_negados)} tentativas de acesso negado detectadas",
+                    recomendacao_acao="Bloquear IP origem, ativar Lockdown, notificar admin",
+                )
+            )
         cpu_alto = [f for f in features if f.tipo == "cpu_alto"]
         mem_alta = [f for f in features if f.tipo == "memoria_alta"]
         if cpu_alto:
-            padroes.append(PadreDetectado(
-                tipo_anomalia=TipoAnomalia.DEGRADACAO_PERFORMANCE,
-                nivel_ameaca=NivelAmeaca.ALERTA,
-                confianca=0.88,
-                features_relacionadas=cpu_alto + mem_alta,
-                descricao="CPU elevada detectada" if not mem_alta else "CPU e memoria elevadas simultaneamente",
-                recomendacao_acao="Investigar processos" if not mem_alta else "Investigar processos, considerar escalacao",
-            ))
+            padroes.append(
+                PadreDetectado(
+                    tipo_anomalia=TipoAnomalia.DEGRADACAO_PERFORMANCE,
+                    nivel_ameaca=NivelAmeaca.ALERTA,
+                    confianca=0.88,
+                    features_relacionadas=cpu_alto + mem_alta,
+                    descricao="CPU elevada detectada" if not mem_alta else "CPU e memoria elevadas simultaneamente",
+                    recomendacao_acao="Investigar processos"
+                    if not mem_alta
+                    else "Investigar processos, considerar escalacao",
+                )
+            )
         disco_cheio = [f for f in features if f.tipo == "disco_cheio"]
         if disco_cheio:
-            padroes.append(PadreDetectado(
-                tipo_anomalia=TipoAnomalia.FALHA_HARDWARE,
-                nivel_ameaca=NivelAmeaca.ALERTA,
-                confianca=0.95,
-                features_relacionadas=disco_cheio,
-                descricao="Espaco em disco critico",
-                recomendacao_acao="Liberar espaco, arquivar logs antigos",
-            ))
+            padroes.append(
+                PadreDetectado(
+                    tipo_anomalia=TipoAnomalia.FALHA_HARDWARE,
+                    nivel_ameaca=NivelAmeaca.ALERTA,
+                    confianca=0.95,
+                    features_relacionadas=disco_cheio,
+                    descricao="Espaco em disco critico",
+                    recomendacao_acao="Liberar espaco, arquivar logs antigos",
+                )
+            )
         return padroes
 
-    def calcular_nivel_ameaca_geral(self, padroes: List[PadreDetectado]) -> Tuple[NivelAmeaca, float]:
+    def calcular_nivel_ameaca_geral(self, padroes: list[PadreDetectado]) -> tuple[NivelAmeaca, float]:
         if not padroes:
             return NivelAmeaca.NORMAL, 0.0
         p_max = max(padroes, key=lambda p: p.confianca)
@@ -168,7 +207,7 @@ class AnalisadorDePadroes:
 
 
 class ModuloPercepcaoVisual:
-    def __init__(self, rag_context: Optional[Dict[str, Any]] = None):
+    def __init__(self, rag_context: dict[str, Any] | None = None):
         self.rag_context = rag_context or {}
         self.extrator = ExtratorDeFeaturesVisuais()
         self.analisador = AnalisadorDePadroes(rag_context)
@@ -199,22 +238,24 @@ class ModuloPercepcaoVisual:
                         logger.error(f"Erro no callback de ameaca: {e}")
         return snapshot
 
-    def obter_historico_ameacas(self, ultimos_n: int = 50) -> List[Dict[str, Any]]:
+    def obter_historico_ameacas(self, ultimos_n: int = 50) -> list[dict[str, Any]]:
         ameacas = []
         for snapshot in list(self.historico_snapshots):
             if snapshot.nivel_ameaca_geral != NivelAmeaca.NORMAL:
                 for padrao in snapshot.padroes_detectados:
-                    ameacas.append({
-                        "tipo": padrao.tipo_anomalia.value,
-                        "nivel": padrao.nivel_ameaca.value,
-                        "confianca": padrao.confianca,
-                        "descricao": padrao.descricao,
-                        "recomendacao": padrao.recomendacao_acao,
-                        "timestamp": padrao.timestamp,
-                    })
+                    ameacas.append(
+                        {
+                            "tipo": padrao.tipo_anomalia.value,
+                            "nivel": padrao.nivel_ameaca.value,
+                            "confianca": padrao.confianca,
+                            "descricao": padrao.descricao,
+                            "recomendacao": padrao.recomendacao_acao,
+                            "timestamp": padrao.timestamp,
+                        }
+                    )
         return ameacas[-ultimos_n:]
 
-    def obter_status_visual(self) -> Dict[str, Any]:
+    def obter_status_visual(self) -> dict[str, Any]:
         snapshots = list(self.historico_snapshots)
         if not snapshots:
             return {"status": "sem_dados", "ameacas_detectadas": 0, "nivel_maximo": "normal"}
@@ -233,7 +274,7 @@ class ModuloPercepcaoVisual:
 _modulo_visao_global = None
 
 
-def inicializar_visao(rag_context: Optional[Dict[str, Any]] = None) -> ModuloPercepcaoVisual:
+def inicializar_visao(rag_context: dict[str, Any] | None = None) -> ModuloPercepcaoVisual:
     global _modulo_visao_global
     if _modulo_visao_global is None:
         _modulo_visao_global = ModuloPercepcaoVisual(rag_context)
@@ -251,7 +292,7 @@ class VisionPipeline:
     def __init__(self):
         self.modulo = ModuloPercepcaoVisual()
 
-    def process_log(self, log_text: str) -> Dict[str, Any]:
+    def process_log(self, log_text: str) -> dict[str, Any]:
         snapshot = self.modulo.processar_entrada_visual(log_text, TipoEntradaVisual.LOG_TEXTO)
         return {
             "features": len(snapshot.features_extraidas),
@@ -261,7 +302,7 @@ class VisionPipeline:
             "status": self.modulo.obter_status_visual(),
         }
 
-    def process_metrics(self, metrics_json: str) -> Dict[str, Any]:
+    def process_metrics(self, metrics_json: str) -> dict[str, Any]:
         snapshot = self.modulo.processar_entrada_visual(metrics_json, TipoEntradaVisual.METRICAS_TEMPO_REAL)
         return {
             "features": len(snapshot.features_extraidas),
@@ -270,8 +311,8 @@ class VisionPipeline:
             "confianca": snapshot.confianca_geral,
         }
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         return self.modulo.obter_status_visual()
 
-    def get_threats(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_threats(self, limit: int = 50) -> list[dict[str, Any]]:
         return self.modulo.obter_historico_ameacas(limit)

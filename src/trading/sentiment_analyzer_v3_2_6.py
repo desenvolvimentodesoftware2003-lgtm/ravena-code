@@ -8,23 +8,25 @@ Responsabilidades:
   - Filtro de seguranca RAG para o TradeBrain
 """
 
+import logging
 import os
 import time
-import logging
-from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger("ravena.sentiment")
 
 try:
     from src.clarividencia import get_sentiment as _cg_sentiment
     from src.clarividencia import get_sinais as _cg_sinais
+
     CLARIVIDENCIA_AVAILABLE = True
 except ImportError:
     CLARIVIDENCIA_AVAILABLE = False
 
 try:
-    import requests
+    import requests  # noqa: F401
+
     HAS_REQUESTS = True
 except ImportError:
     HAS_REQUESTS = False
@@ -33,10 +35,11 @@ except ImportError:
 @dataclass
 class SentimentResult:
     """Resultado da analise de sentimento."""
+
     symbol: str
     score: float
     total_votes: int
-    top_news: List[str]
+    top_news: list[str]
     timestamp: float
 
 
@@ -58,17 +61,18 @@ class SentimentAnalyzer:
         if not CLARIVIDENCIA_AVAILABLE:
             logger.warning("Clarividencia nao disponivel. Modo NEUTRO.")
 
-    def _fetch_news_cryptopanic(self, symbol: str) -> List[Dict[str, Any]]:
+    def _fetch_news_cryptopanic(self, symbol: str) -> list[dict[str, Any]]:
         if not self.api_token or not HAS_REQUESTS:
             return []
         params = {
             "auth_token": self.api_token,
             "currencies": symbol.replace("USDT", ""),
             "kind": "news",
-            "public": "true"
+            "public": "true",
         }
         try:
             import requests
+
             r = requests.get(self.base_url, params=params, timeout=10)
             r.raise_for_status()
             return r.json().get("results", [])
@@ -92,7 +96,8 @@ class SentimentAnalyzer:
                 label = sent.classificacao
                 signal_str = f"sinal: {sinal.acao if sinal else 'neutral'}"
                 result = SentimentResult(
-                    symbol=symbol, score=round(score, 2),
+                    symbol=symbol,
+                    score=round(score, 2),
                     total_votes=abs(int(score * 100)),
                     top_news=[f"CoinGecko: {label} - {signal_str}"],
                     timestamp=now,
@@ -127,6 +132,7 @@ class SentimentAnalyzer:
             logger.warning(f"BLOQUEIO RAG: Bullish ({sentiment.score}) para VENDA.")
             return False
         return True
+
 
 if __name__ == "__main__":
     # Teste rápido

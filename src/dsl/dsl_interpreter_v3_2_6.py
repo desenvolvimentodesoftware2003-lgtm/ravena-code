@@ -1,9 +1,10 @@
-import shlex
 import logging
+import shlex
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Any, Optional, Callable
 from enum import Enum
+from typing import Any
 
 logger = logging.getLogger("ravena.dsl_interpreter")
 
@@ -26,8 +27,8 @@ class CommandType(Enum):
 @dataclass
 class CommandAST:
     command: CommandType
-    args: List[str] = field(default_factory=list)
-    kwargs: Dict[str, str] = field(default_factory=dict)
+    args: list[str] = field(default_factory=list)
+    kwargs: dict[str, str] = field(default_factory=dict)
     raw: str = ""
 
     def __repr__(self):
@@ -84,9 +85,9 @@ class DSLParser:
 class DSLInterpreter:
     def __init__(self):
         self.parser = DSLParser()
-        self._handlers: Dict[CommandType, Callable] = {}
-        self._history: List[Dict[str, Any]] = []
-        self._system_refs: Dict[str, Any] = {}
+        self._handlers: dict[CommandType, Callable] = {}
+        self._history: list[dict[str, Any]] = []
+        self._system_refs: dict[str, Any] = {}
         self._register_default_handlers()
 
     def register_handler(self, cmd_type: CommandType, handler: Callable[[CommandAST], str]):
@@ -127,7 +128,7 @@ class DSLInterpreter:
             logger.error(error_msg)
             return error_msg
 
-    def execute_multi(self, text: str) -> List[str]:
+    def execute_multi(self, text: str) -> list[str]:
         results = []
         for line in text.strip().split("\n"):
             line = line.strip()
@@ -136,7 +137,7 @@ class DSLInterpreter:
             results.append(self.execute(line))
         return results
 
-    def get_history(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_history(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._history[-limit:]
 
     def _cmd_help(self, ast: CommandAST) -> str:
@@ -158,7 +159,7 @@ class DSLInterpreter:
         )
 
     def _cmd_status(self, ast: CommandAST) -> str:
-        lines = [f"Ravena AIM DSL Interpreter - Status", f"Modulos registrados: {len(self._system_refs)}"]
+        lines = ["Ravena AIM DSL Interpreter - Status", f"Modulos registrados: {len(self._system_refs)}"]
         for name, ref in self._system_refs.items():
             try:
                 if hasattr(ref, "health_check"):
@@ -304,10 +305,16 @@ class DSLInterpreter:
             if sub == "ANALYZE":
                 if tipo == "log":
                     result = vision.process_log(dado)
-                    return f"[VISION LOG] Features: {result['features']}, Padroes: {result['padroes']}, Nivel: {result['nivel_ameaca']}"
+                    return (
+                        f"[VISION LOG] Features: {result['features']}, Padroes: {result['padroes']}, Nivel: "
+                        f"{result['nivel_ameaca']}"
+                    )
                 elif tipo == "metrics":
                     result = vision.process_metrics(dado)
-                    return f"[VISION METRICS] Features: {result['features']}, Padroes: {result['padroes']}, Nivel: {result['nivel_ameaca']}"
+                    return (
+                        f"[VISION METRICS] Features: {result['features']}, Padroes: {result['padroes']}, Nivel: "
+                        f"{result['nivel_ameaca']}"
+                    )
                 return f"[VISION] Tipo desconhecido: {tipo}. Use log ou metrics."
             return f"[VISION] Subcomando desconhecido: {sub}"
         except Exception as e:
@@ -322,7 +329,11 @@ class DSLInterpreter:
             if sub == "HEALTH" or sub == "SAUDE":
                 hc = analytics.health_check()
                 subs_hc = hc.get("subsystems", {})
-                subs_str = ", ".join(f"{k}: {'OK' if v else 'FALHA'}" for k, v in subs_hc.items()) if subs_hc else "sem subsistemas"
+                subs_str = (
+                    ", ".join(f"{k}: {'OK' if v else 'FALHA'}" for k, v in subs_hc.items())
+                    if subs_hc
+                    else "sem subsistemas"
+                )
                 score = hc.get("system_health_score", hc.get("health_score", 0))
                 return f"[HEALTH] Status: {hc['status']} | Score: {score} | {subs_str}"
             elif sub == "SUMMARY" or sub == "RESUMO":

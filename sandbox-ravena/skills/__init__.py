@@ -18,12 +18,33 @@ __version__ = "1.0.0"
 __author__ = "Sandbox Ravena"
 
 # Importar todas as skills
-from .sqli_detector import SQLInjectionDetector, sqli_detector
-from .brute_force_protector import BruteForceProtector, brute_force_protector
-from .session_manager import SessionManager, session_manager
-from .input_validator import InputValidator, input_validator
-from .rate_limiter import RateLimiter, rate_limiter, rate_limit
 from .audit_logger import AuditLogger, audit_logger
+from .brute_force_protector import BruteForceProtector, brute_force_protector
+from .input_validator import InputValidator, input_validator
+from .rate_limiter import RateLimiter, rate_limit, rate_limiter
+from .session_manager import SessionManager, session_manager
+from .sqli_detector import SQLInjectionDetector, sqli_detector
+
+__all__ = [
+    "AuditLogger",
+    "audit_logger",
+    "BruteForceProtector",
+    "brute_force_protector",
+    "InputValidator",
+    "input_validator",
+    "RateLimiter",
+    "rate_limit",
+    "rate_limiter",
+    "SessionManager",
+    "session_manager",
+    "SQLInjectionDetector",
+    "sqli_detector",
+    "SKILLS_VERSION",
+    "AVAILABLE_SKILLS",
+    "SECURITY_WARNING",
+    "get_skill_info",
+    "get_all_stats",
+]
 
 # Versão das skills
 SKILLS_VERSION = "1.0.0"
@@ -31,62 +52,53 @@ SKILLS_VERSION = "1.0.0"
 # Listar todas as skills disponíveis
 AVAILABLE_SKILLS = [
     {
-        'name': 'SQLiDetector',
-        'description': 'Detector de SQL Injection',
-        'module': 'sqli_detector',
-        'instance': sqli_detector
+        "name": "SQLiDetector",
+        "description": "Detector de SQL Injection",
+        "module": "sqli_detector",
+        "instance": sqli_detector,
     },
     {
-        'name': 'BruteForceProtector',
-        'description': 'Protetor contra força bruta',
-        'module': 'brute_force_protector',
-        'instance': brute_force_protector
+        "name": "BruteForceProtector",
+        "description": "Protetor contra força bruta",
+        "module": "brute_force_protector",
+        "instance": brute_force_protector,
     },
     {
-        'name': 'SessionManager',
-        'description': 'Gerenciador de sessões',
-        'module': 'session_manager',
-        'instance': session_manager
+        "name": "SessionManager",
+        "description": "Gerenciador de sessões",
+        "module": "session_manager",
+        "instance": session_manager,
     },
     {
-        'name': 'InputValidator',
-        'description': 'Validador de entradas',
-        'module': 'input_validator',
-        'instance': input_validator
+        "name": "InputValidator",
+        "description": "Validador de entradas",
+        "module": "input_validator",
+        "instance": input_validator,
     },
     {
-        'name': 'RateLimiter',
-        'description': 'Limitador de taxa de requisições',
-        'module': 'rate_limiter',
-        'instance': rate_limiter
+        "name": "RateLimiter",
+        "description": "Limitador de taxa de requisições",
+        "module": "rate_limiter",
+        "instance": rate_limiter,
     },
-    {
-        'name': 'AuditLogger',
-        'description': 'Logger de auditoria',
-        'module': 'audit_logger',
-        'instance': audit_logger
-    }
+    {"name": "AuditLogger", "description": "Logger de auditoria", "module": "audit_logger", "instance": audit_logger},
 ]
 
 
 def get_skill_info():
     """Retorna informações sobre todas as skills"""
-    return {
-        'version': SKILLS_VERSION,
-        'skills': AVAILABLE_SKILLS,
-        'total': len(AVAILABLE_SKILLS)
-    }
+    return {"version": SKILLS_VERSION, "skills": AVAILABLE_SKILLS, "total": len(AVAILABLE_SKILLS)}
 
 
 def get_all_stats():
     """Retorna estatísticas de todas as skills"""
     stats = {}
-    
+
     for skill in AVAILABLE_SKILLS:
-        skill_instance = skill['instance']
-        if hasattr(skill_instance, 'get_stats'):
-            stats[skill['name']] = skill_instance.get_stats()
-    
+        skill_instance = skill["instance"]
+        if hasattr(skill_instance, "get_stats"):
+            stats[skill["name"]] = skill_instance.get_stats()
+
     return stats
 
 

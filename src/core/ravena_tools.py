@@ -1,20 +1,32 @@
-import os
-import sys
-import subprocess
 import logging
-from typing import List, Dict, Any, Optional, Tuple
+import os
+import subprocess
+from typing import Any
 
 logger = logging.getLogger("ravena.tools")
 
 _COMANDOS_PROIBIDOS = [
-    "rm -rf /", "rm -rf ~", "rm -rf .",
-    "sudo", "format", "chmod 777", "chmod -R 777",
-    "dd if=", "mkfs", "fdisk", "shutdown", "reboot",
-    "> /dev/sda", "| shutdown", "init 0", "init 6"
+    "rm -rf /",
+    "rm -rf ~",
+    "rm -rf .",
+    "sudo",
+    "format",
+    "chmod 777",
+    "chmod -R 777",
+    "dd if=",
+    "mkfs",
+    "fdisk",
+    "shutdown",
+    "reboot",
+    "> /dev/sda",
+    "| shutdown",
+    "init 0",
+    "init 6",
 ]
 
+
 class RavenaTools:
-    def __init__(self, root_path: Optional[str] = None):
+    def __init__(self, root_path: str | None = None):
         self._root = root_path or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         logger.info(f"RavenaTools ativo — raiz: {self._root}")
 
@@ -25,12 +37,12 @@ class RavenaTools:
             raise PermissionError(f"Acesso negado: {path} esta fora da raiz do projeto")
         return caminho_real
 
-    def ler(self, path: str) -> Tuple[bool, str]:
+    def ler(self, path: str) -> tuple[bool, str]:
         try:
             caminho = self._safe_path(path)
             if not os.path.isfile(caminho):
                 return False, f"Arquivo nao encontrado: {path}"
-            with open(caminho, "r", encoding="utf-8", errors="replace") as f:
+            with open(caminho, encoding="utf-8", errors="replace") as f:
                 conteudo = f.read()
             return True, conteudo
         except PermissionError as e:
@@ -38,7 +50,7 @@ class RavenaTools:
         except Exception as e:
             return False, f"Erro ao ler {path}: {e}"
 
-    def escrever(self, path: str, conteudo: str) -> Tuple[bool, str]:
+    def escrever(self, path: str, conteudo: str) -> tuple[bool, str]:
         try:
             caminho = self._safe_path(path)
             os.makedirs(os.path.dirname(caminho), exist_ok=True)
@@ -51,7 +63,7 @@ class RavenaTools:
         except Exception as e:
             return False, f"Erro ao escrever {path}: {e}"
 
-    def listar(self, directory: str = ".") -> Tuple[bool, List[str]]:
+    def listar(self, directory: str = ".") -> tuple[bool, list[str]]:
         try:
             caminho = self._safe_path(directory)
             if not os.path.isdir(caminho):
@@ -63,7 +75,7 @@ class RavenaTools:
         except Exception as e:
             return False, [f"Erro ao listar {directory}: {e}"]
 
-    def executar(self, comando: str, timeout: int = 30) -> Dict[str, Any]:
+    def executar(self, comando: str, timeout: int = 30) -> dict[str, Any]:
         for proibido in _COMANDOS_PROIBIDOS:
             if proibido in comando.lower():
                 logger.warning(f"Comando bloqueado: {comando[:80]}")
@@ -71,40 +83,30 @@ class RavenaTools:
                     "sucesso": False,
                     "stdout": "",
                     "stderr": f"Comando bloqueado por seguranca: '{proibido}' nao permitido",
-                    "exit_code": -1
+                    "exit_code": -1,
                 }
         try:
             logger.info(f"Executando: {comando[:120]}")
             resultado = subprocess.run(
-                comando,
-                shell=True,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                cwd=self._root
+                comando, shell=True, capture_output=True, text=True, timeout=timeout, cwd=self._root
             )
             return {
                 "sucesso": resultado.returncode == 0,
                 "stdout": resultado.stdout,
                 "stderr": resultado.stderr,
-                "exit_code": resultado.returncode
+                "exit_code": resultado.returncode,
             }
         except subprocess.TimeoutExpired:
             return {
                 "sucesso": False,
                 "stdout": "",
                 "stderr": f"Comando excedeu timeoute limite de {timeout}s",
-                "exit_code": -1
+                "exit_code": -1,
             }
         except Exception as e:
-            return {
-                "sucesso": False,
-                "stdout": "",
-                "stderr": f"Erro ao executar comando: {e}",
-                "exit_code": -1
-            }
+            return {"sucesso": False, "stdout": "", "stderr": f"Erro ao executar comando: {e}", "exit_code": -1}
 
-    def validar_comando(self, comando: str) -> Tuple[bool, str]:
+    def validar_comando(self, comando: str) -> tuple[bool, str]:
         for proibido in _COMANDOS_PROIBIDOS:
             if proibido in comando.lower():
                 return False, f"Comando contem operacao proibida: '{proibido}'"

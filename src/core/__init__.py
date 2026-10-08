@@ -10,8 +10,8 @@ Disponibiliza:
 - SecretsManager: gerenciamento seguro de credenciais e chaves de API
 """
 
-from .secrets_manager import SecretsManager
 from .ravena_model import RavenaModel
+from .secrets_manager import SecretsManager
 
 __all__ = [
     "SecretsManager",

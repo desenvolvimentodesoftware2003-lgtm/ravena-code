@@ -1,12 +1,12 @@
+import importlib.util
+import json
+import logging
 import os
 import sys
 import time
-import json
-import logging
-import importlib.util
-from datetime import datetime
-from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
 _projeto_raiz = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if _projeto_raiz not in sys.path:
@@ -14,13 +14,24 @@ if _projeto_raiz not in sys.path:
 
 _CONFIG_PADRAO = {
     "omega_version": "4.0.0-RAVENA-CORE",
-    "core": {"verbose": True, "fallback_inteligente": True, "max_ciclos_pensamento": 3, "confianca_minima": 0.3, "modo_soberano": True},
-    "log": {"nivel": "INFO", "formato": "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s", "caminho_jsonl": "data/cognitive_treino.jsonl"},
+    "core": {
+        "verbose": True,
+        "fallback_inteligente": True,
+        "max_ciclos_pensamento": 3,
+        "confianca_minima": 0.3,
+        "modo_soberano": True,
+    },
+    "log": {
+        "nivel": "INFO",
+        "formato": "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s",
+        "caminho_jsonl": "data/cognitive_treino.jsonl",
+    },
     "conhecimento": {"ativo": True, "max_resultados": 5, "similaridade_minima": 0.6, "autoridade_minima": 0.3},
     "seguranca": {"separado": True, "lockdown_block": 0.60},
     "sensores_cognitivos": {"ativo": True, "capturar_raciocinio": True, "capturar_fonte": True},
-    "visao": {"ativo": False, "mouse_click": True}
+    "visao": {"ativo": False, "mouse_click": True},
 }
+
 
 def _importar_de_arquivo(nome_modulo: str, caminho_arquivo: str):
     spec = importlib.util.spec_from_file_location(nome_modulo, caminho_arquivo)
@@ -28,6 +39,7 @@ def _importar_de_arquivo(nome_modulo: str, caminho_arquivo: str):
     sys.modules[nome_modulo] = modulo
     spec.loader.exec_module(modulo)
     return modulo
+
 
 @dataclass
 class DiagnosticoMissao:
@@ -37,9 +49,10 @@ class DiagnosticoMissao:
     estado_crenca: str = "ativo"
     authority_score: float = 0.0
     score_ameaca: float = 0.0
-    modulos_usados: List[str] = field(default_factory=list)
+    modulos_usados: list[str] = field(default_factory=list)
     ciclos_pensamento: int = 0
     tempo_total_ms: float = 0.0
+
 
 @dataclass
 class ResultadoMissao:
@@ -47,19 +60,20 @@ class ResultadoMissao:
     resposta: str = ""
     raciocinio: str = ""
     diagnostico: DiagnosticoMissao = field(default_factory=DiagnosticoMissao)
-    erro: Optional[str] = None
-    sugestao: Optional[str] = None
+    erro: str | None = None
+    sugestao: str | None = None
+
 
 class Omega:
     _instancia = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instancia is None:
-            cls._instancia = super(Omega, cls).__new__(cls)
+            cls._instancia = super().__new__(cls)
             cls._instancia._inicializado = False
         return cls._instancia
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: str | None = None):
         if self._inicializado:
             return
 
@@ -87,17 +101,17 @@ class Omega:
         self._inicializado = True
         self.logger_console.info("Omega v4.0.0 inicializado — nucleo unificado pronto")
 
-    def _carregar_config(self, config_path: Optional[str] = None) -> dict:
+    def _carregar_config(self, config_path: str | None = None) -> dict:
         caminhos = [
             config_path,
             os.path.join(_projeto_raiz, "config", "omega_config.json"),
             os.path.join(_projeto_raiz, "config", "config_v3.json"),
-            os.path.join(_projeto_raiz, "config_v3.json")
+            os.path.join(_projeto_raiz, "config_v3.json"),
         ]
         for caminho in caminhos:
             if caminho and os.path.exists(caminho):
                 try:
-                    with open(caminho, "r", encoding="utf-8") as f:
+                    with open(caminho, encoding="utf-8") as f:
                         config = json.load(f)
                     config["_origem"] = caminho
                     return config
@@ -126,7 +140,7 @@ class Omega:
         caminho_perfis = os.path.join(_projeto_raiz, "data", "perfis_config.json")
         if os.path.exists(caminho_perfis):
             try:
-                with open(caminho_perfis, "r", encoding="utf-8") as f:
+                with open(caminho_perfis, encoding="utf-8") as f:
                     self._dados_perfis = json.load(f)
                 self._perfil_nome = self._dados_perfis.get("perfil_ativo", "intermediaria")
                 perfil = self._dados_perfis.get("perfis", {}).get(self._perfil_nome, {})
@@ -138,7 +152,9 @@ class Omega:
                             self.config[secao].update(valores)
                         else:
                             self.config[secao] = dict(valores)
-                    self.logger_console.info(f"Perfil aplicado: {self._perfil_nome} ({perfil.get('label', self._perfil_nome)})")
+                    self.logger_console.info(
+                        f"Perfil aplicado: {self._perfil_nome} ({perfil.get('label', self._perfil_nome)})"
+                    )
             except Exception as e:
                 self.logger_console.warning(f"Erro ao carregar perfil: {e}")
         else:
@@ -183,7 +199,7 @@ class Omega:
             "perfis_disponiveis": {
                 k: {"label": v.get("label", k), "descricao": v.get("descricao", "")}
                 for k, v in self._dados_perfis.get("perfis", {}).items()
-            }
+            },
         }
 
     def _carregar_modulos_disponiveis(self):
@@ -191,6 +207,7 @@ class Omega:
 
         try:
             from src.core.conhecimento import ConhecimentoPith
+
             self.conhecimento = ConhecimentoPith()
             importacao_realizada = True
         except ImportError:
@@ -198,6 +215,7 @@ class Omega:
 
         try:
             from src.core.lockdown import Lockdown
+
             self.lockdown = Lockdown()
             importacao_realizada = True
         except ImportError:
@@ -205,6 +223,7 @@ class Omega:
 
         try:
             from src.core.cognitive_sensors import CognitiveSensor
+
             self.cognitive_sensors = CognitiveSensor()
             importacao_realizada = True
         except ImportError:
@@ -212,6 +231,7 @@ class Omega:
 
         try:
             from src.core.ravena_tools import RavenaTools
+
             self.tools = RavenaTools()
             importacao_realizada = True
         except ImportError:
@@ -219,14 +239,18 @@ class Omega:
 
         try:
             from src.core.ml_pipeline import MLPipeline
+
             self.ml_pipeline = MLPipeline()
         except ImportError:
             pass
 
-        caminho_jsonl = os.path.join(_projeto_raiz, self.config.get("log", {}).get("caminho_jsonl", "data/cognitive_treino.jsonl"))
+        caminho_jsonl = os.path.join(
+            _projeto_raiz, self.config.get("log", {}).get("caminho_jsonl", "data/cognitive_treino.jsonl")
+        )
 
         try:
             from src.core.inteligencia_propria import InteligenciaPropria
+
             ip = InteligenciaPropria()
             if os.path.exists(caminho_jsonl):
                 total = ip.carregar_dados(caminho_jsonl)
@@ -239,6 +263,7 @@ class Omega:
 
         try:
             from src.core.contextualidade import Contextualidade
+
             self.contextualidade = Contextualidade()
             importacao_realizada = True
         except ImportError:
@@ -246,6 +271,7 @@ class Omega:
 
         try:
             from src.core.intencao import ClassificadorIntencao
+
             self.intencao = ClassificadorIntencao()
             importacao_realizada = True
         except ImportError:
@@ -253,6 +279,7 @@ class Omega:
 
         try:
             from src.core.fallback_inteligente import FallbackInteligente
+
             caminho_templates = os.path.join(_projeto_raiz, "data", "fallback_templates.json")
             self.fallback_inteligente = FallbackInteligente(caminho_templates)
             importacao_realizada = True
@@ -261,6 +288,7 @@ class Omega:
 
         try:
             from src.core.ravena_model import RavenaModel
+
             self.ravena_model = RavenaModel(modelo="gguf")
             importacao_realizada = True
         except ImportError:
@@ -269,10 +297,18 @@ class Omega:
         if not importacao_realizada:
             self.logger_console.info("Omega em modo essencial — nenhum modulo adicional encontrado")
 
-    def _escrever_log_jsonl(self, pergunta: str, raciocinio: str, resposta: str,
-                            confianca: float, fonte: str, estado_crenca: str,
-                            authority_score: float, origem: str = "usuario",
-                            score_ameaca: float = 0.0):
+    def _escrever_log_jsonl(
+        self,
+        pergunta: str,
+        raciocinio: str,
+        resposta: str,
+        confianca: float,
+        fonte: str,
+        estado_crenca: str,
+        authority_score: float,
+        origem: str = "usuario",
+        score_ameaca: float = 0.0,
+    ):
         caminho_rel = self.config.get("log", {}).get("caminho_jsonl", "data/cognitive_treino.jsonl")
         caminho_abs = os.path.join(_projeto_raiz, caminho_rel)
         entrada = {
@@ -285,7 +321,7 @@ class Omega:
             "estado_crenca": estado_crenca,
             "authority_score": round(authority_score, 4),
             "origem": origem,
-            "score_ameaca": round(score_ameaca, 4)
+            "score_ameaca": round(score_ameaca, 4),
         }
         try:
             with open(caminho_abs, "a", encoding="utf-8") as f:
@@ -293,14 +329,22 @@ class Omega:
         except Exception as e:
             self.logger_console.warning(f"Erro ao escrever JSONL: {e}")
 
-    def pensar(self, pergunta: str, conhecimento: Optional[List[Dict[str, Any]]] = None) -> Tuple[str, float, str, str, float]:
-        inicio = time.time()
+    def pensar(
+        self, pergunta: str, conhecimento: list[dict[str, Any]] | None = None
+    ) -> tuple[str, float, str, str, float]:
+        time.time()
 
         if conhecimento:
-            trechos = [c for c in conhecimento if c.get("authority_score", 0) >= self.config.get("conhecimento", {}).get("autoridade_minima", 0.3)]
+            trechos = [
+                c
+                for c in conhecimento
+                if c.get("authority_score", 0) >= self.config.get("conhecimento", {}).get("autoridade_minima", 0.3)
+            ]
             if trechos:
                 melhor = max(trechos, key=lambda x: x.get("authority_score", 0))
-                raciocinio = f"Contexto recuperado de {melhor.get('fonte', 'desconhecida')}: {melhor.get('conteudo', '')[:200]}"
+                raciocinio = (
+                    f"Contexto recuperado de {melhor.get('fonte', 'desconhecida')}: {melhor.get('conteudo', '')[:200]}"
+                )
                 confianca = melhor.get("authority_score", 0.5)
                 fonte = melhor.get("fonte", "conhecimento")
                 estado = melhor.get("estado_crenca", "ativo")
@@ -313,31 +357,30 @@ class Omega:
         fonte = "conhecimento_interno"
         estado = "ativo"
         authority = 0.5
-        self.logger_console.info(f"Pensar: sem contexto externo, usando conhecimento interno (confianca: {confianca:.2f})")
+        self.logger_console.info(
+            f"Pensar: sem contexto externo, usando conhecimento interno (confianca: {confianca:.2f})"
+        )
         return raciocinio, confianca, fonte, estado, authority
 
-    def _sugerir_correcao(self, entrada: str) -> Optional[str]:
+    def _sugerir_correcao(self, entrada: str) -> str | None:
         if not self.config.get("core", {}).get("fallback_inteligente", True):
             return None
         if not entrada or not isinstance(entrada, str):
             return None
-        palavras_esperadas = {
-            "qual": ["qual", "qual", "qual"],
-            "capital": ["capital", "capital"],
-            "brasil": ["brasil", "brasil"]
-        }
         return None
 
     _CORRECOES_CONHECIDAS = [
-        (r"qu[em]\s+descobriu\s+o\s+brasil",
-         "Nota: Quem descobriu o Brasil foi Pedro Alvares Cabral em 1500, nao Cristovao Colombo."),
-        (r"brasil\s+fica\s+na\s+america",
-         "Nota: O Brasil fica na America do Sul."),
+        (
+            r"qu[em]\s+descobriu\s+o\s+brasil",
+            "Nota: Quem descobriu o Brasil foi Pedro Alvares Cabral em 1500, nao Cristovao Colombo.",
+        ),
+        (r"brasil\s+fica\s+na\s+america", "Nota: O Brasil fica na America do Sul."),
     ]
 
     @staticmethod
     def _injetar_correcoes(pergunta: str) -> str:
         import re
+
         pergunta_lower = pergunta.lower()
         correcoes = []
         for padrao, correcao in Omega._CORRECOES_CONHECIDAS:
@@ -347,7 +390,7 @@ class Omega:
             return "\n".join(correcoes) + "\n" + pergunta
         return pergunta
 
-    def executar(self, pergunta: str, contexto: Optional[Dict[str, Any]] = None) -> ResultadoMissao:
+    def executar(self, pergunta: str, contexto: dict[str, Any] | None = None) -> ResultadoMissao:
         inicio = time.time()
         contexto = contexto or {}
         origem = contexto.get("origem", "usuario")
@@ -421,7 +464,7 @@ class Omega:
                 resultado.resposta = resposta
                 resultado.sucesso = True
                 resultado.diagnostico.modulos_usados.append("ravena_llm")
-                resultado.raciocinio = f"Resposta gerada pelo modelo de linguagem local"
+                resultado.raciocinio = "Resposta gerada pelo modelo de linguagem local"
                 resultado.diagnostico.confianca = 0.7
                 resultado.diagnostico.fonte = "llm_local"
                 resultado.diagnostico.estado_crenca = "ativo"
@@ -456,7 +499,7 @@ class Omega:
                     authority_score=resultado.diagnostico.authority_score,
                     origem=origem,
                     score_ameaca=resultado.diagnostico.score_ameaca,
-                    diagnostico_extra=diagnostico_extra
+                    diagnostico_extra=diagnostico_extra,
                 )
                 resultado.diagnostico.modulos_usados.append("cognitive_sensors")
             except Exception as e:
@@ -471,11 +514,11 @@ class Omega:
                 estado_crenca=resultado.diagnostico.estado_crenca,
                 authority_score=resultado.diagnostico.authority_score,
                 origem=origem,
-                score_ameaca=resultado.diagnostico.score_ameaca
+                score_ameaca=resultado.diagnostico.score_ameaca,
             )
         return resultado
 
-    def obter_diagnostico(self) -> Dict[str, Any]:
+    def obter_diagnostico(self) -> dict[str, Any]:
         cx_status = None
         if self.contextualidade:
             cx_status = self.contextualidade.obter_diagnostico()
@@ -485,7 +528,20 @@ class Omega:
         return {
             "versao": self.config.get("omega_version", "4.0.0-RAVENA-CORE"),
             "modulos_disponiveis": [
-                nome for nome in ["conhecimento", "cognitive_sensors", "tools", "lockdown", "ml_pipeline", "inteligencia_propria", "contextualidade", "fallback_inteligente", "ravena_model", "intencao", "visao"]
+                nome
+                for nome in [
+                    "conhecimento",
+                    "cognitive_sensors",
+                    "tools",
+                    "lockdown",
+                    "ml_pipeline",
+                    "inteligencia_propria",
+                    "contextualidade",
+                    "fallback_inteligente",
+                    "ravena_model",
+                    "intencao",
+                    "visao",
+                ]
                 if getattr(self, nome) is not None
             ],
             "config_origem": self.config.get("_origem", "padrao_interno"),
@@ -493,26 +549,34 @@ class Omega:
             "perfil_ativo": self._perfil_nome,
             "contextualidade": cx_status,
             "fallback_inteligente": fb_status,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
-def obter_omega(config_path: Optional[str] = None) -> Omega:
+
+def obter_omega(config_path: str | None = None) -> Omega:
     return Omega(config_path)
+
 
 if __name__ == "__main__":
     core = obter_omega()
     print(json.dumps(core.obter_diagnostico(), indent=2, ensure_ascii=False))
     print()
     resultado = core.executar("qual e a capital do Brasil?")
-    print(json.dumps({
-        "sucesso": resultado.sucesso,
-        "resposta": resultado.resposta,
-        "raciocinio": resultado.raciocinio[:80] + "...",
-        "diagnostico": {
-            "confianca": resultado.diagnostico.confianca,
-            "fonte": resultado.diagnostico.fonte,
-            "estado_crenca": resultado.diagnostico.estado_crenca,
-            "modulos": resultado.diagnostico.modulos_usados,
-            "tempo_ms": resultado.diagnostico.tempo_total_ms
-        }
-    }, indent=2, ensure_ascii=False))
+    print(
+        json.dumps(
+            {
+                "sucesso": resultado.sucesso,
+                "resposta": resultado.resposta,
+                "raciocinio": resultado.raciocinio[:80] + "...",
+                "diagnostico": {
+                    "confianca": resultado.diagnostico.confianca,
+                    "fonte": resultado.diagnostico.fonte,
+                    "estado_crenca": resultado.diagnostico.estado_crenca,
+                    "modulos": resultado.diagnostico.modulos_usados,
+                    "tempo_ms": resultado.diagnostico.tempo_total_ms,
+                },
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+    )

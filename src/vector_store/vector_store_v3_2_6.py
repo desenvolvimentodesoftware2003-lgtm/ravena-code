@@ -9,10 +9,10 @@ Responsabilidades:
   - Interface unificada para os modulos RAG
 """
 
-import os
 import logging
+import os
 import time
-from typing import List, Dict, Optional, Any
+from typing import Any
 
 logger = logging.getLogger("ravena.vector_store")
 
@@ -31,7 +31,7 @@ class VectorStoreManager:
         self.path = os.path.abspath(path)
         self.default_collection_name = default_collection
         self._client = None
-        self._collections: Dict[str, Any] = {}
+        self._collections: dict[str, Any] = {}
         logger.info(f"VectorStoreManager: path={self.path}")
 
     @property
@@ -45,10 +45,10 @@ class VectorStoreManager:
             )
         return self._client
 
-    def listar_colecoes(self) -> List[str]:
+    def listar_colecoes(self) -> list[str]:
         return [c.name for c in self.client.list_collections()]
 
-    def criar_colecao(self, nome: str, metadata: Optional[Dict] = None):
+    def criar_colecao(self, nome: str, metadata: dict | None = None):
         if nome not in self.listar_colecoes():
             self.client.create_collection(name=nome, metadata=metadata)
             logger.info(f"Colecao criada: {nome}")
@@ -58,42 +58,51 @@ class VectorStoreManager:
             self.client.delete_collection(nome)
             logger.info(f"Colecao deletada: {nome}")
 
-    def _colecao(self, nome: Optional[str] = None):
+    def _colecao(self, nome: str | None = None):
         nome = nome or self.default_collection_name
         if nome not in self._collections:
             self._collections[nome] = self.client.get_or_create_collection(name=nome)
         return self._collections[nome]
 
-    def adicionar(self, textos: List[str], metadados: Optional[List[Dict]] = None, ids: Optional[List[str]] = None, colecao: Optional[str] = None):
+    def adicionar(
+        self,
+        textos: list[str],
+        metadados: list[dict] | None = None,
+        ids: list[str] | None = None,
+        colecao: str | None = None,
+    ):
         col = self._colecao(colecao)
         import uuid
+
         ids_gerados = ids or [str(uuid.uuid4()) for _ in textos]
         col.add(documents=textos, metadatas=metadados, ids=ids_gerados)
         return ids_gerados
 
-    def buscar(self, query: str, k: int = 5, colecao: Optional[str] = None) -> List[Dict[str, Any]]:
+    def buscar(self, query: str, k: int = 5, colecao: str | None = None) -> list[dict[str, Any]]:
         col = self._colecao(colecao)
         resultados = col.query(query_texts=[query], n_results=k)
         items = []
         if resultados and resultados.get("ids"):
             for i, doc_id in enumerate(resultados["ids"][0]):
-                items.append({
-                    "id": doc_id,
-                    "documento": resultados["documents"][0][i] if resultados.get("documents") else "",
-                    "metadata": resultados["metadatas"][0][i] if resultados.get("metadatas") else {},
-                    "distancia": resultados["distances"][0][i] if resultados.get("distances") else 0.0,
-                })
+                items.append(
+                    {
+                        "id": doc_id,
+                        "documento": resultados["documents"][0][i] if resultados.get("documents") else "",
+                        "metadata": resultados["metadatas"][0][i] if resultados.get("metadatas") else {},
+                        "distancia": resultados["distances"][0][i] if resultados.get("distances") else 0.0,
+                    }
+                )
         return items
 
-    def deletar(self, ids: List[str], colecao: Optional[str] = None):
+    def deletar(self, ids: list[str], colecao: str | None = None):
         col = self._colecao(colecao)
         col.delete(ids=ids)
 
-    def contar(self, colecao: Optional[str] = None) -> int:
+    def contar(self, colecao: str | None = None) -> int:
         col = self._colecao(colecao)
         return col.count()
 
-    def health_check(self) -> Dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         try:
             colecoes = self.listar_colecoes()
             stats = {}

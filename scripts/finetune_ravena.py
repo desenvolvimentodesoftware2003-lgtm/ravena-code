@@ -10,13 +10,13 @@ Pipeline:
   5. Converte para GGUF (substitui modelo atual)
 """
 
-import os
-import sys
+import argparse
 import json
 import logging
+import os
 import subprocess
+import sys
 import urllib.request
-import argparse
 
 _PROJETO_RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _PROJETO_RAIZ)
@@ -38,8 +38,9 @@ def baixar_modelo_hf():
         logger.info(f"Modelo HF ja existe em {CAMINHO_MODELO_HF}")
         return True
 
-    logger.info(f"Baixando Qwen 2.5-1.5B-Instruct da HuggingFace...")
+    logger.info("Baixando Qwen 2.5-1.5B-Instruct da HuggingFace...")
     from huggingface_hub import snapshot_download
+
     snapshot_download(
         repo_id="Qwen/Qwen2.5-1.5B-Instruct",
         local_dir=CAMINHO_MODELO_HF,
@@ -56,7 +57,7 @@ def carregar_dataset():
         return None
 
     dados = []
-    with open(CAMINHO_DATASET, "r", encoding="utf-8") as f:
+    with open(CAMINHO_DATASET, encoding="utf-8") as f:
         for linha in f:
             linha = linha.strip()
             if not linha:
@@ -79,6 +80,7 @@ def carregar_dataset():
 def formatar_chat(dados):
     """Converte usando o chat template do proprio tokenizer"""
     from transformers import AutoTokenizer
+
     tokenizer = AutoTokenizer.from_pretrained(CAMINHO_MODELO_HF)
     textos = []
     for item in dados:
@@ -104,15 +106,16 @@ def tokenizar(textos, tokenizer):
 
 
 def finetunar(dados, resume_from=None, checkpoint_dir=None):
-    from transformers import (
-        AutoTokenizer,
-        AutoModelForCausalLM,
-        Trainer,
-        TrainingArguments,
-        DataCollatorForLanguageModeling,
-        TrainerCallback,
-    )
     from datasets import Dataset
+    from transformers import (
+        AutoModelForCausalLM,
+        AutoTokenizer,
+        DataCollatorForLanguageModeling,
+        Trainer,
+        TrainerCallback,
+        TrainingArguments,
+    )
+
     from src.core.checkpoint import CheckpointHandler
 
     checkpoint_handler = CheckpointHandler(checkpoint_dir or CAMINHO_CHECKPOINT_DIR)
@@ -176,12 +179,14 @@ def finetunar(dados, resume_from=None, checkpoint_dir=None):
 
         def on_log(self, args, state, control, logs=None, **kwargs):
             if logs and "loss" in logs:
-                historico["logs_loss"].append({
-                    "loss": f"{logs['loss']:.4f}",
-                    "grad_norm": f"{logs.get('grad_norm', 0):.2f}",
-                    "learning_rate": f"{logs.get('learning_rate', 0):.2e}",
-                    "epoch": f"{state.epoch:.4f}" if state.epoch else "0",
-                })
+                historico["logs_loss"].append(
+                    {
+                        "loss": f"{logs['loss']:.4f}",
+                        "grad_norm": f"{logs.get('grad_norm', 0):.2f}",
+                        "learning_rate": f"{logs.get('learning_rate', 0):.2e}",
+                        "epoch": f"{state.epoch:.4f}" if state.epoch else "0",
+                    }
+                )
                 historico["progresso_batches"] = [f"{state.global_step}/{total_batches}"]
                 _salvar_historico(historico)
 
@@ -240,6 +245,7 @@ def finetunar(dados, resume_from=None, checkpoint_dir=None):
 
 def _agora():
     from datetime import datetime
+
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
@@ -283,10 +289,13 @@ def converter_para_gguf():
     logger.info("Convertendo checkpoint HF para GGUF...")
     try:
         args = [
-            sys.executable, CAMINHO_CONVERT_SCRIPT,
+            sys.executable,
+            CAMINHO_CONVERT_SCRIPT,
             CAMINHO_CHECKPOINT,
-            "--outfile", CAMINHO_GGUF_ATUAL,
-            "--outtype", "q8_0",
+            "--outfile",
+            CAMINHO_GGUF_ATUAL,
+            "--outtype",
+            "q8_0",
         ]
         result = subprocess.run(args, capture_output=True, text=True)
         if result.returncode == 0:
@@ -313,10 +322,10 @@ def validar_tamanho():
 def main():
     parser = argparse.ArgumentParser(description="Fine-tuning do Ravena LLM com checkpoints")
     parser.add_argument("--resume-from", help="Caminho do checkpoint para restaurar")
-    parser.add_argument("--checkpoint-dir", default=CAMINHO_CHECKPOINT_DIR,
-                        help="Diretorio de checkpoints (default: ./checkpoints)")
-    parser.add_argument("--no-gguf", action="store_true",
-                        help="Pular conversao GGUF no final")
+    parser.add_argument(
+        "--checkpoint-dir", default=CAMINHO_CHECKPOINT_DIR, help="Diretorio de checkpoints (default: ./checkpoints)"
+    )
+    parser.add_argument("--no-gguf", action="store_true", help="Pular conversao GGUF no final")
     args = parser.parse_args()
 
     logger.info("=" * 50)

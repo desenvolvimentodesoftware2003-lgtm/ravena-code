@@ -1,14 +1,15 @@
-import os
 import json
-import uuid
 import logging
+import os
+import uuid
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Any
 
 logger = logging.getLogger("ravena.cognitive_sensors")
 
+
 class CognitiveSensor:
-    def __init__(self, caminho_jsonl: Optional[str] = None):
+    def __init__(self, caminho_jsonl: str | None = None):
         _projeto_raiz = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         self._caminho = caminho_jsonl or os.path.join(_projeto_raiz, "data", "cognitive_treino.jsonl")
         self._sessao_id = str(uuid.uuid4())[:8]
@@ -16,11 +17,19 @@ class CognitiveSensor:
         os.makedirs(os.path.dirname(self._caminho), exist_ok=True)
         logger.info(f"CognitiveSensor ativo — sessao {self._sessao_id} -> {self._caminho}")
 
-    def capturar(self, pergunta: str, raciocinio: str, resposta: str,
-                 confianca: float = 0.0, fonte: str = "conhecimento_interno",
-                 estado_crenca: str = "ativo", authority_score: float = 0.0,
-                 origem: str = "usuario", score_ameaca: float = 0.0,
-                 diagnostico_extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def capturar(
+        self,
+        pergunta: str,
+        raciocinio: str,
+        resposta: str,
+        confianca: float = 0.0,
+        fonte: str = "conhecimento_interno",
+        estado_crenca: str = "ativo",
+        authority_score: float = 0.0,
+        origem: str = "usuario",
+        score_ameaca: float = 0.0,
+        diagnostico_extra: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         self._contador += 1
         entrada = {
             "timestamp": datetime.now().isoformat(),
@@ -34,7 +43,7 @@ class CognitiveSensor:
             "estado_crenca": estado_crenca,
             "authority_score": round(authority_score, 4),
             "origem": origem,
-            "score_ameaca": round(score_ameaca, 4)
+            "score_ameaca": round(score_ameaca, 4),
         }
         if diagnostico_extra:
             for chave in ("modulos_usados", "tempo_total_ms", "ciclos_pensamento"):
@@ -47,13 +56,12 @@ class CognitiveSensor:
             logger.warning(f"Erro ao escrever JSONL: {e}")
         return entrada
 
-    def exportar_para_treino(self, caminho_saida: Optional[str] = None,
-                             formato: str = "jsonl") -> str:
+    def exportar_para_treino(self, caminho_saida: str | None = None, formato: str = "jsonl") -> str:
         caminho_saida = caminho_saida or self._caminho.replace(".jsonl", "_treino.jsonl")
         if not os.path.exists(self._caminho):
             logger.warning("Nenhum dado para exportar")
             return ""
-        with open(self._caminho, "r", encoding="utf-8") as f:
+        with open(self._caminho, encoding="utf-8") as f:
             linhas = f.readlines()
         with open(caminho_saida, "w", encoding="utf-8") as f:
             for linha in linhas:
@@ -65,20 +73,20 @@ class CognitiveSensor:
                     "confidence": dado.get("confianca", 0.0),
                     "source": dado.get("fonte", ""),
                     "belief_state": dado.get("estado_crenca", ""),
-                    "authority": dado.get("authority_score", 0.0)
+                    "authority": dado.get("authority_score", 0.0),
                 }
                 f.write(json.dumps(entrada_treino, ensure_ascii=False) + "\n")
         logger.info(f"Exportado {len(linhas)} interacoes para treino -> {caminho_saida}")
         return caminho_saida
 
-    def estatisticas(self) -> Dict[str, Any]:
+    def estatisticas(self) -> dict[str, Any]:
         if not os.path.exists(self._caminho):
             return {"total": 0}
-        with open(self._caminho, "r", encoding="utf-8") as f:
+        with open(self._caminho, encoding="utf-8") as f:
             linhas = f.readlines()
         total = len(linhas)
-        fontes: Dict[str, int] = {}
-        estados: Dict[str, int] = {}
+        fontes: dict[str, int] = {}
+        estados: dict[str, int] = {}
         confiancas = []
         for linha in linhas:
             try:
@@ -95,7 +103,7 @@ class CognitiveSensor:
             "sessao_id": self._sessao_id,
             "fontes": fontes,
             "estados": estados,
-            "confianca_media": round(sum(confiancas) / len(confiancas), 4) if confiancas else 0.0
+            "confianca_media": round(sum(confiancas) / len(confiancas), 4) if confiancas else 0.0,
         }
 
     def limpar(self):
@@ -117,7 +125,7 @@ if __name__ == "__main__":
         fonte="usuario",
         estado_crenca="ativo",
         authority_score=0.9,
-        diagnostico_extra={"modulos_usados": ["conhecimento", "pensar"], "tempo_total_ms": 3.5}
+        diagnostico_extra={"modulos_usados": ["conhecimento", "pensar"], "tempo_total_ms": 3.5},
     )
     sensor.capturar(
         pergunta="o que e python",
@@ -125,7 +133,7 @@ if __name__ == "__main__":
         resposta="Python e uma linguagem de programacao interpretada",
         confianca=0.7,
         fonte="aprendizado",
-        diagnostico_extra={"modulos_usados": ["conhecimento", "pensar"], "tempo_total_ms": 2.1}
+        diagnostico_extra={"modulos_usados": ["conhecimento", "pensar"], "tempo_total_ms": 2.1},
     )
 
     print("=== ESTATISTICAS ===")
@@ -134,7 +142,7 @@ if __name__ == "__main__":
     print()
     print("=== EXPORTAR PARA TREINO ===")
     caminho = sensor.exportar_para_treino()
-    with open(caminho, "r", encoding="utf-8") as f:
+    with open(caminho, encoding="utf-8") as f:
         for linha in f.readlines()[:2]:
             print(json.loads(linha))
 

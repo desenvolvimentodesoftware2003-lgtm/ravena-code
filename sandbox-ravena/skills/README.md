@@ -32,11 +32,7 @@ from skills import sqli_detector
 is_malicious, attack_type, confidence = sqli_detector.analyze("' OR 1=1--")
 
 # Bloquear e registrar
-result = sqli_detector.block_and_log(
-    input_data="' OR 1=1--",
-    endpoint="/api/login",
-    ip_address="192.168.1.100"
-)
+result = sqli_detector.block_and_log(input_data="' OR 1=1--", endpoint="/api/login", ip_address="192.168.1.100")
 
 # Obter estatísticas
 stats = sqli_detector.get_stats()
@@ -70,10 +66,7 @@ stats = sqli_detector.get_stats()
 from skills import brute_force_protector
 
 # Verificar tentativa
-allowed, message = brute_force_protector.check_attempt(
-    ip_address="192.168.1.100",
-    username="admin"
-)
+allowed, message = brute_force_protector.check_attempt(ip_address="192.168.1.100", username="admin")
 
 # Obter tentativas falhas
 failed = brute_force_protector.get_failed_attempts("192.168.1.100")
@@ -107,17 +100,10 @@ brute_force_protector.reset_lockout(ip_address="192.168.1.100")
 from skills import session_manager
 
 # Criar sessão
-session = session_manager.create_session(
-    user_id="user_001",
-    ip_address="192.168.1.100",
-    user_agent="Mozilla/5.0"
-)
+session = session_manager.create_session(user_id="user_001", ip_address="192.168.1.100", user_agent="Mozilla/5.0")
 
 # Validar sessão
-is_valid, data = session_manager.validate_session(
-    token=session['token'],
-    ip_address="192.168.1.100"
-)
+is_valid, data = session_manager.validate_session(token=session["token"], ip_address="192.168.1.100")
 
 # Invalidar todas as sessões de um usuário
 count = session_manager.invalidate_all_user_sessions("user_001")
@@ -147,20 +133,15 @@ count = session_manager.invalidate_all_user_sessions("user_001")
 from skills import input_validator
 
 # Validar campo
-is_valid, error, sanitized = input_validator.validate(
-    value="admin",
-    field_type="username"
-)
+is_valid, error, sanitized = input_validator.validate(value="admin", field_type="username")
 
 # Validar força de senha
 strength = input_validator.validate_password_strength("Abc@1234")
 
 # Validar múltiplos campos
-results = input_validator.validate_batch({
-    'username': ('admin', 'username'),
-    'email': ('user@example.com', 'email'),
-    'amount': ('100.50', 'amount')
-})
+results = input_validator.validate_batch(
+    {"username": ("admin", "username"), "email": ("user@example.com", "email"), "amount": ("100.50", "amount")}
+)
 ```
 
 **Tipos Disponíveis:**
@@ -191,22 +172,16 @@ results = input_validator.validate_batch({
 from skills import rate_limiter
 
 # Verificar limite
-allowed, info = rate_limiter.check_rate_limit(
-    key="192.168.1.100",
-    endpoint="login"
-)
+allowed, info = rate_limiter.check_rate_limit(key="192.168.1.100", endpoint="login")
 
 # Definir limite personalizado
-rate_limiter.set_custom_limit(
-    endpoint="custom",
-    requests=10,
-    window=60
-)
+rate_limiter.set_custom_limit(endpoint="custom", requests=10, window=60)
 
 # Usar decorator
 from skills import rate_limit
 
-@rate_limit('login')
+
+@rate_limit("login")
 def login():
     # Lógica de login
     pass
@@ -238,12 +213,7 @@ def login():
 from skills import audit_logger
 
 # Log genérico
-audit_logger.log(
-    action="data_access",
-    user_id="user_001",
-    details={"resource": "users"},
-    ip_address="192.168.1.100"
-)
+audit_logger.log(action="data_access", user_id="user_001", details={"resource": "users"}, ip_address="192.168.1.100")
 
 # Log de login
 audit_logger.log_login("user_001", "192.168.1.100", success=True)
@@ -255,7 +225,7 @@ audit_logger.log_withdrawal("user_001", 500.00, "success")
 is_valid = audit_logger.verify_integrity(log_entry)
 
 # Exportar logs
-json_logs = audit_logger.export_logs('json')
+json_logs = audit_logger.export_logs("json")
 ```
 
 ---
@@ -265,49 +235,43 @@ json_logs = audit_logger.export_logs('json')
 ### Exemplo: Proteção Completa de Login
 
 ```python
-from skills import (
-    sqli_detector,
-    brute_force_protector,
-    session_manager,
-    input_validator,
-    rate_limiter,
-    audit_logger
-)
+from skills import sqli_detector, brute_force_protector, session_manager, input_validator, rate_limiter, audit_logger
+
 
 def secure_login(username, password, ip_address):
     # 1. Verificar rate limit
-    allowed, info = rate_limiter.check_rate_limit(ip_address, 'login')
+    allowed, info = rate_limiter.check_rate_limit(ip_address, "login")
     if not allowed:
-        return {'error': 'Rate limit excedido'}, 429
-    
+        return {"error": "Rate limit excedido"}, 429
+
     # 2. Verificar brute force
     allowed, message = brute_force_protector.check_attempt(ip_address, username)
     if not allowed:
-        return {'error': message}, 429
-    
+        return {"error": message}, 429
+
     # 3. Validar inputs
-    is_valid, error, _ = input_validator.validate(username, 'username')
+    is_valid, error, _ = input_validator.validate(username, "username")
     if not is_valid:
-        return {'error': error}, 400
-    
+        return {"error": error}, 400
+
     # 4. Verificar SQL Injection
     is_malicious, _, _ = sqli_detector.analyze(username)
     if is_malicious:
-        audit_logger.log_security_event('sql_injection', ip_address, {'input': username})
-        return {'error': 'Entrada inválida'}, 400
-    
+        audit_logger.log_security_event("sql_injection", ip_address, {"input": username})
+        return {"error": "Entrada inválida"}, 400
+
     # 5. Autenticar (simulado)
     success = authenticate(username, password)
-    
+
     # 6. Registrar tentativa
     audit_logger.log_login(username, ip_address, success)
-    
+
     if success:
         # 7. Criar sessão
-        session = session_manager.create_session(username, ip_address, 'Mozilla/5.0')
-        return {'token': session['token']}, 200
+        session = session_manager.create_session(username, ip_address, "Mozilla/5.0")
+        return {"token": session["token"]}, 200
     else:
-        return {'error': 'Credenciais inválidas'}, 401
+        return {"error": "Credenciais inválidas"}, 401
 ```
 
 ---
@@ -380,7 +344,7 @@ session_manager.session_timeout = 30
 session_manager.max_sessions = 3
 
 # RateLimiter
-rate_limiter.default_limits['login'] = {'requests': 5, 'window': 300}
+rate_limiter.default_limits["login"] = {"requests": 5, "window": 300}
 ```
 
 ---
@@ -411,10 +375,11 @@ rate_limiter.default_limits['login'] = {'requests': 5, 'window': 300}
 ```python
 # Verificar se o diretório skills existe
 import os
-print(os.path.exists('skills'))
+
+print(os.path.exists("skills"))
 
 # Verificar arquivos
-print(os.listdir('skills'))
+print(os.listdir("skills"))
 ```
 
 ### Erro de dependência
@@ -429,6 +394,7 @@ pip install -r requirements.txt
 ```python
 # Configurar logging
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 ```
 

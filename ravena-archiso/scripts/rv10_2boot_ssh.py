@@ -3,7 +3,11 @@
 # 1) restore_keys_from_pendrive deve restaurar data.key/recovery.key da ESP
 # 2) LUKS deve abrir com a chave restaurada e montar RAVENA-DATA
 # 3) dotfiles/.ravena linkados, sync de volta operante
-import socket, time, subprocess, re, sys, os
+import os
+import socket
+import subprocess
+import sys
+import time
 
 ISO = "/root/ravv2/ravena-remaster-RV10.iso"
 ESP_DISK = "/root/ravv2/vm_esp.img"
@@ -14,30 +18,57 @@ SSH_PORT = 2222
 LOG = "/root/ravv2/rv10_2boot.log"
 PW = "Dozinh@12"
 
+
 def log(msg):
     line = str(msg)
     print(line)
     with open(LOG, "a", encoding="utf-8") as f:
         f.write(line + "\n")
 
+
 def run_vm(timeout_min=20):
-    cmdline = ("console=ttyS0,115200n8 archisobasedir=arch archisolabel=RAVENA_202608 "
-               "systemd.mask=ravena-llm.service")
-    qemu = subprocess.Popen([
-        "qemu-system-x86_64", "-enable-kvm",
-        "-m", "4096", "-smp", "4", "-cpu", "host",
-        "-drive", f"file={ESP_DISK},format=raw,if=none,id=usbesp",
-        "-drive", f"file={DATA_DISK},format=raw,if=none,id=usbdata",
-        "-device", "qemu-xhci,id=xhci",
-        "-device", "usb-storage,drive=usbesp",
-        "-device", "usb-storage,drive=usbdata",
-        "-netdev", f"user,restrict=on,id=n0,hostfwd=tcp:127.0.0.1:{SSH_PORT}-:22",
-        "-device", "e1000,netdev=n0",
-        "-cdrom", ISO,
-        "-kernel", VMLIN, "-initrd", INITRD, "-append", cmdline,
-        "-display", "none",
-        "-no-reboot"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    cmdline = "console=ttyS0,115200n8 archisobasedir=arch archisolabel=RAVENA_202608 systemd.mask=ravena-llm.service"
+    qemu = subprocess.Popen(
+        [
+            "qemu-system-x86_64",
+            "-enable-kvm",
+            "-m",
+            "4096",
+            "-smp",
+            "4",
+            "-cpu",
+            "host",
+            "-drive",
+            f"file={ESP_DISK},format=raw,if=none,id=usbesp",
+            "-drive",
+            f"file={DATA_DISK},format=raw,if=none,id=usbdata",
+            "-device",
+            "qemu-xhci,id=xhci",
+            "-device",
+            "usb-storage,drive=usbesp",
+            "-device",
+            "usb-storage,drive=usbdata",
+            "-netdev",
+            f"user,restrict=on,id=n0,hostfwd=tcp:127.0.0.1:{SSH_PORT}-:22",
+            "-device",
+            "e1000,netdev=n0",
+            "-cdrom",
+            ISO,
+            "-kernel",
+            VMLIN,
+            "-initrd",
+            INITRD,
+            "-append",
+            cmdline,
+            "-display",
+            "none",
+            "-no-reboot",
+        ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     return qemu
+
 
 def wait_ssh(timeout=720):
     end = time.time() + timeout
@@ -50,23 +81,43 @@ def wait_ssh(timeout=720):
             time.sleep(3)
     return False
 
+
 def ssh_cmd(cmd, timeout=60, user="root"):
     r = subprocess.run(
-        ["sshpass", "-p", PW, "ssh",
-         "-o", "StrictHostKeyChecking=no",
-         "-o", "UserKnownHostsFile=/dev/null",
-         "-o", "LogLevel=ERROR",
-         "-p", str(SSH_PORT), f"{user}@127.0.0.1", cmd],
-        capture_output=True, text=True, timeout=timeout)
+        [
+            "sshpass",
+            "-p",
+            PW,
+            "ssh",
+            "-o",
+            "StrictHostKeyChecking=no",
+            "-o",
+            "UserKnownHostsFile=/dev/null",
+            "-o",
+            "LogLevel=ERROR",
+            "-p",
+            str(SSH_PORT),
+            f"{user}@127.0.0.1",
+            cmd,
+        ],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
     return r.returncode, r.stdout, r.stderr
+
 
 def wait_system_ready():
     for _ in range(10):
-        rc, out, err = ssh_cmd("systemctl is-system-running 2>/dev/null || true; test -e /etc/ravena/recovery.key && echo CHAVE_PRESENTE || true")
+        rc, out, err = ssh_cmd(
+            "systemctl is-system-running 2>/dev/null || true; test -e /etc/ravena/recovery.key && echo "
+            "CHAVE_PRESENTE || true"
+        )
         if "degraded" in out or "running" in out:
             return out
         time.sleep(15)
     return out
+
 
 def main():
     try:
@@ -84,6 +135,7 @@ def main():
         log(f"boot state: {boot}")
 
         PASS = 0
+
         def ok(cond, label, extra=""):
             nonlocal PASS
             if cond:
@@ -95,19 +147,26 @@ def main():
                 log(f"     {extra}")
 
         print("--- chaves restauradas da ESP? (persistencia) ---")
-        rc, out, err = ssh_cmd("ls -la /etc/ravena/ 2>/dev/null; echo ---; md5sum /etc/ravena/data.key /etc/ravena/recovery.key 2>/dev/null")
+        rc, out, err = ssh_cmd(
+            "ls -la /etc/ravena/ 2>/dev/null; echo ---; md5sum /etc/ravena/data.key /etc/ravena/recovery.key "
+            "2>/dev/null"
+        )
         log("  /etc/ravena: " + out.strip().replace("\n", " | "))
         ok(("data.key" in out and "recovery.key" in out), "chaves restauradas da ESP p/ /etc/ravena")
-        keys_ok = "data.key" in out and "recovery.key" in out
 
         print("--- LUKS aberto e RAVENA-DATA montada (2o boot) ---")
-        rc, out, err = ssh_cmd("cryptsetup status ravena-data 2>&1 | head -6; echo ---; mountpoint /mnt/ravena-data && echo MONTADA_OK; lsblk -o NAME,TYPE,FSTYPE,SIZE")
+        rc, out, err = ssh_cmd(
+            "cryptsetup status ravena-data 2>&1 | head -6; echo ---; mountpoint /mnt/ravena-data && echo "
+            "MONTADA_OK; lsblk -o NAME,TYPE,FSTYPE,SIZE"
+        )
         log("  cryptsetup: " + out.strip().replace("\n", " | "))
         ok(("MONTADA_OK" in out), "RAVENA-DATA montada no 2o boot (chave restaurada)")
         ok(("ravena-data" in (out + err)), "mapper ravena-data ativo")
 
         print("--- conteudo da particao (persistiu do 1o boot?) ---")
-        rc, out, err = ssh_cmd("ls /mnt/ravena-data/ 2>/dev/null; echo ---; ls -a /mnt/ravena-data/ravena/config/dotfiles/ 2>/dev/null")
+        rc, out, err = ssh_cmd(
+            "ls /mnt/ravena-data/ 2>/dev/null; echo ---; ls -a /mnt/ravena-data/ravena/config/dotfiles/ 2>/dev/null"
+        )
         log("  raiz: " + out.strip().replace("\n", " | "))
         ok(("ravena" in out and "CHAVE_RECUPERACAO.txt" in out), "estrutura RAVENA-DATA persistiu")
         ok((".bashrc" in out), "dotfiles persistidos na particao")
@@ -136,7 +195,11 @@ def main():
         ok(("oobe-done" in out), "marcador OOBE persistido na RAVENA-DATA (config/oobe-done)")
 
         print("--- OOBE nao re-exibe no 2o boot (marcador existe) ---")
-        rc, out, err = ssh_cmd("printf '\\n0\\n' | script -qec \"su - ravena -c '/usr/local/bin/ravena-oobe.sh'\" /dev/null 2>&1 | head -8", timeout=60)
+        rc, out, err = ssh_cmd(
+            "printf '\\n0\\n' | script -qec \"su - ravena -c '/usr/local/bin/ravena-oobe.sh'\" /dev/null 2>&1 | "
+            "head -8",
+            timeout=60,
+        )
         log("  saida: [" + out.replace("\x1b", "").strip()[:150] + "]")
         ok(("BEM-VINDO" not in out), "OOBE NAO re-exibe (fluxo completo ja concluido no 1o boot)")
 
@@ -158,6 +221,7 @@ def main():
         except Exception:
             pass
     log("DONE_2BOOT_SSH")
+
 
 if __name__ == "__main__":
     main()
