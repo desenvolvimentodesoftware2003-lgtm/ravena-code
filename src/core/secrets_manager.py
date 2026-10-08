@@ -78,15 +78,10 @@ class SecretsManager:
             "required": False,
             "default": None,
         },
-        "SCIPHI_API_KEY": {
-            "description": "Chave da SciPhi (AgentSearch — provider de busca da "
-            "Fonte 1b do Agente de Busca 360). Sem ela o Radar360 "
-            "funciona so com os 13 RSS.",
-            "severity": "MEDIUM",
-            "module": "cerebros/plutus/core/fonte_agentsearch",
-            "required": False,
-            "default": None,
-        },
+        # SciPhi/agent-search saiu do registro: o repo e open source e o
+        # modo padrao (local, self-hosted) nao pede chave nenhuma. Quem
+        # insistir no provider hospedado exporta SCIPHI_API_KEY no
+        # ambiente — o get() cai no fallback de env var para qualquer nome.
         # 🟠 ALTO - Oracle Cloud Infrastructure
         "OCI_COMPARTMENT_ID": {
             "description": "OCID do compartment na Oracle Cloud",

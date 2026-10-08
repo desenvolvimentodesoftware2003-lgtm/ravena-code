@@ -16,7 +16,10 @@ from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-REPO = Path(r"C:\Users\DELL\dev\ravena-aim")
+# Raiz do proprio repo (tools/*.py = parents[1]), nao um caminho fixo —
+# hardcoded para ravena-aim, este script regenerava o .env.example do
+# repo errado quando rodava daqui.
+REPO = Path(__file__).resolve().parents[1]
 SECRETS_PY = REPO / "src/core/secrets_manager.py"
 
 # variaveis de configuracao ja vistas no scan, com o que va no placeholder.
