@@ -19,6 +19,7 @@ USO:
   oci_compartment = secrets.get("OCI_COMPARTMENT_ID")
 """
 
+import json
 import logging
 import os
 from pathlib import Path
@@ -291,6 +292,56 @@ class SecretsManager:
             logger.debug("python-dotenv não instalado. Pulando .env.")
             return False
 
+    # ─────────────────────────────────────────────
+    # INTERRUPTOR POR API (ligar/desligar sem apagar a chave)
+    # ─────────────────────────────────────────────
+    # O operador quer ver o que existe no .env e desligar uma API sem
+    # apagar a credencial. Sem isto, a unica forma de parar a Bybit seria
+    # editar o .env — e ai a chave se perde.
+    #
+    # O arquivo de estado e SEPARADO do .env. O .env guarda valor; este
+    # guarda vontade. Estado ausente = tudo ligado, para nunca mudar
+    # comportamento de quem so le o .env.
+
+    def _arquivo_estado(self) -> Path:
+        for base in (Path.cwd(), Path(__file__).resolve().parent.parent.parent):
+            for nome in (".env", "config_agente.json"):
+                if (base / nome).exists():
+                    return base / "data" / "api_estado.json"
+        return Path(__file__).resolve().parent.parent.parent / "data" / "api_estado.json"
+
+    def _estado(self) -> dict[str, Any]:
+        try:
+            return json.loads(self._arquivo_estado().read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+
+    def esta_ativo(self, key: str) -> bool:
+        """False somente se o operador desligou por conta propria."""
+        desligado = self._estado().get("desligados", {})
+        return not bool(desligado.get(key))
+
+    def alternar(self, key: str, ativo: bool = None):
+        """
+        Liga/desliga o uso de uma API. Devolve o novo estado.
+        Apagar a credencial NUNCA acontece aqui — so muda a vontade.
+        """
+        if key not in self.REGISTRY:
+            raise KeyError(f"secret nao registrado: {key}")
+        arq = self._arquivo_estado()
+        est = self._estado()
+        desligados = est.setdefault("desligados", {})
+        if ativo is None:
+            ativo = key in desligados  # desligado -> liga, ligado -> desliga
+        if ativo:
+            desligados.pop(key, None)
+        else:
+            desligados[key] = True
+        arq.parent.mkdir(parents=True, exist_ok=True)
+        arq.write_text(json.dumps(est, indent=2, ensure_ascii=False), encoding="utf-8")
+        logger.info("API %s %s", key, "LIGADA" if ativo else "DESLIGADA")
+        return ativo
+
     def get(self, key: str, required: bool = None) -> str | None:
         """
         Obtém o valor de um secret pelo nome.
@@ -301,8 +352,15 @@ class SecretsManager:
 
         Aqui:
           from src.core.secrets_manager import secrets
-          secrets.get('OPENAI_API_KEY')
+          secrets.get('BYBIT_API_KEY')
         """
+        # Interruptor vem ANTES de tudo: se o operador desligou a API,
+        # ela nao pode voltar a aparecer nem pelo cache nem pelo ambiente.
+        # E o que torna o botao de desligar uma parada real e nao um enfeite.
+        if not self.esta_ativo(key):
+            logger.debug("secret DESLIGADO pelo operador: %s", key)
+            return None
+
         # Verificar cache primeiro
         if key in self._cache and self._cache[key]:
             return self._cache[key]
@@ -345,17 +403,27 @@ class SecretsManager:
         """
         Executa auditoria de segurança nos secrets.
         Retorna relatório de conformidade.
+
+        Secret DESLIGADO pelo operador nao conta como faltando: o
+        interruptor e uma decisao, e a auditoria respeita decisao.
+        Sem isto, desligar a OCI escondia o valor mas continuava
+        cobrando a credencial obrigatoria — o botao de desligar nao
+        fechava nada.
         """
         report = {
             "total_secrets": len(self.REGISTRY),
             "loaded": 0,
             "missing_critical": [],
             "missing_high": [],
+            "desligados": [],
             "source": self._source,
             "compliant": True,
         }
 
         for key, meta in self.REGISTRY.items():
+            if not self.esta_ativo(key):
+                report["desligados"].append(key)
+                continue
             has_value = bool(self._cache.get(key) or os.environ.get(key))
             if has_value:
                 report["loaded"] += 1

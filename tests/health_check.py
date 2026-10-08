@@ -451,7 +451,9 @@ def test_secrets_audit():
     loaded = audit["loaded"]
     total = audit["total_secrets"]
     if compliant:
-        return "PASS", f"Auditoria OK | {loaded}/{total} carregados | Conforme: SIM"
+        desl = len(audit.get("desligados", []))
+        extra = f" | Desligados: {desl}" if desl else ""
+        return "PASS", f"Auditoria OK | {loaded}/{total} carregados{extra} | Conforme: SIM"
     missing = audit.get("missing_critical", []) + audit.get("missing_high", [])
     return "WARN", f"Auditoria: {loaded}/{total} carregados | Faltando: {missing}"
 
